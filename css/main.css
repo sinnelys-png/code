@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'Greengoth';
     /* ИСПРАВЛЕНО: Для формата .otf пишется 'opentype' */
-    src: url('fonts/Greengoth SHA_0.woff2') format('woff2');
+    src: url('../fonts/Greengoth SHA_0.woff2') format('woff2');
     font-display: swap;     
 }
 
