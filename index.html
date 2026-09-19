@@ -1,266 +1,162 @@
-@font-face {
-    font-family: 'Greengoth';
-    /* ИСПРАВЛЕНО: Для формата .otf пишется 'opentype' */
-    src: url('../fonts/Greengoth SHA_0.woff2') format('woff2');
-    font-display: swap;     
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROYAL CROSSBREED UNIVERSITY</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="bg-stripes-container"></div>
+    <header>
+    <div class="header-center-wrapper">
+        <nav class="nav-left">
+            <a href="#">дедлайны</a>
+            <span class="star-separator">✦</span>
+            <a href="#">активность</a>
+        </nav>
 
-@font-face {
-    font-family: 'FallbackSerif';
-    src: local('Times New Roman'), local('Georgia'), local('serif');
+        <div class="logo-container">
+            <img src="img/gerb.png" alt="logo" class="logo">
+        </div>
+        
+        <nav class="nav-right">            
+            <a href="#">расписание будущих постов</a>
+        </nav>
+
+        <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
+        <div class="header-bookmark">
+    <svg viewBox="0 0 1010 410" preserveAspectRatio="none" xmlns="http://w3.org">
+        <defs>
+            <!-- 1. Вертикальный градиент заливки (остается без изменений) -->
+            <linearGradient id="header-global-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="400">
+                <stop offset="0%" stop-color="#02304b" />
+                <stop offset="40%" stop-color="#012d47" />
+                <stop offset="75%" stop-color="#012a42" />
+                <stop offset="100%" stop-color="#00263b" />
+            </linearGradient>
+
+            <!-- 2. ИСПРАВЛЕНО: Градиент обводки с тегами анимации внутри -->
+            <!-- Изначально смещаем координаты x1 и x2 далеко влево (-100% и 0%) -->
+            <linearGradient id="header-global-stroke" gradientUnits="userSpaceOnUse" x1="-1010" y1="0" x2="0" y2="410">
+                <stop offset="0%" stop-color="#E3CFAC" stop-opacity="0.6" />
+                <stop offset="50%" stop-color="#FFFFFF" stop-opacity="1" /> <!-- Сам белый блик -->
+                <stop offset="100%" stop-color="#E3CFAC" stop-opacity="0.6" />
+                
+                <!-- Анимация для координаты x1 (движение слева направо) -->
+                <animate id="stroke-anim-1" 
+                         attributeName="x1" 
+                         from="-1010" to="1010" 
+                         dur="0.8s" 
+                         begin="indefinite" 
+                         fill="freeze" />
+                         
+                <!-- Анимация для координаты x2 (движение слева направо параллельно x1) -->
+                <animate id="stroke-anim-2" 
+                         attributeName="x2" 
+                         from="0" to="2020" 
+                         dur="0.8s" 
+                         begin="indefinite" 
+                         fill="freeze" />
+            </linearGradient>
+        </defs>
+
+        <polygon points="5,5 1005,5 1005,305 505,405 5,305" 
+                 fill="url(#header-global-fill)" 
+                 stroke="url(#header-global-stroke)" 
+                 stroke-width="5" 
+                 vector-effect="non-scaling-stroke" />
+    </svg>
+</div>
+    </div>
+</header>
+
+    <script>
+        const star = document.querySelector('.star-separator');
+        star.addEventListener('mouseenter', () => {
+            star.classList.add('is-spinning');
+        });
+        star.addEventListener('animationend', () => {
+            star.classList.remove('is-spinning');
+        });
+
+
+        // Находим элементы для обычных CSS-бликов (буквы, герб)
+        const glareElements = document.querySelectorAll('header a, .logo-container');
+        
+        // НАХОДИМ НАШИ SVG АНИМАЦИИ ОБВОДКИ
+        const strokeAnim1 = document.getElementById('stroke-anim-1');
+        const strokeAnim2 = document.getElementById('stroke-anim-2');
+        
+        // Находим общий контейнер шапки для отслеживания наведения
+        const headerWrapper = document.querySelector('.header-center-wrapper');
+
+        // 1. Старая логика для букв и герба при наведении на них лично
+        glareElements.forEach(element => {
+            element.addEventListener('mouseenter', () => {
+            element.classList.add('is-glaring');
+            });
+            element.addEventListener('animationend', () => {
+            element.classList.remove('is-glaring');
+            });
+        });
+
+        // 2. НОВАЯ ЛОГИКА: При наведении на ЛЮБУЮ часть шапки — запускаем неудержимый блик по обводке!
+        headerWrapper.addEventListener('mouseenter', () => {
+            if (strokeAnim1 && strokeAnim2) {
+            strokeAnim1.beginElement();
+            strokeAnim2.beginElement();
+            }
+        });
+    </script>
+
+<script>
+  const container = document.querySelector('.bg-stripes-container');
+
+  const stripeWidth = 50;
+  const stripesCount = Math.ceil(window.innerWidth / stripeWidth) + 1;
+
+  // 1. Создаем полосы, чередуя их через одну
+  for (let i = 0; i < stripesCount; i++) {
+    const stripe = document.createElement('div');
+    stripe.classList.add('single-stripe');
     
-    /* ВАЖНО: сжимает временный шрифт до 75% от его реального размера, 
-       чтобы он не раздувал шапку до прогрузки Greengoth */
-    size-adjust: 15%; 
-}
-
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%; 
-}
-
-body {
-   font-weight: normal;
-    background-color: #002F4A;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-    width: 100%;
-    position: relative;
-    margin: 0;
-    padding: 0;
-    position: relative;
-    overflow-x: hidden;
-}
-
-.bg-stripes-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;          /* Сияние остаётся под шапкой (у шапки z-index: 20) */
-    pointer-events: none;
-    display: flex;        /* Выстраивает полосы горизонтально друг за другом */
-    background: radial-gradient(circle 1300px at top center, #002F4A, #000000);
-}
-
-/* ИНДИВИДУАЛЬНАЯ ВЕРТИКАЛЬНАЯ ПОЛОСА */
-.single-stripe {
-    width: 50px;          
-    height: 100%;
-    flex-shrink: 0;
-    background-color: transparent; /* Интерактивные полосы в спокойном состоянии теперь прозрачные */
+    // Если индекс полосы четный — она будет интерактивной (пока прозрачная)
+    // Если нечетный (i % 2 !== 0) — делаем её всегда тёмной и статичной
+    if (i % 2 !== 0) {
+      stripe.classList.add('dark-static');
+    }
     
-    /* Время плавного затухания светового шлейфа (2.5 секунды) */
-    transition: background-color 2.5s cubic-bezier(0.1, 0.8, 0.25, 1);
-}
+    container.appendChild(stripe);
+  }
 
-/* СОСТОЯНИЕ ВСПЫШКИ (Для четных полос) */
-.single-stripe.is-lit {
-    background-color: rgba(107, 122, 192, 0.05); /* Золотой блеск */
-    transition: none; 
-}
+  const allStripes = document.querySelectorAll('.single-stripe');
 
-/* НОВЫЙ КЛАСС: Тёмные статичные полосы (через одну) */
-.single-stripe.dark-static {
-    background-color: rgba(0, 18, 29, 0.2);
-    mix-blend-mode: multiply;
-    transition: none; /* Ей не нужно затухать, она зафиксирована */
-    
-}
+  // 2. Отслеживаем движение мыши
+  window.addEventListener('mousemove', (e) => {
+    const stripeIndex = Math.floor(e.clientX / stripeWidth);
 
-a {
-    text-decoration: none;
-}
+    if (allStripes[stripeIndex]) {
+      const activeStripe = allStripes[stripeIndex];
 
-img {
-    max-width: 100%;
-}
+      // ВАЖНО: зажигаем полосу ТОЛЬКО если она не является тёмной-статичной
+      if (!activeStripe.classList.contains('dark-static')) {
+        activeStripe.classList.add('is-lit');
 
-header {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    box-sizing: border-box;
-    background: transparent;
-    font-size: 24px;
-}
-
-.header-center-wrapper {
-    display: grid;
-    grid-template-columns: minmax(250px, 1fr) auto minmax(250px, 1fr);
-    align-items: center;
-    justify-content: center;
-    gap: 40px;                 
-    padding: 20px 40px 20px;   
-    
-    position: relative;         
-    box-sizing: border-box;
-
-    width: max-content;
-    min-width: 20%;
-
-    height: 150px;    
-    
-    background: transparent;
-}
+        // Затухание начинается сразу же, даже если мышь замерла
+        setTimeout(() => {
+          activeStripe.classList.remove('is-lit');
+        }, 50);
+      }
+    }
+  });
+</script>
 
 
-.header-bookmark {
-    position: absolute;
-    left: 0;
-    top: -5px;
-    right: 0;
-    bottom: -80px;             
-    height: 235px;                 
-    z-index: 0;                
-    pointer-events: none;       
-}
-
-.header-bookmark svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-
-.nav-left, .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 10;
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;       /* Центрирует ссылки и звездочку строго по вертикали */
-    justify-content: center;   /* ИСПРАВЛЕНО: Центрирует всю группу элементов по горизонтали внутри левой половины */
-    gap: 15px;                 /* Чуть увеличили зазор для баланса */
-}
-
-/* ПРАВОЕ МЕНЮ (Колонка 3) */
-.nav-right {
-    display: flex;
-    align-items: center;       /* Центрирует ссылки по вертикали */
-    justify-content: center;   /* ИСПРАВЛЕНО: Центрирует ссылки по горизонтали внутри правой половины */
-    text-align: center;        /* Центрирует текст, если он перенесется на 2 строки */
-}
-
-.star-separator {         
-  color: #E3CFAC;           
-  font-family: sans-serif; 
-  display: inline-block; 
-  cursor: default; 
-  transform-origin: 50% 54%; 
-  z-index: 10;
-}
-
-.star-separator.is-spinning {
-  animation: spin-once 0.6s linear; 
-}
-
-@keyframes spin-once {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-header a {
-  text-decoration: none;
-  color: #E3CFAC;
-  font-family: 'Greengoth', 'FallbackSerif', serif;
-  font-weight: normal;
-  line-height: 1.2;
-  white-space: nowrap;  
-  transition: color 0.3s ease;
-  padding: 4px 0;    
-  
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  background: linear-gradient(
-    110deg, 
-    #E3CFAC 0%,    
-    #E3CFAC 40%,   
-    #ffffff 50%,   
-    #E3CFAC 60%,   
-    #E3CFAC 100%
-  );
-  background-size: 300% 100%;
-  background-position: 100% 0; 
-  -webkit-background-clip: text; 
-  background-clip: text;      
-  -webkit-text-fill-color: transparent;
-}
-
-
-header a.is-glaring {
-  animation: text-glare-run 0.8s ease-in-out;
-}
-
-@keyframes text-glare-run {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0% 0; } 
-}
-
-.logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  padding: 0px 0px;  
-  position: relative; 
-  overflow: hidden;
-
-
-  -webkit-mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png'); 
-  mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-
-  height: 150px; 
-  width: 148px;
-  z-index: 10;
-}
-
-.logo-container::before {
-  content: "";
-  position: absolute;
-  top: -50%;                  
-  left: -150%;                
-  width: 35%;                 
-  height: 200%;               
-  
-  background: linear-gradient(
-    110deg, 
-    rgba(255, 255, 255, 0) 0%, 
-    rgba(255, 255, 255, 0.4) 25%, 
-    rgba(255, 255, 255, 0.6) 50%, /* Яркое ядро блика */
-    rgba(255, 255, 255, 0.4) 75%, 
-    rgba(255, 255, 255, 0) 100%
-  );
-  
-  transform: skewX(-10deg); 
-  z-index: 10; 
-}
-
-.logo-container.is-glaring::before {
-  animation: image-glare-run 1s ease-in-out;
-}
-
-@keyframes image-glare-run {
-  0% { left: -150%; }
-  100% { left: 150%; }
-}
-
-.logo {
-  max-height: 150px; 
-  display: block;
-  z-index: 5;
-}
+     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script>
+        // Инициализация VK Bridge
+        vkBridge.send('VKWebAppInit');
+    </script>
+</body>
+</html>
