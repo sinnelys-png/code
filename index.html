@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROYAL CROSSBREED UNIVERSITY</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <header>
+    <div class="header-center-wrapper">
+        <nav class="nav-left">
+            <a href="#">дедлайны</a>
+            <span class="star-separator">✦</span>
+            <a href="#">активность</a>
+        </nav>
+
+        <div class="logo-container">
+            <img src="img/gerb.png" alt="герб" class="logo">
+        </div>
+        
+        <nav class="nav-right">            
+            <a href="#">расписание будущих постов</a>
+        </nav>
+
+        <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
+        <div class="header-bookmark">
+    <svg viewBox="0 0 1010 410" preserveAspectRatio="none" xmlns="http://w3.org">
+        <defs>
+            <!-- 1. Вертикальный градиент заливки (остается без изменений) -->
+            <linearGradient id="header-global-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="400">
+                <stop offset="0%" stop-color="#02304b" />
+                <stop offset="40%" stop-color="#012d47" />
+                <stop offset="75%" stop-color="#012a42" />
+                <stop offset="100%" stop-color="#00263b" />
+            </linearGradient>
+
+            <!-- 2. ИСПРАВЛЕНО: Градиент обводки с тегами анимации внутри -->
+            <!-- Изначально смещаем координаты x1 и x2 далеко влево (-100% и 0%) -->
+            <linearGradient id="header-global-stroke" gradientUnits="userSpaceOnUse" x1="-1010" y1="0" x2="0" y2="410">
+                <stop offset="0%" stop-color="#E3CFAC" stop-opacity="0.6" />
+                <stop offset="50%" stop-color="#FFFFFF" stop-opacity="1" /> <!-- Сам белый блик -->
+                <stop offset="100%" stop-color="#E3CFAC" stop-opacity="0.6" />
+                
+                <!-- Анимация для координаты x1 (движение слева направо) -->
+                <animate id="stroke-anim-1" 
+                         attributeName="x1" 
+                         from="-1010" to="1010" 
+                         dur="0.8s" 
+                         begin="indefinite" 
+                         fill="freeze" />
+                         
+                <!-- Анимация для координаты x2 (движение слева направо параллельно x1) -->
+                <animate id="stroke-anim-2" 
+                         attributeName="x2" 
+                         from="0" to="2020" 
+                         dur="0.8s" 
+                         begin="indefinite" 
+                         fill="freeze" />
+            </linearGradient>
+        </defs>
+
+        <polygon points="5,5 1005,5 1005,305 505,405 5,305" 
+                 fill="url(#header-global-fill)" 
+                 stroke="url(#header-global-stroke)" 
+                 stroke-width="5" 
+                 vector-effect="non-scaling-stroke" />
+    </svg>
+</div>
+    </div>
+</header>
+
+    <script>
+        const star = document.querySelector('.star-separator');
+        star.addEventListener('mouseenter', () => {
+            star.classList.add('is-spinning');
+        });
+        star.addEventListener('animationend', () => {
+            star.classList.remove('is-spinning');
+        });
+
+
+        // Находим элементы для обычных CSS-бликов (буквы, герб)
+        const glareElements = document.querySelectorAll('header a, .logo-container');
+        
+        // НАХОДИМ НАШИ SVG АНИМАЦИИ ОБВОДКИ
+        const strokeAnim1 = document.getElementById('stroke-anim-1');
+        const strokeAnim2 = document.getElementById('stroke-anim-2');
+        
+        // Находим общий контейнер шапки для отслеживания наведения
+        const headerWrapper = document.querySelector('.header-center-wrapper');
+
+        // 1. Старая логика для букв и герба при наведении на них лично
+        glareElements.forEach(element => {
+            element.addEventListener('mouseenter', () => {
+            element.classList.add('is-glaring');
+            });
+            element.addEventListener('animationend', () => {
+            element.classList.remove('is-glaring');
+            });
+        });
+
+        // 2. НОВАЯ ЛОГИКА: При наведении на ЛЮБУЮ часть шапки — запускаем неудержимый блик по обводке!
+        headerWrapper.addEventListener('mouseenter', () => {
+            if (strokeAnim1 && strokeAnim2) {
+            strokeAnim1.beginElement();
+            strokeAnim2.beginElement();
+            }
+        });
+    </script>
+</body>
+</html>
