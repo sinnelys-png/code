@@ -1,139 +1,266 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VK Group Widget demo</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-</head>
-<body>
-  <div class="container-fluid">
-    <nav class="navbar navbar-light bg-light">
-      <a class="navbar-brand" href="https://github.com/Deserter-io/vk-group-widget" target="_blank">github</a>
-    </nav>
+@font-face {
+    font-family: 'Greengoth';
+    /* ИСПРАВЛЕНО: Для формата .otf пишется 'opentype' */
+    src: url('../fonts/Greengoth SHA_0.woff2') format('woff2');
+    font-display: swap;     
+}
 
-    <div class="form-group">
-      <button id="btn-get-groups" class="btn btn-primary">Получить список моих групп</button>
-    </div>
-    <div class="form-group" id="el-select">
-      <label for="exampleFormControlSelect1">Выберите группу:</label>
-      <select id="in-group" class="form-control"></select>
-    </div>
-    <div class="form-group">
-      <button id="btn-get-token" class="btn btn-secondary">Получить токен</button>
-    </div>
-    <div class="form-group">
-      <button id="addWidgetBtn" class="btn btn-secondary">Добавить виджет в сообщество</button>
-    </div>
-
-    <div class="alert alert-warning" id="el-output" role="alert"></div>
-  </div>
-  
-  <!-- Bootstrap scripts -->
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
-
-  <!-- VK Group Widget demo scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@2.2.1/dist/index.umd.js"></script>
-  <script>
-    const APP_ID = 54775225;
-    const VK_API_VERSION = "5.103";
-    let group_id;
-
-    const elSelect = document.getElementById('el-select');
-    const inGroup = document.getElementById('in-group');
-    elSelect.style.display = "none";
-    inGroup.addEventListener('input', e => {
-      group_id = +inGroup.value;
-      console.log("Selected", group_id);
-    });
-
-    const output = document.getElementById('el-output');
-    output.style.display = "none";
-
-    const bridge = vkBridge.default;
-
-    bridge.subscribe((e) => console.log("vkBridge event", e));
-    bridge.send("VKWebAppInit", {});
-
-    const renderOptions = (groups) => {
-      groups.forEach(group => {
-        const opt = document.createElement('option');
-        opt.innerText = group.name;
-        opt.value = group.id;
-        inGroup.appendChild(opt);
-      });
-      elSelect.style.display = "block";
-    };
-
-    document.getElementById('btn-get-groups').addEventListener('click', () => {
-      bridge.send("VKWebAppGetAuthToken", {"app_id": APP_ID, "scope": "groups"})
-      .then(result => {
-        console.log("token?", result);
-        const token = result.access_token;
-        return bridge.send("VKWebAppCallAPIMethod", {
-          "method"    : "groups.get",
-          "request_id": "32test",
-          "params"    : {
-            "filter"      : "admin",
-            "extended"    : 1,
-            "v"           : VK_API_VERSION,
-            "access_token": token
-          },
-        });
-      })
-      .then(result => {
-        console.log("Result from groups.get: %O", result);
-        if (result.response && result.response.items) {
-          renderOptions(result.response.items);
-        } else {
-          console.error("No groups?");
-        }
-      })
-      .catch(err => console.error(err));
-    });
-
-    document.getElementById('btn-get-token').addEventListener('click', () => {
-      if (!group_id) {
-        console.log("Group not selected");
-        return;
-      }
-
-      console.log("Will request permissions for", typeof group_id, group_id);
-
-      bridge.send("VKWebAppGetCommunityToken", {
-        "app_id"   : APP_ID,
-        "group_id" : group_id,
-        "scope"    : "app_widget"
-      })
-      .then(response => {
-        console.log(response);
-        if (response.access_token) {
-          output.style.display = "block";
-          output.innerHTML = `Токен для управления виджетом:<br><small>${response.access_token}</small>`;
-        }
-      })
-      ;
-    });
-
-      document.getElementById('addWidgetBtn').addEventListener('click', () => {
-      // Вызываем метод VK Bridge для отображения окна установки виджета
-      bridge.send("VKWebAppAddToCommunity")
-      .then(data => {
-        // Выполняется, если пользователь успешно нажал кнопку "Установить виджет" в окне VK
-        console.log("Виджет успешно добавлен!", data);
-        alert("Виджет успешно добавлен в ваше сообщество!");
-      })
-      .catch(error => {
-        // Выполняется, если произошла ошибка или пользователь закрыл окно
-        console.error("Ошибка при установке виджета:", error);
-        alert("Не удалось добавить виджет. Проверьте, являетесь ли вы администратором сообщества.");
-    });
-      });
-
+@font-face {
+    font-family: 'FallbackSerif';
+    src: local('Times New Roman'), local('Georgia'), local('serif');
     
-  </script>
+    /* ВАЖНО: сжимает временный шрифт до 75% от его реального размера, 
+       чтобы он не раздувал шапку до прогрузки Greengoth */
+    size-adjust: 15%; 
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%; 
+}
+
+body {
+   font-weight: normal;
+    background-color: #002F4A;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.bg-stripes-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;          /* Сияние остаётся под шапкой (у шапки z-index: 20) */
+    pointer-events: none;
+    display: flex;        /* Выстраивает полосы горизонтально друг за другом */
+    background: radial-gradient(circle 1300px at top center, #002F4A, #000000);
+}
+
+/* ИНДИВИДУАЛЬНАЯ ВЕРТИКАЛЬНАЯ ПОЛОСА */
+.single-stripe {
+    width: 50px;          
+    height: 100%;
+    flex-shrink: 0;
+    background-color: transparent; /* Интерактивные полосы в спокойном состоянии теперь прозрачные */
+    
+    /* Время плавного затухания светового шлейфа (2.5 секунды) */
+    transition: background-color 2.5s cubic-bezier(0.1, 0.8, 0.25, 1);
+}
+
+/* СОСТОЯНИЕ ВСПЫШКИ (Для четных полос) */
+.single-stripe.is-lit {
+    background-color: rgba(107, 122, 192, 0.05); /* Золотой блеск */
+    transition: none; 
+}
+
+/* НОВЫЙ КЛАСС: Тёмные статичные полосы (через одну) */
+.single-stripe.dark-static {
+    background-color: rgba(0, 18, 29, 0.2);
+    mix-blend-mode: multiply;
+    transition: none; /* Ей не нужно затухать, она зафиксирована */
+    
+}
+
+a {
+    text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    font-size: 24px;
+}
+
+.header-center-wrapper {
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) auto minmax(250px, 1fr);
+    align-items: center;
+    justify-content: center;
+    gap: 40px;                 
+    padding: 20px 40px 20px;   
+    
+    position: relative;         
+    box-sizing: border-box;
+
+    width: max-content;
+    min-width: 20%;
+
+    height: 150px;    
+    
+    background: transparent;
+}
+
+
+.header-bookmark {
+    position: absolute;
+    left: 0;
+    top: -5px;
+    right: 0;
+    bottom: -80px;             
+    height: 235px;                 
+    z-index: 0;                
+    pointer-events: none;       
+}
+
+.header-bookmark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+.nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;       /* Центрирует ссылки и звездочку строго по вертикали */
+    justify-content: center;   /* ИСПРАВЛЕНО: Центрирует всю группу элементов по горизонтали внутри левой половины */
+    gap: 15px;                 /* Чуть увеличили зазор для баланса */
+}
+
+/* ПРАВОЕ МЕНЮ (Колонка 3) */
+.nav-right {
+    display: flex;
+    align-items: center;       /* Центрирует ссылки по вертикали */
+    justify-content: center;   /* ИСПРАВЛЕНО: Центрирует ссылки по горизонтали внутри правой половины */
+    text-align: center;        /* Центрирует текст, если он перенесется на 2 строки */
+}
+
+.star-separator {         
+  color: #E3CFAC;           
+  font-family: sans-serif; 
+  display: inline-block; 
+  cursor: default; 
+  transform-origin: 50% 54%; 
+  z-index: 10;
+}
+
+.star-separator.is-spinning {
+  animation: spin-once 0.6s linear; 
+}
+
+@keyframes spin-once {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+header a {
+  text-decoration: none;
+  color: #E3CFAC;
+  font-family: 'Greengoth', 'FallbackSerif', serif;
+  font-weight: normal;
+  line-height: 1.2;
+  white-space: nowrap;  
+  transition: color 0.3s ease;
+  padding: 4px 0;    
   
-</body>
-</html>
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(
+    110deg, 
+    #E3CFAC 0%,    
+    #E3CFAC 40%,   
+    #ffffff 50%,   
+    #E3CFAC 60%,   
+    #E3CFAC 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0; 
+  -webkit-background-clip: text; 
+  background-clip: text;      
+  -webkit-text-fill-color: transparent;
+}
+
+
+header a.is-glaring {
+  animation: text-glare-run 0.8s ease-in-out;
+}
+
+@keyframes text-glare-run {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0% 0; } 
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0px 0px;  
+  position: relative; 
+  overflow: hidden;
+
+
+  -webkit-mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png'); 
+  mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+
+  height: 150px; 
+  width: 148px;
+  z-index: 10;
+}
+
+.logo-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;                  
+  left: -150%;                
+  width: 35%;                 
+  height: 200%;               
+  
+  background: linear-gradient(
+    110deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.4) 25%, 
+    rgba(255, 255, 255, 0.6) 50%, /* Яркое ядро блика */
+    rgba(255, 255, 255, 0.4) 75%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  
+  transform: skewX(-10deg); 
+  z-index: 10; 
+}
+
+.logo-container.is-glaring::before {
+  animation: image-glare-run 1s ease-in-out;
+}
+
+@keyframes image-glare-run {
+  0% { left: -150%; }
+  100% { left: 150%; }
+}
+
+.logo {
+  max-height: 150px; 
+  display: block;
+  z-index: 5;
+}
