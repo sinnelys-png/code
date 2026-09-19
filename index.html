@@ -108,5 +108,106 @@
             }
         });
     </script>
+
+
+     <script src="https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge@2.2.1/dist/index.umd.js"></script>
+  <script>
+    const APP_ID = 54775225;
+    const VK_API_VERSION = "5.103";
+    let group_id;
+
+    const elSelect = document.getElementById('el-select');
+    const inGroup = document.getElementById('in-group');
+    elSelect.style.display = "none";
+    inGroup.addEventListener('input', e => {
+      group_id = +inGroup.value;
+      console.log("Selected", group_id);
+    });
+
+    const output = document.getElementById('el-output');
+    output.style.display = "none";
+
+    const bridge = vkBridge.default;
+
+    bridge.subscribe((e) => console.log("vkBridge event", e));
+    bridge.send("VKWebAppInit", {});
+
+    const renderOptions = (groups) => {
+      groups.forEach(group => {
+        const opt = document.createElement('option');
+        opt.innerText = group.name;
+        opt.value = group.id;
+        inGroup.appendChild(opt);
+      });
+      elSelect.style.display = "block";
+    };
+
+    document.getElementById('btn-get-groups').addEventListener('click', () => {
+      bridge.send("VKWebAppGetAuthToken", {"app_id": APP_ID, "scope": "groups"})
+      .then(result => {
+        console.log("token?", result);
+        const token = result.access_token;
+        return bridge.send("VKWebAppCallAPIMethod", {
+          "method"    : "groups.get",
+          "request_id": "32test",
+          "params"    : {
+            "filter"      : "admin",
+            "extended"    : 1,
+            "v"           : VK_API_VERSION,
+            "access_token": token
+          },
+        });
+      })
+      .then(result => {
+        console.log("Result from groups.get: %O", result);
+        if (result.response && result.response.items) {
+          renderOptions(result.response.items);
+        } else {
+          console.error("No groups?");
+        }
+      })
+      .catch(err => console.error(err));
+    });
+
+    document.getElementById('btn-get-token').addEventListener('click', () => {
+      if (!group_id) {
+        console.log("Group not selected");
+        return;
+      }
+
+      console.log("Will request permissions for", typeof group_id, group_id);
+
+      bridge.send("VKWebAppGetCommunityToken", {
+        "app_id"   : APP_ID,
+        "group_id" : group_id,
+        "scope"    : "app_widget"
+      })
+      .then(response => {
+        console.log(response);
+        if (response.access_token) {
+          output.style.display = "block";
+          output.innerHTML = `Токен для управления виджетом:<br><small>${response.access_token}</small>`;
+        }
+      })
+      ;
+    });
+
+      document.getElementById('addWidgetBtn').addEventListener('click', () => {
+      // Вызываем метод VK Bridge для отображения окна установки виджета
+      bridge.send("VKWebAppAddToCommunity")
+      .then(data => {
+        // Выполняется, если пользователь успешно нажал кнопку "Установить виджет" в окне VK
+        console.log("Виджет успешно добавлен!", data);
+        alert("Виджет успешно добавлен в ваше сообщество!");
+      })
+      .catch(error => {
+        // Выполняется, если произошла ошибка или пользователь закрыл окно
+        console.error("Ошибка при установке виджета:", error);
+        alert("Не удалось добавить виджет. Проверьте, являетесь ли вы администратором сообщества.");
+    });
+      });
+
+    
+  </script>
 </body>
 </html>
