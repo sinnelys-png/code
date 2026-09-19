@@ -22,10 +22,53 @@ html, body {
 }
 
 body {
-    font-weight: normal;
+   font-weight: normal;
     background-color: #002F4A;
     background-repeat: no-repeat;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.bg-stripes-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;          /* Сияние остаётся под шапкой (у шапки z-index: 20) */
+    pointer-events: none;
+    display: flex;        /* Выстраивает полосы горизонтально друг за другом */
     background: radial-gradient(circle 1300px at top center, #002F4A, #000000);
+}
+
+/* ИНДИВИДУАЛЬНАЯ ВЕРТИКАЛЬНАЯ ПОЛОСА */
+.single-stripe {
+    width: 50px;          
+    height: 100%;
+    flex-shrink: 0;
+    background-color: transparent; /* Интерактивные полосы в спокойном состоянии теперь прозрачные */
+    
+    /* Время плавного затухания светового шлейфа (2.5 секунды) */
+    transition: background-color 2.5s cubic-bezier(0.1, 0.8, 0.25, 1);
+}
+
+/* СОСТОЯНИЕ ВСПЫШКИ (Для четных полос) */
+.single-stripe.is-lit {
+    background-color: rgba(107, 122, 192, 0.05); /* Золотой блеск */
+    transition: none; 
+}
+
+/* НОВЫЙ КЛАСС: Тёмные статичные полосы (через одну) */
+.single-stripe.dark-static {
+    background-color: rgba(0, 18, 29, 0.2);
+    mix-blend-mode: multiply;
+    transition: none; /* Ей не нужно затухать, она зафиксирована */
+    
 }
 
 a {
@@ -72,7 +115,7 @@ header {
     right: 0;
     bottom: -80px;             
     height: 235px;                 
-    z-index: -1;                
+    z-index: 0;                
     pointer-events: none;       
 }
 
@@ -87,6 +130,7 @@ header {
     display: flex;
     align-items: center;
     gap: 10px;
+    z-index: 10;
 }
 
 .nav-left {
@@ -110,6 +154,7 @@ header {
   display: inline-block; 
   cursor: default; 
   transform-origin: 50% 54%; 
+  z-index: 10;
 }
 
 .star-separator.is-spinning {
@@ -181,6 +226,7 @@ header a.is-glaring {
 
   height: 150px; 
   width: 148px;
+  z-index: 10;
 }
 
 .logo-container::before {

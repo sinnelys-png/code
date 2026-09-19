@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROYAL CROSSBREED UNIVERSITY</title>
-    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    <div class="bg-stripes-container"></div>
     <header>
     <div class="header-center-wrapper">
         <nav class="nav-left">
@@ -107,6 +108,55 @@
             strokeAnim2.beginElement();
             }
         });
+    </script>
+
+<script>
+  const container = document.querySelector('.bg-stripes-container');
+
+  const stripeWidth = 50;
+  const stripesCount = Math.ceil(window.innerWidth / stripeWidth) + 1;
+
+  // 1. Создаем полосы, чередуя их через одну
+  for (let i = 0; i < stripesCount; i++) {
+    const stripe = document.createElement('div');
+    stripe.classList.add('single-stripe');
+    
+    // Если индекс полосы четный — она будет интерактивной (пока прозрачная)
+    // Если нечетный (i % 2 !== 0) — делаем её всегда тёмной и статичной
+    if (i % 2 !== 0) {
+      stripe.classList.add('dark-static');
+    }
+    
+    container.appendChild(stripe);
+  }
+
+  const allStripes = document.querySelectorAll('.single-stripe');
+
+  // 2. Отслеживаем движение мыши
+  window.addEventListener('mousemove', (e) => {
+    const stripeIndex = Math.floor(e.clientX / stripeWidth);
+
+    if (allStripes[stripeIndex]) {
+      const activeStripe = allStripes[stripeIndex];
+
+      // ВАЖНО: зажигаем полосу ТОЛЬКО если она не является тёмной-статичной
+      if (!activeStripe.classList.contains('dark-static')) {
+        activeStripe.classList.add('is-lit');
+
+        // Затухание начинается сразу же, даже если мышь замерла
+        setTimeout(() => {
+          activeStripe.classList.remove('is-lit');
+        }, 50);
+      }
+    }
+  });
+</script>
+
+
+     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script>
+        // Инициализация VK Bridge
+        vkBridge.send('VKWebAppInit');
     </script>
 </body>
 </html>
