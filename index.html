@@ -113,55 +113,152 @@
         </div>
     </main>
 
-    <!-- СКРИПТ №1: Звёздочка и анимация 7-пиксельной обводки шапки -->
     <script>
-        // Находим элементы для VK Bridge и анимации звёздочки (без изменений)
-        const star = document.querySelector('.star-separator');
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. НАХОДИМ ВСЕ НЕОБХОДИМЫЕ ЭЛЕМЕНТЫ
+    const star = document.querySelector('.star-separator');
+    const headerWrapper = document.querySelector('.header-center-wrapper');
+    const mainBlock = document.querySelector('.main-inner-content');
+    const scrollContainer = document.querySelector('.main-scroll-viewport');
+    const menuLinks = document.querySelectorAll('header a');
+    const logoContainer = document.querySelector('.logo-container');
+    const strokeAnim1 = document.getElementById('stroke-anim-1');
+    const strokeAnim2 = document.getElementById('stroke-anim-2');
+
+    // 2. ОПРЕДЕЛЯЕМ: МОБИЛЬНОЕ ЛИ ЭТО УСТРОЙСТВО ИЛИ VK APP НА ТЕЛЕФОНЕ
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+    if (isMobile) {
+        // ==========================================================================
+        // ЛОГИКА ДЛЯ МОБИЛЬНЫХ ТЕЛЕФОНОВ: ПЕРИОДИЧЕСКИЙ СИНХРОННЫЙ ПУЛЬС СИЯНИЯ
+        // ==========================================================================
+        
+        // Массив всех элементов, которые должны одновременно вспыхивать
+        const pulsingElements = [star, logoContainer, mainBlock, ...menuLinks];
+
+        function triggerMobileGlow() {
+            // Вешаем класс анимации на все элементы одновременно
+            pulsingElements.forEach(el => {
+                if (el) el.classList.add('is-mobile-pulsing');
+            });
+
+            // Запускаем красивый лазерный блик по нижней 7-пиксельной обводке шапки
+            if (strokeAnim1 && strokeAnim2) {
+                strokeAnim1.beginElement();
+                strokeAnim2.beginElement();
+            }
+
+            // Как только анимация завершается — очищаем классы, чтобы подготовить к следующему циклу
+            setTimeout(() => {
+                pulsingElements.forEach(el => {
+                    if (el) el.classList.remove('is-mobile-pulsing');
+                });
+            }, 1500); // Очищаем через 1.5 секунды (с запасом после окончания кадров)
+        }
+
+        // Запускаем первую вспышку сразу через 2 секунды после загрузки сайта
+        setTimeout(triggerMobileGlow, 2000);
+
+        /* ТАЙМЕР ПЕРИОДИЧНОСТИ: 
+           Эффект будет автоматически активироваться каждые 8 секунд (8000 миллисекунд). 
+           Вы можете изменить это число, например, на 10000 (10 секунд) или 5000 (5 секунд). */
+        setInterval(triggerMobileGlow, 8000);
+
+    } else {
+        // ==========================================================================
+        // ЛОГИКА ДЛЯ КОМПЬЮТЕРОВ: ИНТЕРАКТИВНОЕ СЛЕДОВАНИЕ ЗА МЫШЬЮ И БЛИКИ
+        // ==========================================================================
+        
+        // Анимация вращения звёздочки
         if (star) {
             star.addEventListener('mouseenter', () => star.classList.add('is-spinning'));
             star.addEventListener('animationend', () => star.classList.remove('is-spinning'));
         }
 
-        const headerWrapper = document.querySelector('.header-center-wrapper');
-        const mainBlock = document.querySelector('.main-inner-content');
-
-        // ==========================================================================
-        // ИСПРАВЛЕНО: АНИМАЦИЯ БЛИКА ДЛЯ ССЫЛОК МЕНЮ И ДЛЯ ГЕРБА
-        // ==========================================================================
-        /* Мы добавили '.logo-container' в список. Теперь скрипт находит и ссылки, 
-           и сам центральный масочный бокс герба */
+        // Анимация перелива ссылок и герба при наведении
         const glareElements = document.querySelectorAll('header a, .logo-container');
-
         glareElements.forEach(element => {
-            // Когда мышка заходит на ссылку или на герб — запускаем анимацию блика
-            element.addEventListener('mouseenter', () => {
-                element.classList.add('is-glaring');
-            });
-            // Как только блик пролетел до конца — плавно очищаем класс для повторного запуска
-            element.addEventListener('animationend', () => {
-                element.classList.remove('is-glaring');
-            });
+            element.addEventListener('mouseenter', () => element.classList.add('is-glaring'));
+            element.addEventListener('animationend', () => element.classList.remove('is-glaring'));
         });
 
-        // Глобальный слушатель мыши для сквозной подсветки обводок хедера и блока (без изменений)
+        // Запуск блика по обводке шапки при наведении на хедер
+        if (headerWrapper) {
+            headerWrapper.addEventListener('mouseenter', () => {
+                if (strokeAnim1 && strokeAnim2) {
+                    strokeAnim1.beginElement();
+                    strokeAnim2.beginElement();
+                }
+            });
+        }
+
+        // Глобальный сквозной прожектор обводок за указателем мыши
         window.addEventListener('mousemove', (e) => {
             if (headerWrapper) {
                 const hRect = headerWrapper.getBoundingClientRect();
-                const hX = e.clientX - hRect.left;
-                const hY = e.clientY - hRect.top;
-                headerWrapper.style.setProperty('--mouse-x', `${hX}px`);
-                headerWrapper.style.setProperty('--mouse-y', `${hY}px`);
+                headerWrapper.style.setProperty('--mouse-x', `${e.clientX - hRect.left}px`);
+                headerWrapper.style.setProperty('--mouse-y', `${e.clientY - hRect.top}px`);
             }
-
             if (mainBlock) {
                 const mRect = mainBlock.getBoundingClientRect();
-                const mX = e.clientX - mRect.left;
-                const mY = e.clientY - mRect.top;
-                mainBlock.style.setProperty('--mouse-x', `${mX}px`);
-                mainBlock.style.setProperty('--mouse-y', `${mY}px`);
+                mainBlock.style.setProperty('--mouse-x', `${e.clientX - mRect.left}px`);
+                mainBlock.style.setProperty('--mouse-y', `${e.clientY - mRect.top}px`);
             }
         });
-    </script>
+    }
+
+    // Восстанавливаем генерацию строгой диагональной сетки точек (работает только на ПК)
+    const starsContainer = document.querySelector('.header-stars-container');
+    const svgPath = document.querySelector('.star-tracker-path polygon');
+    
+    if (!isMobile && starsContainer && svgPath) {
+        const step = 20; 
+        const rect = starsContainer.getBoundingClientRect();
+        const cols = Math.ceil(rect.width / step);
+        const rows = Math.ceil(rect.height / step);
+        const svgOwner = document.querySelector('.star-tracker-path');
+        const testPoint = svgOwner.createSVGPoint();
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const posX = c * step + (r % 2 === 0 ? 0 : step / 2);
+                const posY = r * step;
+                testPoint.x = (posX / rect.width) * 1010;
+                testPoint.y = (posY / rect.height) * 410;
+
+                if (svgPath.isPointInFill(testPoint)) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('mini-dot');
+                    dot.style.left = `${posX}px`;
+                    dot.style.top = `${posY}px`;
+                    starsContainer.appendChild(dot);
+                }
+            }
+        }
+
+        const allDots = starsContainer.querySelectorAll('.mini-dot');
+        window.addEventListener('mousemove', (e) => {
+            const containerRect = starsContainer.getBoundingClientRect();
+            const mX = e.clientX - containerRect.left;
+            const mY = e.clientY - containerRect.top;
+
+            allDots.forEach(dot => {
+                if (Math.hypot(mX - parseFloat(dot.style.left), mY - parseFloat(dot.style.top)) < 55) {
+                    dot.classList.add('is-ignited');
+                    setTimeout(() => dot.classList.remove('is-ignited'), 50);
+                }
+            });
+        });
+    }
+  });
+</script>
+
+<!-- Интеграция VK Bridge (остается без изменений) -->
+<script src="https://unpkg.com"></script>
+<script>
+    vkBridge.send('VKWebAppInit');
+</script>
+
 
     <!-- СКРИПТ №3: Генерация вертикальных дорожек фона -->
     <script>

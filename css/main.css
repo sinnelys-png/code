@@ -549,3 +549,45 @@ header a.is-glaring {
         min-height: 28rem;
     }
 }
+
+
+/* ==========================================================================
+   ПЕРИОДИЧЕСКАЯ МОБИЛЬНАЯ АНИМАЦИЯ (ВКЛЮЧАЕТСЯ ПО ТАЙМЕРУ)
+   ========================================================================== */
+
+/* 1. СИНХРОННЫЙ БЛИК ДЛЯ ССЫЛОК В ШАПКЕ */
+header a.is-mobile-pulsing {
+    animation: text-glare-run 1s ease-in-out;
+}
+
+/* 2. ВСПЫШКА ДЛЯ ГЕРБА */
+.logo-container.is-mobile-pulsing::before {
+    animation: image-glare-run 1s ease-in-out;
+}
+
+/* 3. КРУЧЕНИЕ ЗВЁЗДОЧКИ */
+.star-separator.is-mobile-pulsing {
+    animation: spin-once 0.8s linear;
+}
+
+/* 4. МЯГКИЙ ИМПУЛЬС СВЕТА ДЛЯ ОБВОДКИ ОСНОВНОГО БЛОКА */
+.main-inner-content.is-mobile-pulsing::before {
+    animation: mobile-border-glow 1.2s ease-in-out;
+}
+
+/* Кадры для плавного разгорания и затухания обводки контента */
+@keyframes mobile-border-glow {
+    0% {
+        background-image: radial-gradient(circle 400px at 50% 50%, #ffffff 0%, rgb(227 207 172 / 80%) 50%, rgb(227 207 172 / 60%) 100%);
+        opacity: 0.3;
+    }
+    50% {
+        /* В пике анимации обводка становится ослепительно яркой */
+        opacity: 1;
+        background-image: radial-gradient(circle 500px at 50% 50%, #ffffff 0%, rgb(227 207 172 / 100%) 40%, rgb(227 207 172 / 80%) 100%);
+    }
+    100% {
+        background-image: radial-gradient(circle 400px at 50% 50%, #ffffff 0%, rgb(227 207 172 / 80%) 50%, rgb(227 207 172 / 60%) 100%);
+        opacity: 0.3; /* Возвращаем к дефолтной бледности */
+    }
+}
