@@ -203,8 +203,8 @@ header a.is-glaring {
   overflow: hidden;
 
 
-  -webkit-mask-image: url('https://i.ibb.co/F4qWyy4p/gerb.png'); 
-  mask-image: url('https://i.ibb.co/F4qWyy4p/gerb.png');
+  -webkit-mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png'); 
+  mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
@@ -288,4 +288,85 @@ header a.is-glaring {
     .header-center-wrapper {
         gap: 0.8rem;
     }
+}
+
+
+
+
+/* ГЛАВНАЯ ПРОЗРАЧНАЯ ОБЕРТКА */
+.main-content-block {
+    display: flex;
+    flex-direction: column;     /* Выстраивает вырез и текст строго друг под другом */
+    align-items: center;        /* Железное центрирование по оси X, строго как у шапки */
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;   
+}
+
+
+
+.main-inner-content {
+    width: 100%;
+    max-width: 50rem;       
+    margin-top: 0px;
+    box-sizing: border-box; 
+    padding: 6rem 2.5rem 2rem 2.5rem; 
+    position: relative;
+    color: #E3CFAC;             
+    font-family: sans-serif;
+
+    /* Внешний срез блока (ваши настроенные 90px) */
+    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
+
+    /* Инициализируем базовые координаты, чтобы до движения мыши не было багов */
+    --mouse-x: -999px;
+    --mouse-y: -999px;
+}
+
+/* 1. СЛОЙ ИНТЕРАКТИВНОЙ ОБВОДКИ (Задний план) */
+.main-inner-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+    
+    /* ХИТРЫЙ ГРАДИЕНТ: Белый яркий блик в центре курсора (радиус 120px), 
+       который плавно переходит в вашу базовую золотую обводку (60% непрозрачности) */
+    background-image: radial-gradient(
+        circle 400px at var(--mouse-x) var(--mouse-y), 
+        #ffffff 0%, 
+        rgb(227 207 172 / 80%) 50%,
+        rgb(227 207 172 / 60%) 100%
+    ); 
+    
+    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
+    
+    /* Плавное перемещение блика, чтобы он не дергался */
+    transition: background-image 0.1s ease;
+}
+
+/* 2. СЛОЙ ВНУТРЕННЕГО ФОНА С ГРАДИЕНТОМ (Передний план) */
+.main-inner-content::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    z-index: -1;
+    
+    background-image: linear-gradient(to bottom, #002F4A 0%, #001929 100%); 
+    
+    
+    /* Ваши настроенные 95px для внутренней точки */
+    clip-path: polygon(
+        0% 7px,          
+        50% 95px,       
+        100% 7px,        
+        100% 100%, 
+        0% 100%
+    );
 }
