@@ -2,33 +2,34 @@
     font-family: 'Greengoth';
     /* ИСПРАВЛЕНО: Для формата .otf пишется 'opentype' */
     src: url('../fonts/Greengoth SHA_0.woff2') format('woff2');
-    font-display: swap;     
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'FallbackSerif';
     src: local('Times New Roman'), local('Georgia'), local('serif');
-    
+
     /* ВАЖНО: сжимает временный шрифт до 75% от его реального размера, 
        чтобы он не раздувал шапку до прогрузки Greengoth */
-    size-adjust: 15%; 
+    size-adjust: 15%;
 }
 
 html {
-  font-size: 16px;
+    font-size: 16px;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%; 
-    padding-top: 0.5rem; 
+    height: 100%;
+    padding-top: 0.5rem;
     box-sizing: border-box;
 }
 
 body {
-   font-weight: normal;
+    font-weight: normal;
     background-color: #002F4A;
     background-repeat: no-repeat;
 }
@@ -39,35 +40,32 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;          /* Сияние остаётся под шапкой (у шапки z-index: 20) */
+    z-index: -1;
     pointer-events: none;
-    display: flex;        /* Выстраивает полосы горизонтально друг за другом */
+    display: flex;
+    isolation: isolate;
     background: radial-gradient(circle 1300px at top center, #002F4A, #000000);
 }
 
-/* ИНДИВИДУАЛЬНАЯ ВЕРТИКАЛЬНАЯ ПОЛОСА */
 .single-stripe {
-    width: 50px;          
+    width: 50px;
     height: 100%;
     flex-shrink: 0;
-    background-color: transparent; /* Интерактивные полосы в спокойном состоянии теперь прозрачные */
-    
-    /* Время плавного затухания светового шлейфа (2.5 секунды) */
+    background-color: transparent;
     transition: background-color 2.5s cubic-bezier(0.1, 0.8, 0.25, 1);
 }
 
-/* СОСТОЯНИЕ ВСПЫШКИ (Для четных полос) */
+
 .single-stripe.is-lit {
-    background-color: rgba(107, 122, 192, 0.05); /* Золотой блеск */
-    transition: none; 
+    background-color: rgba(107, 122, 192, 0.05);
+    transition: none;
 }
 
-/* НОВЫЙ КЛАСС: Тёмные статичные полосы (через одну) */
+
 .single-stripe.dark-static {
     background-color: rgba(0, 18, 29, 0.2);
     mix-blend-mode: multiply;
-    transition: none; /* Ей не нужно затухать, она зафиксирована */
-    
+    transition: none;/
 }
 
 a {
@@ -85,27 +83,27 @@ header {
     box-sizing: border-box;
     background: transparent;
     font-size: 1.5rem;
-    overflow: visible; 
+    overflow: visible;
 }
 
 .header-center-wrapper {
     display: grid;
     grid-template-columns: minmax(15.625rem, 1fr) auto minmax(15.625rem, 1fr);
-    align-items: center;
+    align-items: start;
     justify-content: center;
-    gap: 2.5rem;                  
-    padding: 0 2.5rem;        
-    
-    position: relative;         
+    gap: 2.5rem;
+    padding: 0 2.5rem;
+
+    position: relative;
     box-sizing: border-box;
 
     width: 100%;
     max-width: 50rem;
 
-    height: 9.375rem;
-    
+    height: 7rem;
+
     background: transparent;
-    overflow: visible; 
+    overflow: visible;
 }
 
 
@@ -113,178 +111,191 @@ header {
 .header-bookmark {
     position: absolute;
     left: 0;
-    top: -9.375rem; 
-    right: 0;         
-    height: 22.1875rem;                
-    z-index: 1;                
-    pointer-events: none;       
+    top: -11rem;
+    right: 0;
+    height: 22.1875rem;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .header-bookmark svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 
-.nav-left, .nav-right {
+.nav-left,
+.nav-right {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.9375rem;
     z-index: 10;
+    padding-top: 0.9375rem;
 }
 
 
-.star-separator {         
-  color: #E3CFAC;           
-  font-family: sans-serif; 
-  display: inline-block; 
-  cursor: default; 
-  transform-origin: 50% 54%; 
-  z-index: 10;
+.star-separator {
+    color: rgba(227, 207, 172, 0.8);
+    font-family: sans-serif;
+    display: inline-block;
+    cursor: default;
+    transform-origin: 50% 54%;
+    z-index: 10;
+    vertical-align: middle;
+    margin-top: 0.8rem;
 }
 
 .star-separator.is-spinning {
-  animation: spin-once 0.6s linear; 
+    animation: spin-once 0.6s linear;
 }
 
 @keyframes spin-once {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        color: rgba(255, 255, 255, 1);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 header a {
-  text-decoration: none;
-  color: #E3CFAC;
-  font-family: 'Greengoth', 'FallbackSerif', serif;
-  font-weight: normal;
-  line-height: 1.2;
-  white-space: nowrap;  
-  transition: color 0.3s ease;
-  padding: 0.375rem 0.75rem;    
-  
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+    text-decoration: none;
+    color: #E3CFAC;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+    padding: 1.2rem 0.75rem 0.375rem;
 
-  background: linear-gradient(
-    110deg, 
-    #E3CFAC 0%,    
-    #E3CFAC 40%,   
-    #ffffff 50%,   
-    #E3CFAC 60%,   
-    #E3CFAC 100%
-  );
-  background-size: 300% 100%;
-  background-position: 100% 0; 
-  -webkit-background-clip: text; 
-  background-clip: text;      
-  -webkit-text-fill-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(110deg,
+            rgba(227, 207, 172, 0.8) 0%,
+            rgba(227, 207, 172, 0.8) 40%,
+            rgba(255, 255, 255, 1) 50%,
+            rgba(227, 207, 172, 0.8) 60%,
+            rgba(227, 207, 172, 0.8) 100%);
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 
 header a.is-glaring {
-  animation: text-glare-run 0.8s ease-in-out;
+    animation: text-glare-run 0.8s ease-in-out;
 }
 
 @keyframes text-glare-run {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0% 0; } 
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: 0% 0;
+    }
 }
 
 .logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  padding: 0px 0px;  
-  position: relative; 
-  overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: visible;
 
 
-  -webkit-mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png'); 
-  mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+    -webkit-mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
+    mask-image: url('https://i.ibb.co/C5jsSGxs/gerb.png');
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 
-  height: 150px; 
-  width: 148px;
-  z-index: 10;
+    height: 9.375rem;
+    width: 9.25rem;
+    z-index: 25;
+
+    transform: translateY(0);
 }
 
 .logo-container::before {
-  content: "";
-  position: absolute;
-  top: -50%;                  
-  left: -150%;                
-  width: 35%;                 
-  height: 200%;               
-  
-  background: linear-gradient(
-    110deg, 
-    rgba(255, 255, 255, 0) 0%, 
-    rgba(255, 255, 255, 0.4) 25%, 
-    rgba(255, 255, 255, 0.6) 50%, /* Яркое ядро блика */
-    rgba(255, 255, 255, 0.4) 75%, 
-    rgba(255, 255, 255, 0) 100%
-  );
-  
-  transform: skewX(-10deg); 
-  z-index: 10; 
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 35%;
+    height: 200%;
+
+    background: linear-gradient(110deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.4) 25%,
+            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0.4) 75%,
+            rgba(255, 255, 255, 0) 100%);
+
+    transform: skewX(-10deg);
+    z-index: 10;
 }
 
 .logo-container.is-glaring::before {
-  animation: image-glare-run 1s ease-in-out;
+    animation: image-glare-run 1s ease-in-out;
 }
 
 @keyframes image-glare-run {
-  0% { left: -150%; }
-  100% { left: 150%; }
+    0% {
+        left: -150%;
+    }
+
+    100% {
+        left: 150%;
+    }
 }
 
 .logo {
-  max-height: 150px; 
-  display: block;
-  z-index: 5;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    z-index: 5;
 }
 
 @media (max-width: 768px) {
     html {
-        /* Уменьшаем базовый размер условной единицы rem с 16px до 11px.
-           Вся шапка, готический текст, зазоры и размеры герба 
-           автоматически и пропорционально уменьшатся примерно на 30%! */
-        font-size: 11px; 
+        font-size: 11px;
     }
 
-    /* Дополнительно уменьшаем зазоры между колонками шапки на мобильных, 
-       чтобы ссылки не упирались в края экрана */
     .header-center-wrapper {
-        gap: 1.25rem;       /* Уменьшили расстояние от ссылок до герба в 2 раза */
-        padding: 0 1rem;    /* Сжали боковые отступы */
-        max-width: 100%;    /* Разрешаем шапке занимать всю ширину экрана смартфона */
+        gap: 1.25rem;
+        padding: 0 1rem;
+        max-width: 100%;
     }
 
-    /* Если готические ссылки всё ещё слишком длинные, разрешаем им 
-       аккуратно переноситься на 2 строки на телефонах */
     header a {
-        white-space: normal; 
+        white-space: normal;
         text-align: center;
-        max-width: 10rem;   /* Ограничиваем ширину одной ссылки */
+        max-width: 10rem;
     }
 }
 
-/* ДОПОЛНИТЕЛЬНО ДЛЯ СОВСЕМ МАЛЕНЬКИХ ЭКРАНОВ (телефоны шириной меньше 480 пикселей) */
 @media (max-width: 480px) {
     html {
-        /* Сжимаем еще чуть-чуть для ультра-маленьких экранов */
-        font-size: 9.5px; 
+        font-size: 9.5px;
     }
-    
+
     .header-center-wrapper {
         gap: 0.8rem;
     }
@@ -293,37 +304,127 @@ header a.is-glaring {
 
 
 
+.main-inner-content {
+    width: 100%;
+    max-width: 50rem;
+    margin-top: 0px;
+    box-sizing: border-box;
+    position: relative;
+    height: calc(100vh - 14rem);
+    min-height: 25rem;
+    overflow: hidden;
+
+    --mouse-x: -999px;
+    --mouse-y: -999px;
+}
+
+
+/* 3. КОНТЕЙНЕР ДЛЯ БУКВ (ТЕПЕРЬ НЕПОДВИЖЕН) */
+.main-scroll-text {
+    width: 100%;
+    height: 100%;
+    
+    /* ИСПРАВЛЕНО: Отключаем скроллбар на этом уровне, чтобы он не улетал в срез clip-path */
+    overflow: hidden; 
+    
+    /* Безопасный padding под срез 90px, чтобы текст не залезал на пустоту */
+    padding: 6.5rem 0 0 0; 
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* ==========================================================================
+   ИСПРАВЛЕНО: ВНУТРЕННЯЯ ЗОНА СДВИГА СКРОЛЛБАРА (АККУРАТНЫЙ НИЗКИЙ СТАРТ)
+   ========================================================================== */
+.main-scroll-viewport {
+    width: 100%;
+    
+    /* Высота рассчитывается автоматически с учетом верхнего padding родителя, 
+       чтобы блок идеально уперся в нижнюю границу сайта */
+    height: calc(100% - 2rem);  
+    
+    /* Включаем вертикальный скроллбар СТРОГО здесь. 
+       Поскольку родитель (.main-scroll-text) уже сдвинул контент вниз на 6.5rem (около 104px), 
+       полоса прокрутки начнется ровно под скосом и никогда не вылетит за блок! */
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    /* Внутренние аккуратные отступы для самого текста внутри скролл-зоны */
+    padding: 0 2.5rem 0.5rem 2.5rem; 
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;       
+    text-align: justify;        
+    
+    color: rgba(227, 207, 172, 0.9);             
+    font-family: sans-serif;
+}
+
+/* СТИЛИЗАЦИЯ И СДВИГ НОВОГО СКРОЛЛБАРА */
+/* ИСПРАВЛЕНО: Изменили селектор с .main-scroll-text на .main-scroll-viewport */
+.main-scroll-viewport::-webkit-scrollbar {
+    width: 5px;
+}
+.main-scroll-viewport::-webkit-scrollbar-track {
+    background: transparent;
+}
+.main-scroll-viewport::-webkit-scrollbar-thumb {
+    /* Полупрозрачное благородное золото */
+    background: rgba(227, 207, 172, 0.1); 
+    border-radius: 10px;
+}
+.main-scroll-viewport::-webkit-scrollbar-thumb:hover {
+    background: rgba(227, 207, 172, 0.6);
+}
+
+
+
+
+
+
 /* ГЛАВНАЯ ПРОЗРАЧНАЯ ОБЕРТКА */
 .main-content-block {
     display: flex;
-    flex-direction: column;     /* Выстраивает вырез и текст строго друг под другом */
-    align-items: center;        /* Железное центрирование по оси X, строго как у шапки */
+    flex-direction: column;
+    /* Выстраивает вырез и текст строго друг под другом */
+    align-items: center;
+    /* Железное центрирование по оси X, строго как у шапки */
     width: 100%;
     box-sizing: border-box;
-    background: transparent;   
+    background: transparent;
 }
 
 
 
 .main-inner-content {
     width: 100%;
-    max-width: 50rem;       
+    max-width: 50rem;
     margin-top: 0px;
-    box-sizing: border-box; 
-    padding: 6rem 2.5rem 2rem 2.5rem; 
+    box-sizing: border-box;
+    padding: 0rem 2.5rem 2rem 2.5rem;
     position: relative;
-    color: #E3CFAC;             
+
+    /* ИСПРАВЛЕНО: Базовый цвет текста делаем прозрачным, так как цвет 
+       теперь будет плавно «накатывать» из интерактивного фонового градиента */
+    color: transparent;
     font-family: sans-serif;
 
     /* Внешний срез блока (ваши настроенные 90px) */
     clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
 
-    /* Инициализируем базовые координаты, чтобы до движения мыши не было багов */
+    height: 50rem;
+    max-height: 50rem;
+
+    overflow: hidden;
+
+    /* Координаты для мыши */
     --mouse-x: -999px;
     --mouse-y: -999px;
 }
 
-/* 1. СЛОЙ ИНТЕРАКТИВНОЙ ОБВОДКИ (Задний план) */
+/* 1. СЛОЙ ИНТЕРАКТИВНОЙ ОБВОДКИ БЛОКА (Остается на заднем плане без изменений) */
 .main-inner-content::before {
     content: "";
     position: absolute;
@@ -332,159 +433,32 @@ header a.is-glaring {
     right: 0;
     bottom: 0;
     z-index: -2;
-    
-    /* ХИТРЫЙ ГРАДИЕНТ: Белый яркий блик в центре курсора (радиус 120px), 
-       который плавно переходит в вашу базовую золотую обводку (60% непрозрачности) */
-    background-image: radial-gradient(
-        circle 400px at var(--mouse-x) var(--mouse-y), 
-        #ffffff 0%, 
-        rgb(227 207 172 / 80%) 50%,
-        rgb(227 207 172 / 60%) 100%
-    ); 
-    
+
+    background-image: radial-gradient(circle 400px at var(--mouse-x) var(--mouse-y),
+            #ffffff 0%,
+            rgb(227 207 172 / 80%) 50%,
+            rgb(227 207 172 / 60%) 100%);
+
     clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
-    
-    /* Плавное перемещение блика, чтобы он не дергался */
     transition: background-image 0.1s ease;
 }
 
-/* 2. СЛОЙ ВНУТРЕННЕГО ФОНА С ГРАДИЕНТОМ (Передний план) */
+/* 2. СЛОЙ ВНУТРЕННЕГО ТЕМНОГО ФОНА (Передний план) */
 .main-inner-content::after {
     content: "";
     position: absolute;
     top: 0;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
+    left: 0px;
+    right: 0px;
+    bottom: 7px;
     z-index: -1;
-    
-    background-image: linear-gradient(to bottom, #002F4A 0%, #001929 100%); 
-    
-    
-    /* Ваши настроенные 95px для внутренней точки */
-    clip-path: polygon(
-        0% 7px,          
-        50% 95px,       
-        100% 7px,        
-        100% 100%, 
-        0% 100%
-    );
+
+    background-image: linear-gradient(to bottom, #002F4A 0%, #001929 100%);
+
+    clip-path: polygon(0% 7px,
+            50% 97px,
+            100% 7px,
+            100% 100%,
+            0% 100%);
 }
 
-@media (max-width: 768px) {
-    html {
-        /* Уменьшаем базовый размер условной единицы rem с 16px до 11px.
-           Вся шапка, готический текст, зазоры и размеры герба 
-           автоматически и пропорционально уменьшатся примерно на 30%! */
-        font-size: 11px; 
-    }
-
-    /* Дополнительно уменьшаем зазоры между колонками шапки на мобильных, 
-       чтобы ссылки не упирались в края экрана */
-    .header-center-wrapper {
-        gap: 1.25rem;       /* Уменьшили расстояние от ссылок до герба в 2 раза */
-        padding: 0 1rem;    /* Сжали боковые отступы */
-        max-width: 100%;    /* Разрешаем шапке занимать всю ширину экрана смартфона */
-    }
-
-    /* Если готические ссылки всё ещё слишком длинные, разрешаем им 
-       аккуратно переноситься на 2 строки на телефонах */
-    header a {
-        white-space: normal; 
-        text-align: center;
-        max-width: 10rem;   /* Ограничиваем ширину одной ссылки */
-    }
-}
-
-/* ДОПОЛНИТЕЛЬНО ДЛЯ СОВСЕМ МАЛЕНЬКИХ ЭКРАНОВ (телефоны шириной меньше 480 пикселей) */
-@media (max-width: 480px) {
-    html {
-        /* Сжимаем еще чуть-чуть для ультра-маленьких экранов */
-        font-size: 9.5px; 
-    }
-    
-    .header-center-wrapper {
-        gap: 0.8rem;
-    }
-}
-
-
-
-
-/* ГЛАВНАЯ ПРОЗРАЧНАЯ ОБЕРТКА */
-.main-content-block {
-    display: flex;
-    flex-direction: column;     /* Выстраивает вырез и текст строго друг под другом */
-    align-items: center;        /* Железное центрирование по оси X, строго как у шапки */
-    width: 100%;
-    box-sizing: border-box;
-    background: transparent;   
-}
-
-
-
-.main-inner-content {
-    width: 100%;
-    max-width: 50rem;       
-    margin-top: 0px;
-    box-sizing: border-box; 
-    padding: 6rem 2.5rem 2rem 2.5rem; 
-    position: relative;
-    color: #E3CFAC;             
-    font-family: sans-serif;
-
-    /* Внешний срез блока (ваши настроенные 90px) */
-    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
-
-    /* Инициализируем базовые координаты, чтобы до движения мыши не было багов */
-    --mouse-x: -999px;
-    --mouse-y: -999px;
-}
-
-/* 1. СЛОЙ ИНТЕРАКТИВНОЙ ОБВОДКИ (Задний план) */
-.main-inner-content::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -2;
-    
-    /* ХИТРЫЙ ГРАДИЕНТ: Белый яркий блик в центре курсора (радиус 120px), 
-       который плавно переходит в вашу базовую золотую обводку (60% непрозрачности) */
-    background-image: radial-gradient(
-        circle 400px at var(--mouse-x) var(--mouse-y), 
-        #ffffff 0%, 
-        rgb(227 207 172 / 80%) 50%,
-        rgb(227 207 172 / 60%) 100%
-    ); 
-    
-    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
-    
-    /* Плавное перемещение блика, чтобы он не дергался */
-    transition: background-image 0.1s ease;
-}
-
-/* 2. СЛОЙ ВНУТРЕННЕГО ФОНА С ГРАДИЕНТОМ (Передний план) */
-.main-inner-content::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
-    z-index: -1;
-    
-    background-image: linear-gradient(to bottom, #002F4A 0%, #001929 100%); 
-    
-    
-    /* Ваши настроенные 95px для внутренней точки */
-    clip-path: polygon(
-        0% 7px,          
-        50% 95px,       
-        100% 7px,        
-        100% 100%, 
-        0% 100%
-    );
-}

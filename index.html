@@ -1,206 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROYAL CROSSBREED UNIVERSITY</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
+
 <body>
     <div class="bg-stripes-container"></div>
+
+    <!-- ИСПРАВЛЕНО: Теперь header — это изолированная и правильная структура -->
     <header>
-    <div class="header-center-wrapper">
-        <nav class="nav-left">
-            <a href="#">дедлайны</a>
-            <span class="star-separator">✦</span>
-            <a href="#">активность</a>
-        </nav>
+        <div class="header-center-wrapper">
+            <nav class="nav-left">
+                <a href="#">дедлайны</a>
+                <span class="star-separator">✦</span>
+                <a href="#">активность</a>
+            </nav>
 
-        <div class="logo-container">
-            <img src="img/gerb.png" alt="logo" class="logo">
+            <div class="logo-container">
+                <img src="img/gerb.png" alt="logo" class="logo">
+            </div>
+
+            <nav class="nav-right">
+                <a href="#">расписание будущих постов</a>
+            </nav>
+
+            <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
+            <div class="header-bookmark">
+                <svg viewBox="0 0 1010 410" preserveAspectRatio="none" xmlns="http://w3.org">
+                    <defs>
+                        <!-- 1. Вертикальный градиент заливки шапки (остается без изменений) -->
+                        <linearGradient id="header-global-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0"
+                            y2="400">
+                            <stop offset="0%" stop-color="#02304b" />
+                            <stop offset="40%" stop-color="#012d47" />
+                            <stop offset="75%" stop-color="#012a42" />
+                            <stop offset="100%" stop-color="#00263b" />
+                        </linearGradient>
+
+                        <!-- 2. ИСПРАВЛЕНО: Теперь градиент обводки шапки СИНХРОНИЗИРОВАН с мышкой -->
+                        <!-- Он слушает те же переменные --mouse-x и --mouse-y, что и нижний блок -->
+                        <radialGradient id="header-global-stroke" gradientUnits="userSpaceOnUse"
+                            cx="var(--mouse-x, -999px)" cy="calc(var(--mouse-y, -999px) + 160px)" r="400">
+                            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" /> <!-- Яркое ядро под мышкой -->
+                            <stop offset="50%" stop-color="#E3CFAC" stop-opacity="0.8" />
+                            <stop offset="100%" stop-color="#E3CFAC" stop-opacity="0.6" />
+                        </radialGradient>
+                    </defs>
+
+                    <!-- Чистое тело шапки -->
+                    <polygon points="0,0 1010,0 1010,305 505,405 0,305" fill="url(#header-global-fill)" stroke="none" />
+
+                    <!-- Нижняя обводка 7 пикселей, которая теперь светится СТРОГО под курсором -->
+                    <polyline points="0,305 505,405 1010,305" fill="none" stroke="url(#header-global-stroke)"
+                        stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                </svg>
+            </div>
+        </div> <!-- ИСПРАВЛЕНО: закрыли внутренний .header-center-wrapper -->
+    </header> <!-- ИСПРАВЛЕНО: Теперь тег закрывается жестко и правильно! -->
+
+    <!-- Основной контентный блок сайта -->
+    <main class="main-content-block">
+        <div class="main-inner-content">
+            <div class="main-scroll-text">
+                <div class="main-scroll-viewport">
+                    <h1>Добро пожаловать</h1>
+                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.
+                        Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus
+                        mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa
+                        quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo,
+                        rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium.
+                        Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend
+                        tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante,
+                        dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet.
+                        Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper
+                        ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus,
+                        sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel,
+                        luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae
+                        sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus
+                        tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed
+                        consequat, leo eget bibendum sodales, augue velit cursus nunc, quis gravida magna mi a libero.
+                        Fusce vulputate eleifend sapien. Vestibulum purus quam, scelerisque ut, mollis sed, nonummy id,
+                        metus. Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum
+                        ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi
+                        consectetuer lacinia. Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet
+                        nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris. Integer ante arcu, accumsan a,
+                        consectetuer eget, posuere ut, mauris. Praesent adipiscing. Phasellus ullamcorper ipsum rutrum
+                        nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut eros et
+                        nisl sagittis vestibulum. Nullam nulla eros, ultricies sit amet, nonummy id, imperdiet feugiat,
+                        pede. Sed lectus. Donec mollis hendrerit risus. Phasellus nec sem in justo pellentesque
+                        facilisis. Etiam imperdiet imperdiet orci. Nunc nec neque. Phasellus leo dolor, tempus non,
+                        auctor et, hendrerit quis, nisi. Curabitur ligula sapien, tincidunt non, euismod vitae, posuere
+                        imperdiet, leo. Maecenas malesuada. Praesent congue erat at massa. Sed cursus turpis vitae
+                        tortor. Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum
+                        primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis
+                        porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci. Phasellus
+                        consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc.
+                        Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praesent turpis.
+                        Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc, eu sollicitudin urna dolor
+                        sagittis lacus. Donec elit libero, sodales nec, volutpat a, suscipit non, turpis. Nullam
+                        sagittis. Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec
+                        pellentesque velit pede quis nunc. Vestibulum ante ipsum primis in faucibus orci luctus et
+                        ultrices posuere cubilia Curae; Fusce id purus. Ut varius tincidunt libero. Phasellus dolor.
+                        Maecenas vestibulum mollis
+
+                    </p>
+                </div>
+            </div>
         </div>
-        
-        <nav class="nav-right">            
-            <a href="#">расписание будущих постов</a>
-        </nav>
+    </main>
 
-        <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
-        <div class="header-bookmark">
-    <svg viewBox="0 0 1010 410" preserveAspectRatio="none" xmlns="http://w3.org">
-        <defs>
-            <!-- 1. Вертикальный градиент заливки (остается без изменений) -->
-            <linearGradient id="header-global-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="400">
-                <stop offset="0%" stop-color="#02304b" />
-                <stop offset="40%" stop-color="#012d47" />
-                <stop offset="75%" stop-color="#012a42" />
-                <stop offset="100%" stop-color="#00263b" />
-            </linearGradient>
-
-            <!-- 2. ИСПРАВЛЕНО: Градиент обводки с тегами анимации внутри -->
-            <!-- Изначально смещаем координаты x1 и x2 далеко влево (-100% и 0%) -->
-            <linearGradient id="header-global-stroke" gradientUnits="userSpaceOnUse" x1="-1010" y1="0" x2="0" y2="410">
-                <stop offset="0%" stop-color="#E3CFAC" stop-opacity="0.6" />
-                <stop offset="50%" stop-color="#FFFFFF" stop-opacity="1" /> <!-- Сам белый блик -->
-                <stop offset="100%" stop-color="#E3CFAC" stop-opacity="0.6" />
-                
-                <!-- Анимация для координаты x1 (движение слева направо) -->
-                <animate id="stroke-anim-1" 
-                         attributeName="x1" 
-                         from="-1010" to="1010" 
-                         dur="0.8s" 
-                         begin="indefinite" 
-                         fill="freeze" />
-                         
-                <!-- Анимация для координаты x2 (движение слева направо параллельно x1) -->
-                <animate id="stroke-anim-2" 
-                         attributeName="x2" 
-                         from="0" to="2020" 
-                         dur="0.8s" 
-                         begin="indefinite" 
-                         fill="freeze" />
-            </linearGradient>
-        </defs>
-
-        <polygon points="5,5 1005,5 1005,305 505,405 5,305" 
-                 fill="url(#header-global-fill)" 
-                 stroke="url(#header-global-stroke)" 
-                 stroke-width="5" 
-                 vector-effect="non-scaling-stroke" />
-    </svg>
-</div>
-    </div>
-</header>
-
-<!-- Основной контентный блок сайта -->
-<main class="main-content-block">
-    
-<div class="main-border-wrapper">
-    <!-- Внутреннее содержимое вашего сайта (Чистый текстовый прямоугольник) -->
-    <div class="main-inner-content">
-        <h1>Добро пожаловать</h1>
-        <p>Здесь будет ваш текст и основной контент. Теперь блок идеально отцентрирован, черный дубль полностью исчез, а треугольный вырез сверху пиксель в пиксель совпадает с шапкой.</p>
-    </div>
-</div>
-  
-
-
-    
-</main>
-
-
-
+    <!-- СКРИПТ №1: Звёздочка и анимация 7-пиксельной обводки шапки -->
     <script>
+        // Находим элементы для VK Bridge и анимации звёздочки (без изменений)
         const star = document.querySelector('.star-separator');
-        star.addEventListener('mouseenter', () => {
-            star.classList.add('is-spinning');
-        });
-        star.addEventListener('animationend', () => {
-            star.classList.remove('is-spinning');
-        });
+        if (star) {
+            star.addEventListener('mouseenter', () => star.classList.add('is-spinning'));
+            star.addEventListener('animationend', () => star.classList.remove('is-spinning'));
+        }
 
-
-        // Находим элементы для обычных CSS-бликов (буквы, герб)
-        const glareElements = document.querySelectorAll('header a, .logo-container');
-        
-        // НАХОДИМ НАШИ SVG АНИМАЦИИ ОБВОДКИ
-        const strokeAnim1 = document.getElementById('stroke-anim-1');
-        const strokeAnim2 = document.getElementById('stroke-anim-2');
-        
-        // Находим общий контейнер шапки для отслеживания наведения
         const headerWrapper = document.querySelector('.header-center-wrapper');
+        const mainBlock = document.querySelector('.main-inner-content');
 
-        // 1. Старая логика для букв и герба при наведении на них лично
+        // ==========================================================================
+        // ИСПРАВЛЕНО: АНИМАЦИЯ БЛИКА ДЛЯ ССЫЛОК МЕНЮ И ДЛЯ ГЕРБА
+        // ==========================================================================
+        /* Мы добавили '.logo-container' в список. Теперь скрипт находит и ссылки, 
+           и сам центральный масочный бокс герба */
+        const glareElements = document.querySelectorAll('header a, .logo-container');
+
         glareElements.forEach(element => {
+            // Когда мышка заходит на ссылку или на герб — запускаем анимацию блика
             element.addEventListener('mouseenter', () => {
-            element.classList.add('is-glaring');
+                element.classList.add('is-glaring');
             });
+            // Как только блик пролетел до конца — плавно очищаем класс для повторного запуска
             element.addEventListener('animationend', () => {
-            element.classList.remove('is-glaring');
+                element.classList.remove('is-glaring');
             });
         });
 
-        // 2. НОВАЯ ЛОГИКА: При наведении на ЛЮБУЮ часть шапки — запускаем неудержимый блик по обводке!
-        headerWrapper.addEventListener('mouseenter', () => {
-            if (strokeAnim1 && strokeAnim2) {
-            strokeAnim1.beginElement();
-            strokeAnim2.beginElement();
+        // Глобальный слушатель мыши для сквозной подсветки обводок хедера и блока (без изменений)
+        window.addEventListener('mousemove', (e) => {
+            if (headerWrapper) {
+                const hRect = headerWrapper.getBoundingClientRect();
+                const hX = e.clientX - hRect.left;
+                const hY = e.clientY - hRect.top;
+                headerWrapper.style.setProperty('--mouse-x', `${hX}px`);
+                headerWrapper.style.setProperty('--mouse-y', `${hY}px`);
+            }
+
+            if (mainBlock) {
+                const mRect = mainBlock.getBoundingClientRect();
+                const mX = e.clientX - mRect.left;
+                const mY = e.clientY - mRect.top;
+                mainBlock.style.setProperty('--mouse-x', `${mX}px`);
+                mainBlock.style.setProperty('--mouse-y', `${mY}px`);
+            }
+        });
+    </script>
+
+    <!-- СКРИПТ №3: Генерация вертикальных дорожек фона -->
+    <script>
+        const container = document.querySelector('.bg-stripes-container');
+        const stripeWidth = 50;
+        const stripesCount = Math.ceil(window.innerWidth / stripeWidth) + 1;
+
+        for (let i = 0; i < stripesCount; i++) {
+            const stripe = document.createElement('div');
+            stripe.classList.add('single-stripe');
+            if (i % 2 !== 0) {
+                stripe.classList.add('dark-static');
+            }
+            container.appendChild(stripe);
+        }
+
+        const allStripes = document.querySelectorAll('.single-stripe');
+
+        window.addEventListener('mousemove', (e) => {
+            const stripeIndex = Math.floor(e.clientX / stripeWidth);
+            if (allStripes[stripeIndex]) {
+                const activeStripe = allStripes[stripeIndex];
+                if (!activeStripe.classList.contains('dark-static')) {
+                    activeStripe.classList.add('is-lit');
+                    setTimeout(() => {
+                        activeStripe.classList.remove('is-lit');
+                    }, 50);
+                }
             }
         });
     </script>
 
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const block = document.querySelector('.main-inner-content');
-    
-    if (block) {
-      // Отслеживаем перемещение мыши по ВСЕМУ экрану (документу)
-      document.addEventListener('mousemove', (e) => {
-        // Получаем текущие координаты блока на экране
-        const rect = block.getBoundingClientRect();
-        
-        // Высчитываем положение мыши относительно левого верхнего угла НАШЕГО блока,
-        // даже если курсор находится далеко на фоне сайта
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Передаем координаты в CSS-переменные блока
-        block.style.setProperty('--mouse-x', `${x}px`);
-        block.style.setProperty('--mouse-y', `${y}px`);
-      });
-      
-      // Слой удаления mouseleave больше не нужен, так как эффект активен везде
-    }
-  });
-</script>
-
-<script>
-  const container = document.querySelector('.bg-stripes-container');
-
-  const stripeWidth = 50;
-  const stripesCount = Math.ceil(window.innerWidth / stripeWidth) + 1;
-
-  // 1. Создаем полосы, чередуя их через одну
-  for (let i = 0; i < stripesCount; i++) {
-    const stripe = document.createElement('div');
-    stripe.classList.add('single-stripe');
-    
-    // Если индекс полосы четный — она будет интерактивной (пока прозрачная)
-    // Если нечетный (i % 2 !== 0) — делаем её всегда тёмной и статичной
-    if (i % 2 !== 0) {
-      stripe.classList.add('dark-static');
-    }
-    
-    container.appendChild(stripe);
-  }
-
-  const allStripes = document.querySelectorAll('.single-stripe');
-
-  // 2. Отслеживаем движение мыши
-  window.addEventListener('mousemove', (e) => {
-    const stripeIndex = Math.floor(e.clientX / stripeWidth);
-
-    if (allStripes[stripeIndex]) {
-      const activeStripe = allStripes[stripeIndex];
-
-      // ВАЖНО: зажигаем полосу ТОЛЬКО если она не является тёмной-статичной
-      if (!activeStripe.classList.contains('dark-static')) {
-        activeStripe.classList.add('is-lit');
-
-        // Затухание начинается сразу же, даже если мышь замерла
-        setTimeout(() => {
-          activeStripe.classList.remove('is-lit');
-        }, 50);
-      }
-    }
-  });
-</script>
-
-
-     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <!-- СКРИПТ №4: Интеграция VK Bridge -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <script>
-        // Инициализация VK Bridge
         vkBridge.send('VKWebAppInit');
     </script>
 </body>
+
 </html>
