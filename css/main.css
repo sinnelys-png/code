@@ -370,3 +370,121 @@ header a.is-glaring {
         0% 100%
     );
 }
+
+@media (max-width: 768px) {
+    html {
+        /* Уменьшаем базовый размер условной единицы rem с 16px до 11px.
+           Вся шапка, готический текст, зазоры и размеры герба 
+           автоматически и пропорционально уменьшатся примерно на 30%! */
+        font-size: 11px; 
+    }
+
+    /* Дополнительно уменьшаем зазоры между колонками шапки на мобильных, 
+       чтобы ссылки не упирались в края экрана */
+    .header-center-wrapper {
+        gap: 1.25rem;       /* Уменьшили расстояние от ссылок до герба в 2 раза */
+        padding: 0 1rem;    /* Сжали боковые отступы */
+        max-width: 100%;    /* Разрешаем шапке занимать всю ширину экрана смартфона */
+    }
+
+    /* Если готические ссылки всё ещё слишком длинные, разрешаем им 
+       аккуратно переноситься на 2 строки на телефонах */
+    header a {
+        white-space: normal; 
+        text-align: center;
+        max-width: 10rem;   /* Ограничиваем ширину одной ссылки */
+    }
+}
+
+/* ДОПОЛНИТЕЛЬНО ДЛЯ СОВСЕМ МАЛЕНЬКИХ ЭКРАНОВ (телефоны шириной меньше 480 пикселей) */
+@media (max-width: 480px) {
+    html {
+        /* Сжимаем еще чуть-чуть для ультра-маленьких экранов */
+        font-size: 9.5px; 
+    }
+    
+    .header-center-wrapper {
+        gap: 0.8rem;
+    }
+}
+
+
+
+
+/* ГЛАВНАЯ ПРОЗРАЧНАЯ ОБЕРТКА */
+.main-content-block {
+    display: flex;
+    flex-direction: column;     /* Выстраивает вырез и текст строго друг под другом */
+    align-items: center;        /* Железное центрирование по оси X, строго как у шапки */
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;   
+}
+
+
+
+.main-inner-content {
+    width: 100%;
+    max-width: 50rem;       
+    margin-top: 0px;
+    box-sizing: border-box; 
+    padding: 6rem 2.5rem 2rem 2.5rem; 
+    position: relative;
+    color: #E3CFAC;             
+    font-family: sans-serif;
+
+    /* Внешний срез блока (ваши настроенные 90px) */
+    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
+
+    /* Инициализируем базовые координаты, чтобы до движения мыши не было багов */
+    --mouse-x: -999px;
+    --mouse-y: -999px;
+}
+
+/* 1. СЛОЙ ИНТЕРАКТИВНОЙ ОБВОДКИ (Задний план) */
+.main-inner-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+    
+    /* ХИТРЫЙ ГРАДИЕНТ: Белый яркий блик в центре курсора (радиус 120px), 
+       который плавно переходит в вашу базовую золотую обводку (60% непрозрачности) */
+    background-image: radial-gradient(
+        circle 400px at var(--mouse-x) var(--mouse-y), 
+        #ffffff 0%, 
+        rgb(227 207 172 / 80%) 50%,
+        rgb(227 207 172 / 60%) 100%
+    ); 
+    
+    clip-path: polygon(0% 0%, 50% 90px, 100% 0%, 100% 100%, 0% 100%);
+    
+    /* Плавное перемещение блика, чтобы он не дергался */
+    transition: background-image 0.1s ease;
+}
+
+/* 2. СЛОЙ ВНУТРЕННЕГО ФОНА С ГРАДИЕНТОМ (Передний план) */
+.main-inner-content::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    z-index: -1;
+    
+    background-image: linear-gradient(to bottom, #002F4A 0%, #001929 100%); 
+    
+    
+    /* Ваши настроенные 95px для внутренней точки */
+    clip-path: polygon(
+        0% 7px,          
+        50% 95px,       
+        100% 7px,        
+        100% 100%, 
+        0% 100%
+    );
+}
