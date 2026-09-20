@@ -26,6 +26,7 @@ body {
     height: 100%;
     padding-top: 0.5rem;
     box-sizing: border-box;
+    overflow: hidden
 }
 
 body {
@@ -499,6 +500,7 @@ header a.is-glaring {
            благодаря чему треугольник перестанет наплывать на текст! */
         clip-path: polygon(0% 0%, 50% 40px, 100% 0%, 100% 100%, 0% 100%);
         -webkit-clip-path: polygon(0% 0%, 50% 40px, 100% 0%, 100% 100%, 0% 100%);
+        height: calc(100% - 10rem);
     }
 
     /* Перенастраиваем внутренний скролл-контейнер под новый мобильный срез 40px */
