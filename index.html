@@ -71,6 +71,24 @@
     </div>
 </header>
 
+<!-- Основной контентный блок сайта -->
+<main class="main-content-block">
+    
+<div class="main-border-wrapper">
+    <!-- Внутреннее содержимое вашего сайта (Чистый текстовый прямоугольник) -->
+    <div class="main-inner-content">
+        <h1>Добро пожаловать</h1>
+        <p>Здесь будет ваш текст и основной контент. Теперь блок идеально отцентрирован, черный дубль полностью исчез, а треугольный вырез сверху пиксель в пиксель совпадает с шапкой.</p>
+    </div>
+</div>
+  
+
+
+    
+</main>
+
+
+
     <script>
         const star = document.querySelector('.star-separator');
         star.addEventListener('mouseenter', () => {
@@ -109,6 +127,32 @@
             }
         });
     </script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const block = document.querySelector('.main-inner-content');
+    
+    if (block) {
+      // Отслеживаем перемещение мыши по ВСЕМУ экрану (документу)
+      document.addEventListener('mousemove', (e) => {
+        // Получаем текущие координаты блока на экране
+        const rect = block.getBoundingClientRect();
+        
+        // Высчитываем положение мыши относительно левого верхнего угла НАШЕГО блока,
+        // даже если курсор находится далеко на фоне сайта
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Передаем координаты в CSS-переменные блока
+        block.style.setProperty('--mouse-x', `${x}px`);
+        block.style.setProperty('--mouse-y', `${y}px`);
+      });
+      
+      // Слой удаления mouseleave больше не нужен, так как эффект активен везде
+    }
+  });
+</script>
 
 <script>
   const container = document.querySelector('.bg-stripes-container');
