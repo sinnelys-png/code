@@ -438,8 +438,8 @@ header a.is-glaring {
         justify-content: center;
         gap: 0.8rem;       
         padding: 0.5rem 1rem;    
-        max-width: 95%;    
-        width: 95%;
+        max-width: 100%;    
+        width: 100%;
         
         /* Фиксируем высоту рабочей зоны шапки в колонку (около 180px) */
         height: 11.25rem;       
@@ -482,8 +482,8 @@ header a.is-glaring {
 
     /* Компактный мобильный герб */
     .logo-container {
-        height: 10rem; 
-        width: 9.9rem;
+        height: 8rem; 
+        width: 7.9rem;
         transform: translateY(1rem); /* Сбрасываем десктопное смещение */
     }
 
@@ -494,7 +494,7 @@ header a.is-glaring {
         
         /* ИСПРАВЛЕНО: Подтягиваем блок выше к шапке, убирая пустое место!
             margin-top: 0.5rem аккуратно выставит параллельный зазор в 20px */
-        margin-top: 5dvh; 
+        margin-top: 0dvh; 
         
         /* ИСПРАВЛЕНО: На мобильных убираем расчеты от 100% высоты, которые блокировали скролл, 
            и переводим блок на фиксированные rem для стабильной прокрутки букв на смартфонах */
