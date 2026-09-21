@@ -494,16 +494,16 @@ header a.is-glaring {
         height: 75dvh; 
         min-height: 75dvh; 
         overflow: hidden; 
-        clip-path: polygon(0% 0%, 50% 55px, 100% 0%, 100% 100%, 0% 100%);
+        clip-path: polygon(0% 0%, 50% 60px, 100% 0%, 100% 100%, 0% 100%);
     }
      .main-inner-content::before {
         /* Точка должна идеально совпадать с родительским блоком */
-        clip-path: polygon(0% 0%, 50% 55px, 100% 0%, 100% 100%, 0% 100%);
+        clip-path: polygon(0% 0%, 50% 60px, 100% 0%, 100% 100%, 0% 100%);
     }
 
     .main-inner-content::after {
         /* Сохраняем сдвиг обводки в 7px (40px + 7px = 47px) */
-        clip-path: polygon(0% 7px, 50% 62px, 100% 7px, 100% 100%, 0% 100%);
+        clip-path: polygon(0% 7px, 50% 67px, 100% 7px, 100% 100%, 0% 100%);
     }
 
     /* 3. ИСПРАВЛЕНО: ПОЧИНКА СКРОЛЛА И ЗАЩИТА ОТ НАЛЕЗАНИЯ НА ОБВОРДКУ */
