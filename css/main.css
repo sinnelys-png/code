@@ -427,7 +427,7 @@ header a.is-glaring {
 @media (max-width: 768px) {
     html {
         font-size: 12px; 
-        height: 95%;
+        height: 100%;
     }
 
     /* 1. КОРРЕКЦИЯ ВЕРТИКАЛЬНОЙ ШАПКИ И ФОНА */
@@ -491,8 +491,8 @@ header a.is-glaring {
         
         /* ИСПРАВЛЕНО: На мобильных убираем расчеты от 100% высоты, которые блокировали скролл, 
            и переводим блок на фиксированные rem для стабильной прокрутки букв на смартфонах */
-        height: 85%; 
-        min-height: 85%; 
+        height: 75dvh; 
+        min-height: 75dvh; 
         overflow: hidden; 
         clip-path: polygon(0% 0%, 50% 55px, 100% 0%, 100% 100%, 0% 100%);
     }
