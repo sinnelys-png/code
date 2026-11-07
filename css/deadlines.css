@@ -1,0 +1,424 @@
+/* ==========================================================================
+   СТРАНИЦА «ДЕДЛАЙНЫ»
+   ========================================================================== */
+
+:root {
+    --gold: #E3CFAC;
+    --gold-80: rgba(227, 207, 172, 0.8);
+    --gold-55: rgba(227, 207, 172, 0.55);
+    --gold-15: rgba(227, 207, 172, 0.15);
+    --gold-08: rgba(227, 207, 172, 0.08);
+    --urgent: #F0B36B;
+    --overdue: #E8877A;
+}
+
+.page-title {
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    color: var(--gold);
+    text-align: center;
+    margin: 0 0 1rem;
+}
+
+.page-root {
+    text-align: left;
+}
+
+.dl-status {
+    text-align: center;
+    color: var(--gold-55);
+}
+
+/* Текущая страница в меню */
+header a.is-current {
+    text-decoration: underline;
+    text-decoration-color: var(--gold-55);
+    text-underline-offset: 0.35em;
+}
+
+/* ---------- Группы ---------- */
+
+.dl-section {
+    margin-bottom: 1.75rem;
+}
+
+.dl-section-title {
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.35rem;
+    color: var(--gold);
+    margin: 0 0 0.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--gold-15);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.dl-section-title::before,
+.dl-section-title::after {
+    content: "✦";
+    font-family: sans-serif;
+    font-size: 0.7em;
+    color: var(--gold-55);
+}
+
+.dl-section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--gold-15), transparent);
+}
+
+/* «Ваши персонажи» — в золотой рамке */
+.dl-section--mine {
+    padding: 0.75rem 1rem 0.25rem;
+    border: 1px solid var(--gold-55);
+    background: linear-gradient(to bottom, rgba(227, 207, 172, 0.07), transparent);
+}
+
+.dl-section--mine .dl-section-title {
+    border-bottom-color: var(--gold-55);
+}
+
+/* ---------- Строка персонажа ---------- */
+
+.dl-card {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
+    grid-template-areas: "avatar info deadline";
+    gap: 0 1rem;
+    align-items: center;
+    padding: 0.8rem 0.25rem;
+    border-bottom: 1px solid var(--gold-08);
+    transition: background-color 0.3s ease;
+}
+
+.dl-card:last-child {
+    border-bottom: none;
+}
+
+.dl-card:hover {
+    background-color: var(--gold-08);
+}
+
+.dl-avatar {
+    grid-area: avatar;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--gold-55);
+    box-shadow: 0 0 0 3px rgba(0, 25, 41, 0.9), 0 0 0 4px var(--gold-15);
+    box-sizing: border-box;
+}
+
+.dl-avatar--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 1.6rem;
+    color: var(--gold-80);
+    background: radial-gradient(circle at 50% 35%, #0a3d5c, #001929);
+}
+
+.dl-info {
+    grid-area: info;
+    min-width: 0;
+}
+
+.dl-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.dl-name {
+    color: var(--gold);
+    font-weight: bold;
+    font-size: 1.05rem;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+a.dl-name:hover {
+    color: #fff;
+    border-bottom-color: var(--gold-55);
+}
+
+.dl-label {
+    color: var(--gold-55);
+    font-size: 0.85em;
+}
+
+.dl-player {
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+    color: var(--gold-80);
+}
+
+.dl-player-link {
+    color: var(--gold-80);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--gold-55);
+}
+
+.dl-player-link:hover {
+    color: #fff;
+}
+
+/* ---------- Дуэт 👥 с подсказкой ---------- */
+
+.dl-duet {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0 0.15rem;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: help;
+    filter: sepia(0.6) saturate(0.8);
+}
+
+.dl-duet::after {
+    content: attr(data-duet);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 0.45rem);
+    transform: translate(-50%, -0.25rem);
+    white-space: nowrap;
+    padding: 0.35rem 0.7rem;
+    font-family: sans-serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    background: #001929;
+    border: 1px solid var(--gold-55);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+    filter: none;
+}
+
+.dl-duet:hover::after,
+.dl-duet:focus-visible::after,
+.dl-duet.is-open::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* ---------- Подроли ---------- */
+
+.dl-subs {
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--gold-80);
+}
+
+.dl-counter {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0 0.4rem;
+    border: 1px solid var(--gold-55);
+    border-radius: 1rem;
+    font-size: 0.8em;
+    color: var(--gold);
+}
+
+.dl-queue {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    counter-reset: q;
+}
+
+.dl-chip {
+    counter-increment: q;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--gold-15);
+    color: var(--gold-55);
+    font-size: 0.8rem;
+}
+
+.dl-chip::before {
+    content: counter(q) ". ";
+    opacity: 0.6;
+}
+
+.dl-chip.is-active {
+    border-color: var(--gold-55);
+    color: var(--gold);
+    background: var(--gold-08);
+}
+
+/* ---------- Дедлайн ---------- */
+
+.dl-deadline {
+    grid-area: deadline;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.dl-date {
+    color: var(--gold);
+    font-size: 0.95rem;
+}
+
+.dl-days {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--gold-55);
+}
+
+.dl-days.is-soon {
+    color: var(--gold);
+}
+
+.dl-days.is-urgent {
+    color: var(--urgent);
+}
+
+.dl-days.is-overdue {
+    color: var(--overdue);
+}
+
+/* ---------- Телефон ---------- */
+
+@media (max-width: 768px) {
+    .dl-card {
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+        grid-template-areas:
+            "avatar info"
+            "avatar deadline";
+        gap: 0.3rem 0.8rem;
+        align-items: start;
+    }
+
+    .dl-avatar {
+        width: 3.2rem;
+        height: 3.2rem;
+    }
+
+    .dl-deadline {
+        text-align: left;
+        white-space: normal;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0 0.6rem;
+    }
+
+    .dl-days {
+        margin-top: 0;
+    }
+
+    .dl-section--mine {
+        padding: 0.6rem 0.6rem 0.1rem;
+    }
+
+    /* подсказка дуэта не должна вылезать за край экрана */
+    .dl-duet::after {
+        left: 0;
+        transform: translate(0, -0.25rem);
+        white-space: normal;
+        width: max-content;
+        max-width: 60vw;
+    }
+
+    .dl-duet:hover::after,
+    .dl-duet:focus-visible::after,
+    .dl-duet.is-open::after {
+        transform: translate(0, 0);
+    }
+}
+
+/* ---------- Сворачиваемые группы (Студенты / Преподаватели / Персонал) ---------- */
+
+.dl-group {
+    margin-bottom: 0.4rem;
+}
+
+.dl-group > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.55rem 0.25rem 0.5rem;
+    margin: 0;
+    transition: background-color 0.25s ease;
+}
+
+.dl-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+.dl-group > summary:hover {
+    background-color: var(--gold-08);
+}
+
+.dl-group > summary:focus-visible {
+    outline: 1px solid var(--gold-55);
+    outline-offset: 2px;
+}
+
+/* линия-разделитель (::after заголовка) стоит между счётчиком и стрелкой */
+.dl-group .dl-chevron {
+    order: 10;
+}
+
+.dl-group-count {
+    font-family: sans-serif;
+    font-size: 0.75rem;
+    color: var(--gold-55);
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 1rem;
+}
+
+.dl-chevron {
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: 0 0.35rem 0.2rem 0;
+    border-right: 1.5px solid var(--gold-80);
+    border-bottom: 1.5px solid var(--gold-80);
+    transform: rotate(45deg);
+    transition: transform 0.3s ease, margin 0.3s ease;
+}
+
+.dl-group[open] > summary .dl-chevron {
+    transform: rotate(-135deg);
+    margin-bottom: -0.2rem;
+}
+
+.dl-group[open] > summary {
+    border-bottom-color: var(--gold-55);
+}
+
+.dl-group-body {
+    animation: dl-unfold 0.35s ease;
+}
+
+@keyframes dl-unfold {
+    from {
+        opacity: 0;
+        transform: translateY(-0.4rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dl-group-body {
+        animation: none;
+    }
+}
