@@ -30,17 +30,31 @@
                     sum: cell.text('D') || '0',
                     sumNum: Number(cell('D')?.v) || 0,
                     stats: STATS.map(([col]) => cell.text(col) || '0'),
+                    statNums: STATS.map(([col]) => Number(cell(col)?.v) || 0),
                 };
-            });
+            })
+            // С нулевой суммой показываем только тех, у кого есть что-то в остальных столбцах —
+            // это победитель прошлого месяца, ему ставим корону
+            .filter(p => p.sumNum !== 0 || p.statNums.some(n => n !== 0))
+            .map(p => ({ ...p, winner: p.sumNum === 0 }));
         return { people, viewerId };
     }
+
+    const CROWN = `<button class="ac-crown" type="button" data-tip="победитель прошлого месяца" aria-label="Победитель прошлого месяца">👑</button>`;
+
+    // На телефоне наведения нет — подсказка открывается касанием
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ac-crown');
+        document.querySelectorAll('.ac-crown.is-open').forEach(b => { if (b !== btn) b.classList.remove('is-open'); });
+        if (btn) btn.classList.toggle('is-open');
+    });
 
     function row(p, isMe) {
         const medal = p.place <= 3 ? ` is-top is-top-${p.place}` : '';
         return `
             <div class="ac-row${medal}${isMe ? ' is-me' : ''}" role="row">
                 <div class="ac-place" role="cell">${esc(p.place)}</div>
-                <div class="ac-name" role="cell">${link(p.url, p.name, 'ac-name-link')}</div>
+                <div class="ac-name" role="cell">${link(p.url, p.name, 'ac-name-link')}${p.winner ? CROWN : ''}</div>
                 <div class="ac-sum" role="cell">${esc(p.sum)}</div>
                 ${p.stats.map((v, i) => `
                     <div class="ac-stat${/^0+$/.test(v) ? ' is-zero' : ''}" role="cell" data-label="${esc(STATS[i][1])}">${esc(v)}</div>`).join('')}

@@ -8,6 +8,17 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/deadlines.css">
     <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/intro.css">
+    <script>
+        // Заставка «конверт» при загрузке (css/intro.css). Ставим класс сразу,
+        // до отрисовки страницы, чтобы блок не мелькнул на своём месте раньше времени.
+        (function () {
+            if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            var html = document.documentElement;
+            html.classList.add('intro');
+            setTimeout(function () { html.classList.remove('intro'); }, 2900);
+        })();
+    </script>
 </head>
 
 <body>
@@ -64,6 +75,8 @@
 
     <!-- Основной контентный блок сайта -->
     <main class="main-content-block">
+        <!-- Золотая лента с названием раздела (заполняет js/router.js, стили — css/pages.css) -->
+        <div class="page-ribbon is-hidden" aria-hidden="true"><span class="page-ribbon-text"></span></div>
         <div class="main-inner-content">
             <div class="main-scroll-text">
                 <div class="main-scroll-viewport">

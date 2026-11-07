@@ -55,6 +55,14 @@ window.RCU = (() => {
         });
     }
 
+    // Любая внешняя ссылка на сайте открывается в новом окне — даже если её добавят без target
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[href]');
+        if (!a || !/^https?:/i.test(a.href) || a.origin === location.origin) return;
+        a.target = '_blank';
+        a.rel = 'noopener';
+    }, true);
+
     // Кто открыл мини-приложение (VK ID). Запрашивается один раз на всю сессию.
     let viewerPromise = null;
     function getViewerId() {
@@ -101,5 +109,18 @@ window.RCU = (() => {
             </div>`;
     }
 
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, pages: {} };
+    // Данные страницы (каждая таблица грузится один раз и доступна всем страницам)
+    const loaded = {};
+    function dataOf(name) {
+        if (!loaded[name]) {
+            loaded[name] = pages[name].load().catch(err => {
+                delete loaded[name];          // при ошибке попробуем ещё раз при следующем заходе
+                throw err;
+            });
+        }
+        return loaded[name];
+    }
+
+    const pages = {};
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dataOf, pages };
 })();

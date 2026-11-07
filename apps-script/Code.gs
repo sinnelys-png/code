@@ -29,6 +29,7 @@ const COL = {
   deadline: 10, // J
   noSub: 12,    // L  — ответы без подроли
   activeSub: 13,// M  — актуальная подроль
+  status: 16,   // P  — «в отложке/предложке»
   queue: 17,    // Q  — подроли в порядке очереди
   topicId: 28,  // AB — id обсуждения
   playerId: 29, // AC — id отвечающего
@@ -76,6 +77,7 @@ function doGet() {
         ? Utilities.formatDate(deadlineValue, tz, 'yyyy-MM-dd') : '',
       noSub: d[COL.noSub - 1].trim(),
       activeSub: d[COL.activeSub - 1].trim(),
+      status: d[COL.status - 1].trim(),
       queue: d[COL.queue - 1].split('\n').map(s => s.trim()).filter(Boolean),
     });
   }

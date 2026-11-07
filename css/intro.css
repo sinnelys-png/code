@@ -1,0 +1,140 @@
+/* ==========================================================================
+   ЗАСТАВКА ПРИ ЗАГРУЗКЕ: КОНВЕРТ
+   1. В центре экрана появляется герб.
+   2. Вокруг него проявляется закрытый конверт: шапка-клапан и узкая полоска
+      основного блока под ней.
+   3. Короткая пауза — и шапка уезжает вверх на своё место, а основной блок
+      одновременно выезжает вниз: конверт «раскрывается» в обе стороны.
+   4. Когда раскрытие закончилось, появляются пункты меню и текст.
+   Класс .intro ставится на <html> скриптом в <head> и снимается по окончании,
+   поэтому в конце анимации всё стоит ровно на своих обычных местах.
+   ========================================================================== */
+
+/* Шапка лежит поверх основного блока, чтобы он мог прятаться под ней */
+header {
+    position: relative;
+    z-index: 2;
+}
+
+.main-content-block {
+    position: relative;
+    z-index: 1;
+}
+
+html.intro {
+    /* насколько нижняя часть закрытого конверта видна под остриём клапана */
+    --env-body: 9rem;
+    /* высота закрытого конверта: от верха шапки до низа основного блока */
+    --env-h: calc(var(--hdr-h) - var(--gap) + var(--tri) + var(--env-body));
+    /* насколько конверт опущен в начале: его середина — в центре экрана */
+    --env-d: calc(50vh - 0.5rem - var(--env-h) / 2);
+    /* общий ритм раскрытия — шапка и блок движутся строго вместе */
+    --env-ease: cubic-bezier(0.55, 0, 0.2, 1);
+    --env-logo: 0.5s;     /* 1. герб */
+    --env-shell: 0.45s;   /* 2. конверт проявляется сразу после герба */
+    --env-delay: 1.15s;   /* 3. начало раскрытия: герб + конверт + короткая пауза */
+    --env-time: 1.1s;
+    --env-done: calc(var(--env-delay) + var(--env-time));
+}
+
+/* 1–2. Шапка: стоит в центре, затем уезжает вверх.
+   Пока она в центре, показываем от неё ровно ту часть, что видна на экране
+   в конце (от верхнего края окна вниз), — без лишнего «хвоста» сверху. */
+html.intro header {
+    clip-path: polygon(0 -0.5rem, 100% -0.5rem, 100% 1000%, 0 1000%);
+    animation: env-header var(--env-time) var(--env-ease) var(--env-delay) both;
+}
+
+/* 1. Первым появляется герб */
+html.intro .logo {
+    animation: env-logo var(--env-logo) cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+/* 2. Затем — фон шапки и узкая полоска основного блока: закрытый конверт */
+html.intro .header-bookmark {
+    animation: env-appear var(--env-shell) ease-out var(--env-logo) both;
+}
+
+/* 3. Пункты меню — только после раскрытия */
+html.intro .nav-left,
+html.intro .nav-right {
+    animation: env-appear 0.45s ease-out var(--env-done) both;
+}
+
+/* 2. Основной блок выезжает вниз. Он с самого начала стоит под шапкой,
+   а всё, что выше линии клапана, обрезается (clip-path у обёртки) —
+   поэтому до начала раскрытия его не видно совсем, ни полоски. */
+html.intro .main-content-block {
+    animation:
+        env-appear var(--env-shell) ease-out var(--env-logo) both,
+        env-reveal var(--env-time) var(--env-ease) var(--env-delay) both;
+}
+
+html.intro .main-inner-content {
+    animation: env-slide var(--env-time) var(--env-ease) var(--env-delay) both;
+}
+
+/* 3. Проявляется текст */
+html.intro .main-scroll-text {
+    animation: env-text 0.6s ease-out calc(var(--env-done) - 0.15s) both;
+}
+
+@keyframes env-appear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes env-logo {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes env-header {
+    from { transform: translateY(var(--env-d)); }
+    to { transform: none; }
+}
+
+/* В начале нижний край блока стоит на --env-body ниже острия клапана —
+   видна только узкая полоска, как низ закрытого конверта */
+@keyframes env-slide {
+    from { transform: translateY(calc(var(--env-d) - 100% - var(--gap) + var(--tri) + var(--env-body))); }
+    to { transform: none; }
+}
+
+/* Видимая часть обёртки начинается от боковых углов клапана и едет вместе с шапкой */
+@keyframes env-reveal {
+    from { clip-path: polygon(0 calc(var(--env-d) - var(--gap)), 100% calc(var(--env-d) - var(--gap)), 100% 100%, 0 100%); }
+    to { clip-path: polygon(0 calc(0px - var(--gap)), 100% calc(0px - var(--gap)), 100% 100%, 0 100%); }
+}
+
+@keyframes env-text {
+    from {
+        opacity: 0;
+        transform: translateY(0.6rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.intro header,
+    html.intro .header-bookmark,
+    html.intro .logo,
+    html.intro .nav-left,
+    html.intro .nav-right,
+    html.intro .main-content-block,
+    html.intro .main-inner-content,
+    html.intro .main-scroll-text {
+        animation: none;
+    }
+}

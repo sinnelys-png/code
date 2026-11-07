@@ -23,13 +23,30 @@
 
     const isEmpty = (s) => !s || /^-*$/.test(s); // «------» в таблице = пусто
 
+    // Колонка P: «в отложке/предложке» — вместо даты пишем, что пост скоро выйдет
+    const isQueued = (s) => /отложк|предложк/i.test(s || '');
+
     /* ===================== ЗАГРУЗКА ===================== */
+
+    async function addStatusFromSheet(rows) {
+        try {
+            const sheet = await loadGviz(SHEET_ID, SHEET_GID);
+            const byName = new Map(sheet.map(cell => [cell.text('B'), cell.text('P')]));
+            rows.forEach(r => { r.status = byName.get(r.name) || ''; });
+        } catch (e) {
+            console.warn('Не удалось прочитать колонку P:', e);
+        }
+    }
 
     async function loadRows() {
         if (APPS_SCRIPT_URL) {
             try {
                 const data = await (await fetch(APPS_SCRIPT_URL)).json();
                 if (data.error) throw new Error(data.error);
+                if (data.rows.length && !('status' in data.rows[0])) {
+                    // Старая версия скрипта без колонки P — берём её из публичной выгрузки
+                    await addStatusFromSheet(data.rows);
+                }
                 return data.rows;
             } catch (e) {
                 console.warn('Apps Script недоступен, беру публичную выгрузку:', e);
@@ -53,6 +70,7 @@
                     deadlineISO: gvizDateToISO(cell('J')?.v),
                     noSub: cell.text('L'),
                     activeSub: cell.text('M'),
+                    status: cell.text('P'),
                     queue: cell.text('Q').split('\n').map(s => s.trim()).filter(Boolean),
                 };
             })
@@ -81,6 +99,15 @@
         return `<span class="dl-days ${cls}">${text}</span>`;
     }
 
+    // «[актуальная подроль у дуэта]» в колонке M — значит, текущая подроль берётся у дуэта
+    const fromDuet = (s) => /у\s+дуэта/i.test(s || '');
+    let byName = new Map();
+    function currentSub(row) {
+        if (!fromDuet(row.activeSub)) return isEmpty(row.activeSub) ? '' : row.activeSub;
+        const partner = byName.get(row.duet);
+        return partner && !fromDuet(partner.activeSub) && !isEmpty(partner.activeSub) ? partner.activeSub : '';
+    }
+
     function card(row) {
         const avatar = safeUrl(row.avatar)
             ? `<img class="dl-avatar" src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
@@ -90,15 +117,16 @@
             `<button class="dl-duet" type="button" data-duet="${esc(row.duet)}" aria-label="Дуэт: ${esc(row.duet)}">👥</button>`;
 
         const active = isEmpty(row.activeSub) ? '' : row.activeSub;
+        const current = currentSub(row);   // какую подроль подсветить в очереди
         const queue = (row.queue || []).filter(q => !isEmpty(q));
         let subs = '';
         if (active || queue.length) {
             const counter = isEmpty(row.noSub) ? '' : `<span class="dl-counter" title="Ответы без подроли">${esc(row.noSub)}</span>`;
             const chips = queue.map(q =>
-                `<li class="dl-chip${q === active ? ' is-active' : ''}">${esc(q)}</li>`).join('');
+                `<li class="dl-chip${q === current ? ' is-active' : ''}">${esc(q)}</li>`).join('');
             subs = `
                 <div class="dl-subs">
-                    ${active ? `<div class="dl-active"><span class="dl-label">подроль:</span> ${esc(active)} ${counter}</div>` : ''}
+                    ${active ? `<div class="dl-active"><span class="dl-label">текущая подроль:</span> ${esc(active)} ${counter}</div>` : ''}
                     ${queue.length > 1 || (queue.length === 1 && queue[0] !== active)
                         ? `<ol class="dl-queue" aria-label="Очередь подролей">${chips}</ol>` : ''}
                 </div>`;
@@ -113,8 +141,9 @@
                     ${subs}
                 </div>
                 <div class="dl-deadline">
-                    <div class="dl-date">${esc(row.deadline) || '—'}</div>
-                    ${deadlineBadge(row)}
+                    ${isQueued(row.status)
+                        ? '<div class="dl-date is-queued">пост скоро выйдет</div>'
+                        : `<div class="dl-date">${esc(row.deadline) || '—'}</div>${deadlineBadge(row)}`}
                 </div>
             </article>`;
     }
@@ -153,6 +182,7 @@
         title: 'Дедлайны',
         load: () => Promise.all([loadRows(), getViewerId()]),
         render(root, [rows, viewerId]) {
+            byName = new Map(rows.map(r => [r.name, r]));
             const sorted = sortRows(rows);
             let html = '';
 

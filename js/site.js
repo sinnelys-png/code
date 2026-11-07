@@ -6,6 +6,19 @@
     const star = document.querySelector('.star-separator');
     const headerWrapper = document.querySelector('.header-center-wrapper');
     const mainBlock = document.querySelector('.main-inner-content');
+    const ribbon = document.querySelector('.page-ribbon');
+
+    // Лента с названием раздела подсвечивается вместе с полосками блока:
+    // ей передаются те же координаты света, только в её собственной системе отсчёта.
+    function setGlow(name, value) {
+        mainBlock.style.setProperty(name, value);
+        if (!ribbon) return;
+        if (name === '--glow-r' || value === '-999px') { ribbon.style.setProperty(name, value); return; }
+        const m = mainBlock.getBoundingClientRect();
+        const r = ribbon.getBoundingClientRect();
+        const shift = name.endsWith('-x') ? m.left - r.left : m.top - r.top;
+        ribbon.style.setProperty(name, `${parseFloat(value) + shift}px`);
+    }
     const scrollContainer = document.querySelector('.main-scroll-viewport');
     const menuLinks = document.querySelectorAll('header a');
     const logoContainer = document.querySelector('.logo-container');
@@ -70,9 +83,9 @@
 
             // Пятно одного размера на экране для всех трёх полос
             headerStrokeGrad.setAttribute('r', GLOW_R * 1010 / sRect.width);
-            mainBlock.style.setProperty('--glow-r', `${GLOW_R}px`);
+            setGlow('--glow-r', `${GLOW_R}px`);
 
-            const set = (name, v) => mainBlock.style.setProperty(name, v);
+            const set = setGlow;
             const hideAll = () => {
                 headerStrokeGrad.setAttribute('cx', '-9999');
                 headerStrokeGrad.setAttribute('cy', '-9999');
@@ -171,8 +184,8 @@
             }
             if (mainBlock) {
                 const mRect = mainBlock.getBoundingClientRect();
-                mainBlock.style.setProperty('--mouse-x', `${e.clientX - mRect.left}px`);
-                mainBlock.style.setProperty('--mouse-y', `${e.clientY - mRect.top}px`);
+                setGlow('--mouse-x', `${e.clientX - mRect.left}px`);
+                setGlow('--mouse-y', `${e.clientY - mRect.top}px`);
             }
         });
     }

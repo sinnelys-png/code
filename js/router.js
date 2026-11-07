@@ -7,23 +7,34 @@
     const homeHTML = document.getElementById('home-template').innerHTML;
     const navLinks = document.querySelectorAll('header a[href^="#"]');
     const logo = document.querySelector('.logo-container');
+    const ribbon = document.querySelector('.page-ribbon');
+    const ribbonText = ribbon && ribbon.querySelector('.page-ribbon-text');
 
-    const loaded = {};   // загруженные данные страниц (каждая таблица грузится один раз)
+    const { dataOf } = RCU;
     let navToken = 0;    // чтобы медленный ответ старой страницы не перерисовал новую
-
-    function dataOf(name) {
-        if (!loaded[name]) {
-            loaded[name] = RCU.pages[name].load().catch(err => {
-                delete loaded[name];          // при ошибке попробуем ещё раз при следующем заходе
-                throw err;
-            });
-        }
-        return loaded[name];
-    }
 
     function currentPage() {
         const name = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
         return RCU.pages[name] ? name : '';
+    }
+
+    // Лента с названием: уезжает под клапан шапки, меняет надпись и выезжает обратно.
+    // Длина ленты сама подстраивается под длину названия.
+    let ribbonToken = 0;
+    async function setRibbon(title) {
+        if (!ribbon) return;
+        const token = ++ribbonToken;
+        if (ribbonText.textContent === title && !ribbon.classList.contains('is-hidden')) return;
+        if (!ribbon.classList.contains('is-hidden')) {
+            ribbon.classList.add('is-hidden');
+            await new Promise(r => setTimeout(r, 380));
+            if (token !== ribbonToken) return;
+        }
+        ribbonText.textContent = title;
+        if (title) {
+            void ribbon.offsetHeight;          // новая длина применяется, пока лента спрятана
+            ribbon.classList.remove('is-hidden');
+        }
     }
 
     async function show() {
@@ -36,6 +47,7 @@
             if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
         });
 
+        setRibbon(name ? RCU.pages[name].title : '');
         view.classList.add('is-leaving');
         await new Promise(r => setTimeout(r, 150));
         if (token !== navToken) return;
@@ -47,7 +59,7 @@
             const page = RCU.pages[name];
             document.title = `${page.title} — ROYAL CROSSBREED UNIVERSITY`;
             view.innerHTML = `
-                <h1 class="page-title">${RCU.esc(page.title)}</h1>
+                <h1 class="page-title visually-hidden">${RCU.esc(page.title)}</h1>
                 <div class="page-root">${RCU.loaderHTML()}</div>`;
             const root = view.querySelector('.page-root');
             view.classList.remove('is-leaving');   // показываем «Загружаем…», пока ждём данные

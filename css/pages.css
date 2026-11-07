@@ -16,12 +16,110 @@
     }
 }
 
+/* Заголовок страницы виден только программам чтения с экрана —
+   на экране название раздела написано на золотой ленте */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================================================
+   ЗОЛОТАЯ ЛЕНТА С НАЗВАНИЕМ РАЗДЕЛА
+   Висит у левого края основного блока и выходит из-под клапана шапки
+   (её верх спрятан под шапкой). Длина — по длине названия.
+   При смене раздела уезжает вверх под шапку и выезжает с новой надписью.
+   ========================================================================== */
+
+.page-ribbon {
+    --ribbon-w: 2.3rem;
+    --ribbon-tuck: 1.5rem;     /* сколько ленты спрятано под шапкой */
+    --ribbon-notch: 0.8rem;    /* глубина «ласточкина хвоста» внизу */
+
+    position: absolute;
+    z-index: 3;
+    top: calc(-1 * var(--gap) - var(--ribbon-tuck));
+    /* у левого края блока (блок не шире 50rem и стоит по центру) */
+    left: calc(max(0px, (100% - 50rem) / 2) + 1.3rem);
+    width: var(--ribbon-w);
+    padding: calc(var(--gap) + var(--ribbon-tuck) + 1.1rem) 0 calc(var(--ribbon-notch) + 1.1rem);
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+
+    /* Одноцветная, того же цвета, что золотые полоски блока, и подсвечивается вместе с ними:
+       те же два пятна света, что у .main-inner-content::before (координаты ставит js/site.js) */
+    background-color: #00263b;
+    background-image:
+        radial-gradient(circle var(--glow-r, 400px) at var(--glow2-x, -999px) var(--glow2-y, -999px),
+            #ffffff 0%,
+            rgb(227 207 172 / 80%) 50%,
+            rgb(227 207 172 / 0%) 100%),
+        radial-gradient(circle var(--glow-r, 400px) at var(--mouse-x, -999px) var(--mouse-y, -999px),
+            #ffffff 0%,
+            rgb(227 207 172 / 80%) 50%,
+            rgb(227 207 172 / 60%) 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--ribbon-notch)), 0 100%);
+
+    pointer-events: none;
+    transition: transform 0.55s cubic-bezier(0.3, 0.75, 0.25, 1);
+}
+
+/* надпись читается снизу вверх, с маленькой буквы — как пункты меню */
+.page-ribbon-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    text-transform: lowercase;
+    white-space: nowrap;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 1.1rem;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    color: #00223a;
+}
+
+/* спрятана под шапкой: на главной, при смене раздела и во время заставки */
+.page-ribbon.is-hidden,
+html.intro .page-ribbon {
+    transform: translateY(-100%);
+    transition-duration: 0.35s;
+    transition-timing-function: ease-in;
+}
+
+html.intro .page-ribbon {
+    transition: none;
+}
+
+@media (max-width: 768px) {
+    .page-ribbon {
+        --ribbon-w: 1.6rem;
+        --ribbon-notch: 0.6rem;
+        left: 0.5rem;
+    }
+
+    .page-ribbon-text {
+        font-size: 0.85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-ribbon {
+        transition: none;
+    }
+}
+
 /* ==========================================================================
    РАСПИСАНИЕ БУДУЩИХ ПОСТОВ
    ========================================================================== */
 
 .sc-day {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2.75rem;
 }
 
 .sc-day-title {
@@ -94,6 +192,24 @@
     overflow-wrap: anywhere;
 }
 
+/* «Ваши посты» наверху расписания */
+.sc-mine {
+    margin-bottom: 2.75rem;
+}
+
+.sc-mine .sc-day {
+    margin-bottom: 1rem;
+}
+
+.sc-mine .sc-day:last-child {
+    margin-bottom: 0;
+}
+
+/* Все теги, кроме тегов персонажей (#Др_RCU, #Mafia_RCU…), — приглушённые */
+.sc-tag.is-service {
+    opacity: 0.45;
+}
+
 /* ==========================================================================
    АКТИВНОСТЬ (рейтинг)
    ========================================================================== */
@@ -162,14 +278,57 @@
 
 .ac-name {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .ac-name-link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--gold);
     text-decoration: none;
+}
+
+/* Корона победителя прошлого месяца с подсказкой */
+.ac-crown {
+    position: relative;
+    flex: none;
+    background: none;
+    border: none;
+    padding: 0 0.1rem;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: help;
+}
+
+.ac-crown::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 0.45rem);
+    transform: translate(-50%, -0.25rem);
+    white-space: nowrap;
+    padding: 0.35rem 0.7rem;
+    font-family: sans-serif;
+    font-size: 0.8rem;
+    color: var(--gold);
+    background: #001929;
+    border: 1px solid var(--gold-55);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+}
+
+.ac-crown:hover::after,
+.ac-crown:focus-visible::after,
+.ac-crown.is-open::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }
 
 a.ac-name-link:hover {
