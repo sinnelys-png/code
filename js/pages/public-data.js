@@ -58,6 +58,58 @@
         return list;
     }
 
+    // Лист [бронь] Техтаблицы. Он «повёрнут»: в колонке B подписи строк (роль, факультет,
+    // курс, предмет, должность, окончание брони…), а каждая следующая колонка — один персонаж.
+    // Бронь начинается с колонки, где в первой строке «[бронь]»; дуэт — две колонки подряд.
+    // Брони с прошедшей датей окончания не считаются.
+    const BRON_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
+    const BRON_GID = '2050639534';
+
+    function parseBron(grid, now = new Date()) {
+        const cell = (r, c) => String((grid[r] || [])[c] ?? '').trim();
+        const width = Math.max(0, ...grid.map(r => r.length));
+        // колонка с подписями — та, где есть «роль» и «факультет»
+        let lc = -1;
+        for (let c = 0; c < width && lc < 0; c++) {
+            const col = grid.map((_, r) => cell(r, c).toLowerCase());
+            if (col.includes('роль') && col.includes('факультет')) lc = c;
+        }
+        if (lc < 0) return [];
+        const rowOf = (re) => grid.findIndex((_, r) => re.test(cell(r, lc).toLowerCase()));
+        const R = {
+            name: rowOf(/^имя$/), role: rowOf(/^роль/), faculty: rowOf(/^факультет/), course: rowOf(/^курс/),
+            subject: rowOf(/^предмет/), post: rowOf(/^должност/), until: rowOf(/^окончание/),
+        };
+        const get = (key, c) => (R[key] >= 0 ? cell(R[key], c) : '');
+        const toDate = (t) => {
+            const m = String(t).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+            return m ? new Date(+m[3], m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : null;
+        };
+
+        const out = [];
+        let until = null, inGroup = false;
+        for (let c = lc + 1; c < width; c++) {
+            if (/\[бронь\]/i.test(cell(0, c))) { inGroup = true; until = toDate(get('until', c)); }
+            const role = get('role', c), faculty = get('faculty', c);
+            if (!role && !faculty) { inGroup = false; continue; }    // пустая колонка между бронями
+            if (!inGroup || (until && until < now)) continue;
+            out.push({
+                name: get('name', c), role, faculty,
+                course: get('course', c), subject: get('subject', c), post: get('post', c),
+                until: until ? until.toISOString() : '',
+            });
+        }
+        return out;
+    }
+
+    async function bronFromSheet() {
+        const url = `https://docs.google.com/spreadsheets/d/${BRON_SHEET_ID}/gviz/tq?tqx=out:json&gid=${BRON_GID}&headers=0`;
+        const text = await (await fetch(url)).text();
+        const data = JSON.parse(text.slice(text.indexOf('(') + 1, text.lastIndexOf(')')));
+        if (data.status !== 'ok') throw new Error('Лист [бронь] недоступен');
+        return data.table.rows.map(row => (row.c || []).map(c => (c ? String(c.f ?? c.v ?? '') : '')));
+    }
+
     async function load() {
         let data = {};
         try { data = await RCU.bundle(); } catch (e) { console.warn('Скрипт недоступен:', e); }
@@ -72,6 +124,13 @@
             ...f,
             electives: (f.electives || []).filter(x => x.subject || x.curator || x.students.length),
         }));
+
+        // брони: из скрипта, а если скрипт ещё старый — прямо из открытого листа
+        let bronRaw = Array.isArray(data.bron) ? data.bron : null;
+        if (!bronRaw) {
+            try { bronRaw = parseBron(await RCU.cached('bron-sheet', bronFromSheet)); }
+            catch (e) { bronRaw = []; console.warn('Лист [бронь] недоступен:', e); }
+        }
 
         const deadlines = data.rows || [];
         const tech = data.tech || [];
@@ -135,7 +194,21 @@
         });
 
         const characters = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-        return { characters, byName, facultyInfo, hasTech: tech.length > 0 };
+        // брони из листа [бронь] Техтаблицы: роль приводим к «студент / преподаватель / персонал»
+        const roleOf = (x) => {
+            const r = String(x.role || '').toLowerCase();
+            if (/студ/.test(r)) return 'студент';
+            if (/преп/.test(r)) return 'преподаватель';
+            if (/персон|сотруд|должн/.test(r)) return 'персонал';
+            if (x.post) return 'персонал';
+            if (x.subject) return 'преподаватель';
+            return x.course || x.faculty ? 'студент' : '';
+        };
+        const bron = bronRaw
+            .map(x => ({ ...x, role: roleOf(x), course: String(x.course || '').replace(/\D+/g, '') }))
+            .filter(x => x.role && !byName.has(x.name));
+
+        return { characters, byName, facultyInfo, bron, hasTech: tech.length > 0 };
     }
 
     // Один раз на сессию; страницы публичного сайта берут данные отсюда

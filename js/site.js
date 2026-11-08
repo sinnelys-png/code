@@ -195,15 +195,16 @@
         // Координаты ставим только аватарам рядом с мышью (в радиусе свечения), остальным гасим.
         let lastMouse = null;
         let ringFrame = 0;
-        const RING_GLOW_R = 150;
+        // рамки аватаров в больших карточках — с тем же радиусом света, что у полосы шапки
+        const RINGS = [['.dl-avatar.has-faculty', 150], ['.pc-ava-frame', 400]];
         function glowRings() {
             ringFrame = 0;
             if (!lastMouse) return;
             const { clientX: x, clientY: y } = lastMouse;
-            document.querySelectorAll('.dl-avatar.has-faculty').forEach(a => {
+            RINGS.forEach(([selector, R]) => document.querySelectorAll(selector).forEach(a => {
                 const r = a.getBoundingClientRect();
-                const near = r.width && x > r.left - RING_GLOW_R && x < r.right + RING_GLOW_R
-                    && y > r.top - RING_GLOW_R && y < r.bottom + RING_GLOW_R;
+                const near = r.width && x > r.left - R && x < r.right + R
+                    && y > r.top - R && y < r.bottom + R;
                 if (near) {
                     a.style.setProperty('--gx', `${x - r.left}px`);
                     a.style.setProperty('--gy', `${y - r.top}px`);
@@ -213,6 +214,14 @@
                     a.style.removeProperty('--gy');
                     delete a.dataset.lit;
                 }
+            }));
+            // внутренняя полоса ленты в карточках: градиент в координатах её SVG (viewBox 60×140)
+            document.querySelectorAll('.pc-ribbon').forEach(svg => {
+                const g = svg.querySelector('.pc-ribbon-glow');
+                const r = svg.getBoundingClientRect();
+                if (!g || !r.width) return;
+                g.setAttribute('cx', (x - r.left) * 60 / r.width);
+                g.setAttribute('cy', (y - r.top) * 140 / r.height);
             });
         }
         // при прокрутке аватары двигаются под неподвижной мышью — пересчитываем

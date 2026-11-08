@@ -19,7 +19,7 @@
     <!-- Основной шрифт текста -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/deadlines.css">
     <link rel="stylesheet" href="css/pages.css">
@@ -29,6 +29,8 @@
     <script>
         // Заставка «конверт» при загрузке (css/intro.css). Ставим класс сразу,
         // до отрисовки страницы, чтобы блок не мелькнул на своём месте раньше времени.
+        // Тема (светлая / тёмная) — до отрисовки, чтобы страница не мигнула другой темой
+        try { document.documentElement.dataset.theme = localStorage.getItem('rcu-theme') || 'dark'; } catch (e) {}
         (function () {
             if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             var html = document.documentElement;
@@ -93,6 +95,8 @@
         <!-- Золотая лента с названием раздела (заполняет js/router.js, стили — css/pages.css) -->
         <div class="page-ribbon is-hidden" aria-hidden="true"><span class="page-ribbon-text"></span></div>
         <div class="main-inner-content">
+            <!-- переключатель светлой / тёмной темы (js/menu.js) -->
+            <button class="theme-toggle" type="button"></button>
             <div class="main-scroll-text">
                 <div class="main-scroll-viewport">
                     <div id="view" class="page-view"></div>

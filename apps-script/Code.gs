@@ -26,6 +26,8 @@ const DEADLINES_SHEET_ID = '1KTZmUktm284bdyGc_LfDpv9BVUDCqcEU8Av29s-NXVU';
 // Техтаблица (закрытая): B — имя персонажа, J — факультет
 const FACULTY_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
 const FACULTY_GID = 0;
+// Лист [бронь] в Техтаблице
+const BRON_GID = 2050639534;
 // Таблица факультетов (структура: предметы, преподаватели, декан, нпс, студенты по курсам, факультативы)
 const FACULTY_INFO_SHEET_ID = '1Rs16v2rZ_PwRoVF-gNBU0fW4sdw_r5eZ2JjcbEyJ17s';
 const FACULTY_INFO_GID = 1846439865;
@@ -40,7 +42,7 @@ const WARMUP_MINUTES = 5;
 // Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
-const CACHE_KEY = 'site-v6';
+const CACHE_KEY = 'site-v7';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -138,6 +140,7 @@ function build_() {
   try { out.faculties = faculties_(); } catch (e) { out.facultiesError = String(e); }
   try { out.tech = tech_(); } catch (e) { out.techError = String(e); }
   try { out.facultyInfo = facultyInfo_(); } catch (e) { out.facultyInfoError = String(e); }
+  try { out.bron = bron_(); } catch (e) { out.bronError = String(e); }
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
@@ -308,6 +311,50 @@ function tech_() {
     });
   }
   return rows;
+}
+
+/**
+ * Лист [бронь] Техтаблицы. Он «повёрнут»: в колонке B подписи строк (роль, факультет,
+ * курс, предмет, должность, окончание брони…), каждая следующая колонка — один персонаж.
+ * Бронь начинается с колонки, где в первой строке «[бронь]»; дуэт — две колонки подряд.
+ * Брони с прошедшей датой окончания пропускаются. Тот же разбор — parseBron в js/pages/public-data.js.
+ */
+function bron_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), BRON_GID);
+  const grid = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 1)).getDisplayValues();
+  const cell = (r, c) => String((grid[r] || [])[c] || '').trim();
+  const width = grid[0].length;
+  let lc = -1;
+  for (let c = 0; c < width && lc < 0; c++) {
+    const col = grid.map((_, r) => cell(r, c).toLowerCase());
+    if (col.indexOf('роль') >= 0 && col.indexOf('факультет') >= 0) lc = c;
+  }
+  if (lc < 0) return [];
+  const rowOf = (re) => grid.findIndex((_, r) => re.test(cell(r, lc).toLowerCase()));
+  const R = {
+    name: rowOf(/^имя$/), role: rowOf(/^роль/), faculty: rowOf(/^факультет/), course: rowOf(/^курс/),
+    subject: rowOf(/^предмет/), post: rowOf(/^должност/), until: rowOf(/^окончание/),
+  };
+  const get = (key, c) => (R[key] >= 0 ? cell(R[key], c) : '');
+  const toDate = (t) => {
+    const m = String(t).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    return m ? new Date(+m[3], m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : null;
+  };
+  const now = new Date();
+  const out = [];
+  let until = null, inGroup = false;
+  for (let c = lc + 1; c < width; c++) {
+    if (/\[бронь\]/i.test(cell(0, c))) { inGroup = true; until = toDate(get('until', c)); }
+    const role = get('role', c), faculty = get('faculty', c);
+    if (!role && !faculty) { inGroup = false; continue; }
+    if (!inGroup || (until && until < now)) continue;
+    out.push({
+      name: get('name', c), role: role, faculty: faculty,
+      course: get('course', c), subject: get('subject', c), post: get('post', c),
+      until: until ? until.toISOString() : '',
+    });
+  }
+  return out;
 }
 
 /**

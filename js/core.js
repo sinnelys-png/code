@@ -119,14 +119,31 @@ window.RCU = (() => {
         ['юридич',      '#151515', '#d8d8d8'],   // Юридический
     ];
 
-    // Атрибуты для аватара: класс has-faculty, цвета в CSS-переменных и название в подсказке
+    // Контраст двух цветов (#rrggbb) по WCAG — чтобы акценты факультета были видны на фоне темы
+    function luminance(hex) {
+        const n = parseInt(String(hex).replace('#', ''), 16);
+        return [n >> 16 & 255, n >> 8 & 255, n & 255]
+            .map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+            .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+    }
+    function contrast(a, b) {
+        const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+    }
+    // фон карточек в тёмной и светлой теме
+    const THEME_BG = { d: '#05304b', l: '#f7f1e6' };
+    // из двух цветов факультета — тот, что контрастнее на фоне темы
+    const accentOn = (bg, main, stripe) => (contrast(main, bg) >= contrast(stripe, bg) ? main : stripe);
+
+    // Атрибуты для аватара: класс has-faculty, цвета в CSS-переменных и название в подсказке.
+    // --fac-accent-d / --fac-accent-l — цвет акцентов (линии, полосы прокрутки) для тёмной и светлой темы
     function facultyAttrs(faculty) {
         const name = String(faculty || '').trim();
         const hit = name && FACULTIES.find(([key]) => name.toLowerCase().includes(key));
         if (!hit) return { cls: '', attrs: '' };
         return {
             cls: ' has-faculty',
-            attrs: ` style="--fac-main:${hit[1]};--fac-stripe:${hit[2]}" title="${esc(name)}"`,
+            attrs: ` style="--fac-main:${hit[1]};--fac-stripe:${hit[2]};--fac-accent-d:${accentOn(THEME_BG.d, hit[1], hit[2])};--fac-accent-l:${accentOn(THEME_BG.l, hit[1], hit[2])}" title="${esc(name)}"`,
         };
     }
 

@@ -112,6 +112,46 @@
         return `<div class="pc-stat"><div class="pc-k">${esc(label)}</div><div class="pc-v">${value ? esc(value) : '<span class="pc-none">—</span>'}</div></div>`;
     }
 
+    // лента-закладка: снаружи основной цвет факультета, внутренняя линия — второй
+    const RIBBON = `
+        <svg class="pc-ribbon" viewBox="0 0 60 140" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+                <radialGradient id="pc-ribbon-glow" class="pc-ribbon-glow" gradientUnits="userSpaceOnUse" cx="-999" cy="-999" r="90">
+                    <stop offset="0%" class="pc-ribbon-glow-core" />
+                    <stop offset="50%" class="pc-ribbon-glow-mid" />
+                    <stop offset="100%" class="pc-ribbon-glow-edge" />
+                </radialGradient>
+            </defs>
+            <path class="pc-ribbon-body" d="M0 0 H60 V140 L30 104 L0 140 Z" />
+            <path class="pc-ribbon-line" d="M10 0 V107.7 L30 83.7 L50 107.7 V0" />
+        </svg>`;
+    RCU.ribbonHTML = RIBBON;     // та же лента у карточек факультетов
+
+    // статус комнаты: сосед уже есть / можно подселиться / нельзя / спросить автора (колонка P)
+    function roomStatus(c) {
+        if (!c.house) return null;
+        const mates = c.room
+            ? data.characters.filter(x => x.name !== c.name && String(x.house) === String(c.house) && String(x.room) === String(c.room))
+            : [];
+        if (mates.length) {
+            const names = mates.map(m => `<button class="pc-link" type="button" data-name="${esc(m.name)}">${esc(m.name)}</button>`);
+            return { cls: 'mate', html: `${mates.length > 1 ? 'соседи' : 'сосед'}: ${names.join(', ')}` };
+        }
+        const t = String(c.neighbor || '').toLowerCase();
+        if (/^да|можно/.test(t)) return { cls: 'yes', text: 'можно стать соседом' };
+        if (/^нет/.test(t)) return { cls: 'no', text: 'нельзя стать соседом' };
+        if (/уточн|автор|спрос/.test(t)) return { cls: 'ask', text: 'спрашивайте у автора, можно ли стать соседом' };
+        return null;
+    }
+
+    function homeStat(c) {
+        const home = c.house ? `д. ${c.house}${c.room ? `, к. ${c.room}` : ''}` : '';
+        if (!home) return stat('проживает', '');
+        const st = roomStatus(c);
+        const star = st ? `<span class="pc-room"><button class="pc-room-star pc-room-star--${st.cls}" type="button" aria-expanded="false" aria-label="Статус комнаты">✦</button><span class="pc-room-info">${st.html || esc(st.text)}</span></span>` : '';
+        return `<div class="pc-stat"><div class="pc-k">проживает</div><div class="pc-v">${esc(home)}${star}</div></div>`;
+    }
+
     function bigCard(c) {
         const a = anketaOf(c);
         const tabs = [
@@ -121,54 +161,55 @@
         ].filter(([, u]) => safeUrl(u))
             .map(([t, u]) => `<a class="pc-tab" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('');
 
-        const home = c.house ? `д. ${c.house}${c.room ? `, к. ${c.room}` : ''}` : '';
         const duet = c.duet
             ? (data.byName.has(c.duet)
                 ? `<button class="pc-link" type="button" data-name="${esc(c.duet)}">${esc(c.duet)}</button>`
                 : esc(c.duet))
             : '';
-
         const extras = [
-            c.posts.length ? `<li><span class="pc-k">должности</span> ${c.posts.map(esc).join('; ')}</li>` : '',
-            c.extra ? `<li><span class="pc-k">доп. предметы</span> ${esc(c.extra)}</li>` : '',
-            c.neighbor ? `<li><span class="pc-k">можно соседа</span> ${esc(c.neighbor)}</li>` : '',
-            duet ? `<li><span class="pc-k">дуэт</span> ${duet}</li>` : '',
-            c.player ? `<li><span class="pc-k">отвечает</span> ${safeUrl(c.playerUrl) ? `<a class="pc-link" href="${esc(c.playerUrl)}" target="_blank" rel="noopener">${esc(c.player)}</a>` : esc(c.player)}</li>` : '',
+            c.posts.length ? `<div class="pc-k">должности</div><div class="pc-v">${c.posts.map(esc).join('; ')}</div>` : '',
+            c.extra ? `<div class="pc-k">доп. предметы</div><div class="pc-v">${esc(c.extra)}</div>` : '',
+            duet ? `<div class="pc-k">дуэт</div><div class="pc-v">${duet}</div>` : '',
         ].join('');
 
         return `
-            <article class="pc-big"${facStyle(c)}>
-                ${tabs ? `<nav class="pc-tabs">${tabs}</nav>` : ''}
-                <button class="pc-close" type="button" data-close aria-label="Закрыть">×</button>
-                <span class="pc-bookmark" aria-hidden="true"></span>
-
-                <div class="pc-head">
-                    ${avatar(c, 'pc-big-avatar')}
-                    <div class="pc-head-info">
-                        <div class="pc-k">имя</div>
-                        <h2 class="pc-big-name">${esc(c.name)}</h2>
-                        ${c.role === 'студент'
-                            ? `<div class="pc-k">курс</div><div class="pc-v">${esc(c.course || '—')}</div>`
-                            : c.role === 'преподаватель'
-                                ? `<div class="pc-k">роль</div><div class="pc-v">${esc(teacherRole(c.subject))}</div>`
-                                : c.role === 'персонал'
-                                    ? `<div class="pc-k">должность</div><div class="pc-v">${esc(lowerFirst(c.post || '') || '—')}</div>`
-                                    : `<div class="pc-k">роль</div><div class="pc-v">${esc(c.role || '—')}</div>`}
-                        ${c.role === 'персонал' ? '' : `<div class="pc-v pc-big-fac">${esc((c.faculty || '').toLowerCase() || '—')}</div>`}
+            <article class="pc-big pc-ticket"${facStyle(c)}>
+                <nav class="pc-tabs"><span class="pc-tab-own" aria-hidden="true"></span>${tabs}</nav>
+                <div class="pc-top">
+                    ${RIBBON}
+                    <div class="pc-room-pop" role="status" hidden></div>
+                    <div class="pc-seg pc-seg--head">
+                        <button class="pc-close" type="button" data-close aria-label="Закрыть">×</button>
+                        <div class="pc-head">
+                            <span class="pc-ava-frame">${avatar(c, 'pc-big-avatar')}</span>
+                            <div class="pc-head-info">
+                                <div class="pc-k">имя</div>
+                                <h2 class="pc-big-name">${esc(c.name)}</h2>
+                                ${c.role === 'студент'
+                                    ? `<div class="pc-k">курс</div><div class="pc-v">${esc(c.course || '—')}</div>`
+                                    : c.role === 'преподаватель'
+                                        ? `<div class="pc-k">роль</div><div class="pc-v">${esc(teacherRole(c.subject))}</div>`
+                                        : c.role === 'персонал'
+                                            ? `<div class="pc-k">должность</div><div class="pc-v">${esc(lowerFirst(c.post || '') || '—')}</div>`
+                                            : `<div class="pc-k">роль</div><div class="pc-v">${esc(c.role || '—')}</div>`}
+                                ${c.role === 'персонал' ? '' : (c.faculty
+                                    ? `<a class="pc-v pc-big-fac pc-fac-link" href="#faculties/${encodeURIComponent(slug(c.faculty))}">${esc(c.faculty.toLowerCase())}</a>`
+                                    : '<div class="pc-v pc-big-fac">—</div>')}
+                                ${extras}
+                            </div>
+                        </div>
                     </div>
+                    <section class="pc-seg pc-stats">
+                        ${stat('возраст', a && a.age)}
+                        ${homeStat(c)}
+                        ${stat('вид', a && a.species)}
+                        ${stat('рост', (a && a.height) || (c.height ? `${c.height}${/^\d+$/.test(c.height) ? ' см' : ''}` : ''))}
+                        ${stat('вес', a && a.weight)}
+                    </section>
                 </div>
-
-                <section class="pc-stats">
-                    ${stat('возраст', a && a.age)}
-                    ${stat('проживает', home)}
-                    ${stat('вид', a && a.species)}
-                    ${stat('рост', (a && a.height) || (c.height ? `${c.height}${/^\d+$/.test(c.height) ? ' см' : ''}` : ''))}
-                    ${stat('вес', a && a.weight)}
-                </section>
-
-                ${extras ? `<ul class="pc-extra">${extras}</ul>` : ''}
-
                 ${anketaHTML(c, a)}
+                <div class="pc-seam-star" aria-hidden="true"><span class="pc-seam-dot">✦</span></div>
+                <div class="pc-seg pc-seg--foot"></div>
             </article>`;
     }
 
@@ -197,27 +238,31 @@
     }
 
     function anketaHTML(c, a) {
-        const link = safeUrl(c.topicUrl)
-            ? `<a class="pc-link" href="${esc(c.topicUrl)}" target="_blank" rel="noopener">Открыть тему персонажа</a>` : '';
         if (!a) {
             return `
-                <section class="pc-text">
+                <section class="pc-seg pc-text">
                     <h3 class="pc-section-title">биография</h3>
-                    <p class="pc-soon">${anketaTexts ? 'Анкеты пока нет в таблице.' : 'Загружаем анкету…'} ${link}</p>
+                    <p class="pc-soon">${anketaTexts ? 'Анкеты пока нет в таблице.' : 'Загружаем анкету…'}</p>
                 </section>`;
         }
         const paras = (list) => list.map(p => `<p>${esc(p)}</p>`).join('');
+        const info = a.interaction ? `<span><span class="pc-k">взаимодействия</span> ${esc(a.interaction)}</span>` : '';
         return `
-            ${a.shared ? '<p class="pc-shared">общая анкета дуэта</p>' : ''}
-            ${a.bio.length ? `<section class="pc-text"><h3 class="pc-section-title">биография</h3>${paras(a.bio)}</section>` : ''}
-            ${a.character.length ? `<section class="pc-text"><h3 class="pc-section-title">характер</h3>${paras(a.character)}</section>` : ''}
+            ${info ? `<section class="pc-seg pc-interaction">${info}</section>` : ''}
+            <section class="pc-seg pc-text">
+                <h3 class="pc-section-title">биография</h3>
+                <div class="pc-scroll pc-scroll--bio">
+                    ${a.bio.length ? paras(a.bio) : '<p class="pc-soon">Биографии нет в анкете.</p>'}
+                    ${a.character.length ? `<h4 class="pc-subtitle">характер</h4>${paras(a.character)}` : ''}
+                </div>
+            </section>
             ${a.facts.length ? `
-                <section class="pc-text">
+                <section class="pc-seg pc-text pc-seg--facts">
                     <h3 class="pc-section-title">интересные факты</h3>
-                    <ul class="pc-facts">${a.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
-                </section>` : ''}
-            ${a.interaction ? `<p class="pc-interaction"><span class="pc-k">взаимодействия</span> ${esc(a.interaction)}</p>` : ''}
-            ${link ? `<p class="pc-topic">${link}</p>` : ''}`;
+                    <div class="pc-scroll pc-scroll--facts">
+                        <ul class="pc-facts">${a.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+                    </div>
+                </section>` : ''}`;
     }
 
     /* ---------- Окно большой карточки ---------- */
@@ -226,22 +271,221 @@
     const modalBody = modal && modal.querySelector('.pc-modal-body');
     let lastFocus = null;
 
-    function openCharacter(name) {
+    // dir: 0 — открытие (карточка вырастает и раскладывается), ±1 — листание (старая уезжает вбок)
+    function openCharacter(name, dir = 0) {
         if (!modal || !data || !data.byName.has(name)) return;
+        const wasHidden = modal.hidden || !modal.classList.contains('is-shown');
         if (modal.hidden) lastFocus = document.activeElement;
-        modalBody.innerHTML = bigCard(data.byName.get(name));
+        const unfold = wasHidden || !modalBody.querySelector('.pc-ticket');
+        const render = () => {
+            modalBody.innerHTML = bigCard(data.byName.get(name));
+            fitStats(modalBody);
+        };
+        // переход из одной открытой карточки в другую (стрелки, ссылка на дуэт или соседа)
+        if (unfold) render();
+        else swapCard(dir || 1, render);
+        modalBody.scrollTop = 0;
         modalBody.dataset.name = name;
+        delete modalBody.dataset.fac;
+        updatePager(name);
         setCardHash(name);
         // анкеты грузятся отдельно — когда придут, перерисуем открытую карточку
         if (!anketaTexts) loadAnketas().then(() => {
             if (!modal.hidden && modalBody.dataset.name === name && modalBody.querySelector('.pc-big:not(.fc-big)')) {
-                modalBody.innerHTML = bigCard(data.byName.get(name));
+                render();
             }
         });
         modal.hidden = false;
         document.documentElement.classList.add('pc-open');
+        if (unfold) unfoldCard(name);
         requestAnimationFrame(() => modal.classList.add('is-shown'));
         modalBody.querySelector('.pc-close').focus({ preventScroll: true });
+    }
+
+    const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const EASE = 'cubic-bezier(0.33, 1, 0.68, 1)';          // мягкое замедление в конце
+    const EASE_MOVE = 'cubic-bezier(0.45, 0, 0.25, 1)';     // плавный разгон и остановка
+
+    // копия элемента поверх окна, на месте оригинала (её можно увести за край окна — ничего не обрежет)
+    function ghostOf(el, cls) {
+        const r = el.getBoundingClientRect();
+        const ghost = el.cloneNode(true);
+        ghost.classList.add(cls);
+        ghost.removeAttribute('id');
+        Object.assign(ghost.style, {
+            position: 'fixed', left: `${r.left}px`, top: `${r.top}px`,
+            width: `${r.width}px`, height: `${r.height}px`, right: 'auto', margin: '0', maxHeight: 'none',
+        });
+        const cs = getComputedStyle(el);
+        ['--fac-main', '--fac-stripe', '--card-bg', '--seam'].forEach(v => {
+            const value = cs.getPropertyValue(v);
+            if (value) ghost.style.setProperty(v, value);
+        });
+        modal.appendChild(ghost);
+        return { ghost, rect: r };
+    }
+
+    /* ---------- Смена карточки: старая уезжает вбок, новая выезжает на её место ----------
+       dir > 0 — вперёд (старая уходит влево, новая приходит справа). Используют и факультеты. */
+    function swapCard(dir, render) {
+        const old = modalBody.querySelector('.pc-ticket');
+        if (!old || !old.animate || reduceMotion()) { render(); return; }
+        modal.querySelectorAll('.pc-card-ghost').forEach(g => g.remove());
+        const { ghost, rect } = ghostOf(old, 'pc-card-ghost');
+        render();
+        modalBody.scrollTop = 0;
+        const card = modalBody.querySelector('.pc-ticket');
+        const dist = innerWidth / 2 + rect.width / 2 + 40;
+        const timing = { duration: 620, easing: EASE_MOVE };
+        ghost.animate([
+            { transform: 'none', opacity: 1 },
+            { transform: `translateX(${-dir * dist}px)`, opacity: 0.4 },
+        ], { ...timing, fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
+        if (card) {
+            modalBody.classList.add('is-swapping');
+            card.animate([
+                { transform: `translateX(${dir * dist}px)`, opacity: 0.4 },
+                { transform: 'none', opacity: 1 },
+            ], timing).finished.then(() => modalBody.classList.remove('is-swapping'), () => {});
+        }
+    }
+    RCU.swapCard = swapCard;
+
+    /* ---------- Анимация открытия ----------
+       1) маленькая карточка увеличивается до шапки большой (без ленты и вкладок) посередине экрана;
+       2) шапка плавно уезжает вверх на своё место, а блоки под ней раскладываются вниз — строго
+          по очереди, каждый следующий начинает раскрываться, когда предыдущий почти раскрыт;
+       3) лента откидывается из-за верхнего края блока и ложится на место, как закладка;
+       4) слева друг за другом выезжают вкладки. */
+    const GROW = 560;     // рост шапки из маленькой карточки
+    const PART = 340;     // раскладывание одного блока
+    const UNIT = 250;     // через сколько начинает раскладываться следующий блок
+    const DROP = 820;     // появление ленты
+
+    // srcEl — маленькая карточка, из которой «вырастает» большая (если не задана — ищем по имени)
+    function unfoldCard(name, srcEl) {
+        const card = modalBody.querySelector('.pc-ticket');
+        if (!card || !card.animate || reduceMotion()) return;
+        const head = card.querySelector('.pc-seg--head');
+        const ribbon = card.querySelector('.pc-ribbon');
+        const tabs = [...card.querySelectorAll('.pc-tabs > *')];
+        const seam = card.querySelector(':scope > .pc-seam-star');
+        const lowers = [card.querySelector('.pc-top > .pc-seg:not(.pc-seg--head)'),
+            ...[...card.children].filter(el => el.matches('.pc-seg'))].filter(Boolean);
+
+        const h = head.getBoundingClientRect();
+        // откуда растём: маленькая карточка на экране (если видна) или центр экрана
+        const src = (srcEl ? [srcEl] : [...document.querySelectorAll('.pc-card[data-name]')]
+            .filter(el => el.dataset.name === name && !el.closest('.pc-modal')))
+            .map(el => el.getBoundingClientRect())
+            .find(r => r.width && r.bottom > 0 && r.top < innerHeight);
+        const midY = innerHeight / 2;
+        const dy = midY - (h.top + h.height / 2);             // шапка сначала стоит посередине экрана
+        const s = src ? Math.min(1, src.width / h.width) : 0.6;
+        const sx = src ? (src.left + src.width / 2) - (h.left + h.width / 2) : 0;
+        const sy = src ? (src.top + src.height / 2) - midY : 0;
+
+        const start = GROW * 0.9;                                    // блоки начинают раскладываться
+        const blocks = (lowers.length - 1) * UNIT + PART;            // все блоки разложены
+        const opened = start + blocks;
+
+        // вся карточка: стоит ниже на dy, а пока раскладываются блоки — плавно уезжает вверх
+        card.animate([
+            { transform: `translateY(${dy}px)`, easing: 'linear' },
+            { transform: `translateY(${dy}px)`, offset: start / opened, easing: EASE_MOVE },
+            { transform: 'none' },
+        ], { duration: opened, fill: 'backwards' });
+
+        // шапка: из маленькой карточки — в полный размер
+        head.animate([
+            { transform: `translate(${sx}px, ${sy}px) scale(${s})`, opacity: 0.85 },
+            { transform: 'none', opacity: 1 },
+        ], { duration: GROW, easing: EASE, fill: 'backwards' });
+
+        // блоки — по очереди, сверху вниз
+        lowers.forEach((el, i) => el.animate([
+            { transform: 'perspective(1600px) rotateX(-90deg)', opacity: 0 },
+            { opacity: 1, offset: 0.25 },
+            { transform: 'none', opacity: 1 },
+        ], { duration: PART, delay: start + i * UNIT, easing: 'cubic-bezier(0.25, 0.6, 0.35, 1)', fill: 'backwards' }));
+        if (seam) seam.animate([{ opacity: 0 }, { opacity: 1 }],
+            { duration: 300, delay: opened - 120, fill: 'backwards' });
+
+        // лента: из-за верхнего края блока поворачивается к нам и ложится на карточку
+        // (ось поворота — верхний край ленты), в конце чуть «качнувшись»
+        if (ribbon) ribbon.animate([
+            { transform: 'perspective(700px) rotateX(-100deg)', opacity: 0 },
+            { opacity: 1, offset: 0.25 },
+            { transform: 'perspective(700px) rotateX(7deg)', offset: 0.72 },
+            { transform: 'none', opacity: 1 },
+        ], { duration: DROP, delay: opened - 60, easing: 'cubic-bezier(0.3, 0.6, 0.35, 1)', fill: 'backwards' });
+
+        // вкладки слева, друг за другом
+        tabs.forEach((el, i) => el.animate([
+            { transform: 'translateX(-1.2rem)', opacity: 0 },
+            { transform: 'none', opacity: 1 },
+        ], { duration: 420, delay: opened + DROP * 0.75 + i * 130, easing: EASE, fill: 'backwards' }));
+    }
+    RCU.unfoldCard = unfoldCard;
+
+
+    /* ---------- Листание анкет стрелками ----------
+       Только внутри своей группы (студенты / преподаватели / персонал), в порядке
+       текущей сортировки картотеки. На краях группы стрелка гаснет. */
+    function pageList(name) {
+        const c = data.byName.get(name);
+        const g = file.groups.find(x => x.list.some(y => y.name === name));
+        if (g) return sorted(g.list, sortState[g.title] || 'name');
+        return sorted(data.characters.filter(x => x.role === c.role), 'name');
+    }
+
+    function updatePager(name) {
+        if (!pager.prev) return;
+        const list = pageList(name);
+        const i = list.findIndex(c => c.name === name);
+        pager.prev.disabled = i <= 0;
+        pager.next.disabled = i < 0 || i >= list.length - 1;
+    }
+
+    function pageBy(dir) {
+        // открыт факультет — листаем факультеты
+        if (modalBody.dataset.fac != null && !modal.hidden) { if (RCU.pageFaculty) RCU.pageFaculty(dir); return; }
+        const name = modalBody.dataset.name;
+        if (!name || modal.hidden || !modalBody.querySelector('.pc-ticket:not(.fc-big)')) return;
+        const list = pageList(name);
+        const next = list[list.findIndex(c => c.name === name) + dir];
+        if (!next) return;
+        openCharacter(next.name, dir);
+        // картотека за окном тоже переходит к этой карточке
+        const g = file.groups[file.gi];
+        if (file.root && file.open && g && g.view) {
+            const idx = g.view.findIndex(c => c.name === next.name);
+            if (idx >= 0) { file.target = idx; kick(); }
+        }
+    }
+
+    // анкеты заранее — чтобы карточка не перерисовывалась посреди анимации открытия
+    if (modal) setTimeout(loadAnketas, 1200);
+
+    const pager = {};
+    RCU.setPager = (hasPrev, hasNext) => {
+        if (!pager.prev) return;
+        pager.prev.disabled = !hasPrev;
+        pager.next.disabled = !hasNext;
+    };
+    if (modal) {
+        modal.insertAdjacentHTML('beforeend', `
+            <button class="pc-arrow pc-arrow-prev pc-pager pc-pager--prev" type="button" aria-label="Предыдущая анкета"><span></span></button>
+            <button class="pc-arrow pc-arrow-next pc-pager pc-pager--next" type="button" aria-label="Следующая анкета"><span></span></button>`);
+        pager.prev = modal.querySelector('.pc-pager--prev');
+        pager.next = modal.querySelector('.pc-pager--next');
+        pager.prev.addEventListener('click', (e) => { e.stopPropagation(); pageBy(-1); });
+        pager.next.addEventListener('click', (e) => { e.stopPropagation(); pageBy(1); });
+        document.addEventListener('keydown', (e) => {
+            if (modal.hidden || e.target.closest('input, textarea')) return;
+            if (e.key === 'ArrowLeft') pageBy(-1);
+            if (e.key === 'ArrowRight') pageBy(1);
+        });
     }
 
     const slug = (name) => name.replace(/\s+/g, '_');
@@ -253,18 +497,71 @@
         if (location.hash !== h) history.replaceState(history.state, '', h);
     }
 
+    /* ---------- Подсказка со статусом комнаты ----------
+       На ПК открывается при наведении на звёздочку (и не гаснет, пока мышь на подсказке —
+       чтобы можно было нажать на имя соседа), на телефоне — по нажатию. */
+    let popTimer = 0;
+    function setRoomPop(star, open) {
+        clearTimeout(popTimer);
+        const pop = modal && modal.querySelector('.pc-room-pop');
+        modal.querySelectorAll('.pc-room-star').forEach(b => b.setAttribute('aria-expanded', String(b === star && open)));
+        if (!pop) return;
+        pop.hidden = !open;
+        if (!open) return;
+        const box = pop.parentElement.getBoundingClientRect();
+        const r = star.getBoundingClientRect();
+        pop.innerHTML = star.nextElementSibling.innerHTML;
+        pop.style.top = `${r.bottom - box.top + 6}px`;
+        pop.style.left = `${Math.min(Math.max(r.left + r.width / 2 - box.left, 115), box.width - 115)}px`;
+    }
+
+    if (modal && window.matchMedia('(hover: hover)').matches) {
+        modal.addEventListener('mouseover', (e) => {
+            const star = e.target.closest('.pc-room-star');
+            if (star) setRoomPop(star, true);
+            else if (e.target.closest('.pc-room-pop')) clearTimeout(popTimer);
+        });
+        modal.addEventListener('mouseout', (e) => {
+            const from = e.target.closest('.pc-room-star, .pc-room-pop');
+            const to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.pc-room-star, .pc-room-pop');
+            if (from && !to) popTimer = setTimeout(() => setRoomPop(null, false), 300);
+        });
+    }
+
+    // параметр не помещается в 3 строки (длинный вид) — уменьшаем шрифт
+    function fitStats(root) {
+        const fit = () => root.querySelectorAll('.pc-stat .pc-v').forEach(v => {
+            v.style.fontSize = '';
+            let size = parseFloat(getComputedStyle(v).fontSize);
+            const lines = () => v.scrollHeight / parseFloat(getComputedStyle(v).lineHeight);
+            while (lines() > 3.2 && size > 10) {
+                size -= 0.5;
+                v.style.fontSize = `${size}px`;
+            }
+        });
+        requestAnimationFrame(fit);
+        if (document.fonts) document.fonts.ready.then(fit);     // Montserrat шире запасного шрифта
+    }
+
     function closeCharacter() {
         if (!modal || modal.hidden) return;
         setCardHash('');
         modal.classList.remove('is-shown');
         document.documentElement.classList.remove('pc-open');
-        setTimeout(() => { modal.hidden = true; modalBody.innerHTML = ''; }, 250);
+        setTimeout(() => {
+            if (modal.classList.contains('is-shown')) return;
+            modal.hidden = true; modalBody.innerHTML = ''; delete modalBody.dataset.name;
+        }, 250);
         if (lastFocus) lastFocus.focus({ preventScroll: true });
     }
 
     if (modal) {
         modal.addEventListener('click', (e) => {
             if (e.target.closest('[data-close]')) { closeCharacter(); return; }
+            // звёздочка у «проживает» — статус комнаты
+            const star = e.target.closest('.pc-room-star');
+            if (star) { setRoomPop(star, star.getAttribute('aria-expanded') !== 'true'); return; }
+            if (!e.target.closest('.pc-room-pop')) setRoomPop(null, false);
             const link = e.target.closest('.pc-link[data-name]');
             if (link) openCharacter(link.dataset.name);
         });

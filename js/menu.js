@@ -42,6 +42,24 @@
     const homeLinks = tpl && tpl.content.querySelector('.pub-home-links');
     if (homeLinks) homeLinks.innerHTML = items.map(link).join('');
 
+    // светлая / тёмная тема: меняется только основной блок и окно карточек, выбор запоминается
+    const toggle = document.querySelector('.theme-toggle');
+    if (toggle) {
+        const html = document.documentElement;
+        const show = () => {
+            const light = html.dataset.theme === 'light';
+            toggle.textContent = light ? '☾' : '☀';
+            toggle.setAttribute('aria-label', light ? 'Тёмная тема' : 'Светлая тема');
+            toggle.title = light ? 'Тёмная тема' : 'Светлая тема';
+        };
+        toggle.addEventListener('click', () => {
+            html.dataset.theme = html.dataset.theme === 'light' ? 'dark' : 'light';
+            try { localStorage.setItem('rcu-theme', html.dataset.theme); } catch (e) {}
+            show();
+        });
+        show();
+    }
+
     // много пунктов — длинные названия могут переноситься на две строки
     if (visible.length > 4) document.querySelector('header').classList.add('has-many-items');
 })();

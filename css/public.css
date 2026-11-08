@@ -3,6 +3,169 @@
    Общий стиль — из main.css / deadlines.css / pages.css, здесь только новое.
    ========================================================================== */
 
+/* ---------- Темы ----------
+   Тёмная — по умолчанию. Светлая (html[data-theme="light"]) меняет только основной блок
+   и окно карточек: светло-бежевый фон, тёмно-синие полоски; шапка остаётся как есть.
+   Цвета поверхностей и текста — переменные ниже, светлая тема их переопределяет. */
+:root {
+    --surface-top: #063754;          /* маленькие карточки: градиент сверху вниз */
+    --surface-bot: #022a42;
+    --surface-hover-top: #0a3e5d;
+    --surface-hover-bot: #042f49;
+    --pop-bg: #022a42;               /* выпадающие списки */
+    --pop-bg2: #0c4566;              /* подсказки */
+    --card-surface: #05304b;         /* блоки большой карточки */
+    --ava-a: #0a3d5c;                /* аватар без картинки */
+    --ava-b: #001929;
+    --pager-bg: rgba(1, 34, 58, 0.6);
+    --backdrop: rgba(0, 12, 22, 0.72);
+    --hi: #fff;                      /* текст при наведении */
+}
+
+/* акцент факультета — тот из двух цветов, что контрастнее на фоне темы (считает js/core.js) */
+[style*="--fac-accent-d"] {
+    --fac-accent: var(--fac-accent-d);
+}
+
+html[data-theme="light"] [style*="--fac-accent-d"] {
+    --fac-accent: var(--fac-accent-l);
+}
+
+html[data-theme="light"] .main-content-block,
+html[data-theme="light"] .pc-modal {
+    --text: #14344c;
+    --text-80: rgba(20, 52, 76, 0.85);
+    --text-70: rgba(20, 52, 76, 0.75);
+    --text-55: rgba(20, 52, 76, 0.6);
+    --text-30: rgba(20, 52, 76, 0.32);
+    --gold: #8a6a3a;
+    --gold-80: rgba(138, 106, 58, 0.9);
+    --gold-55: rgba(138, 106, 58, 0.7);
+    --gold-15: rgba(20, 52, 76, 0.16);
+    --gold-08: rgba(20, 52, 76, 0.07);
+    --hover: rgba(20, 52, 76, 0.06);
+    --hover-line: rgba(20, 52, 76, 0.45);
+    --hi: #002f4a;
+    --surface-top: #fffdf9;
+    --surface-bot: #f4ece0;
+    --surface-hover-top: #ffffff;
+    --surface-hover-bot: #f9f3ea;
+    --pop-bg: #fbf7f0;
+    --pop-bg2: #fffaf2;
+    --card-surface: #fbf7f0;
+    --ava-a: #efe6d8;
+    --ava-b: #d9ccb6;
+    --pager-bg: rgba(251, 247, 240, 0.85);
+    --backdrop: rgba(18, 30, 40, 0.5);
+}
+
+/* карта города — картинка тёмная, описания на ней остаются в цветах тёмной темы */
+html[data-theme="light"] .ct-map {
+    --text: #cccccc;
+    --text-80: rgba(204, 204, 204, 0.8);
+    --text-70: rgba(204, 204, 204, 0.7);
+    --text-55: rgba(204, 204, 204, 0.55);
+    --text-30: rgba(204, 204, 204, 0.3);
+    --gold: #E3CFAC;
+    --gold-80: rgba(227, 207, 172, 0.8);
+    --gold-55: rgba(227, 207, 172, 0.55);
+    --gold-15: rgba(227, 207, 172, 0.15);
+    --gold-08: rgba(227, 207, 172, 0.08);
+    --hover: rgba(204, 204, 204, 0.08);
+    --hover-line: rgba(204, 204, 204, 0.55);
+    --hi: #fff;
+}
+
+/* основной блок: светло-бежевый фон */
+html[data-theme="light"] .main-inner-content::after {
+    background-image: linear-gradient(to bottom, #f7f1e6 0%, #e9dfcc 100%);
+}
+
+/* полоски блока и лента раздела — тёмно-синие, свет от мыши тот же (белое ядро) */
+html[data-theme="light"] .main-inner-content::before,
+html[data-theme="light"] .page-ribbon {
+    background-image:
+        radial-gradient(circle var(--glow-r, 400px) at var(--glow2-x, -999px) var(--glow2-y, -999px),
+            #ffffff 0%, #4d7896 50%, rgb(77 120 150 / 0%) 100%),
+        radial-gradient(circle var(--glow-r, 400px) at var(--mouse-x, -999px) var(--mouse-y, -999px),
+            #ffffff 0%, #4d7896 50%, #0b3550 100%);
+}
+
+html[data-theme="light"] .page-ribbon-text {
+    color: #f7f1e6;
+}
+
+html[data-theme="light"] .main-scroll-viewport {
+    color: var(--text-80);
+}
+
+html[data-theme="light"] .main-scroll-viewport::-webkit-scrollbar-thumb {
+    background: rgba(20, 52, 76, 0.18);
+}
+
+html[data-theme="light"] .page-updated {
+    color: var(--text-55);
+}
+
+/* песочные часы загрузки — тёмно-синие на светлом фоне */
+html[data-theme="light"] .hg-loader {
+    background: radial-gradient(circle at 50% 42%, rgba(20, 52, 76, 0.06), transparent 9rem);
+}
+
+html[data-theme="light"] .hg-glass {
+    fill: rgba(20, 52, 76, 0.04);
+    stroke: rgba(20, 52, 76, 0.7);
+}
+
+html[data-theme="light"] .hg-sand-bottom {
+    fill: rgba(138, 106, 58, 0.75);
+}
+
+html[data-theme="light"] .hg-stream {
+    stroke: rgba(138, 106, 58, 0.75);
+}
+
+html[data-theme="light"] .hg-text {
+    color: var(--text-70);
+}
+
+/* переключатель темы — в правом верхнем углу основного блока */
+.theme-toggle {
+    position: absolute;
+    z-index: 5;
+    top: 1.1rem;
+    right: 1.3rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--text-55);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    background-color: var(--hover);
+    outline: none;
+}
+
+html[data-theme="light"] .theme-toggle {
+    color: rgba(20, 52, 76, 0.6);
+    border-color: rgba(20, 52, 76, 0.2);
+}
+
+/* Основной шрифт публичного сайта — Montserrat, как в прототипе Figma */
+:root {
+    --font-main: 'Montserrat', sans-serif;
+}
+
 /* ---------- Главная: ссылки на разделы ---------- */
 
 .pub-home-links {
@@ -24,7 +187,7 @@
 
 .pub-home-links a:hover,
 .pub-home-links a:focus-visible {
-    color: #fff;
+    color: var(--hi);
     border-color: var(--hover-line);
     background-color: var(--hover);
     outline: none;
@@ -58,9 +221,9 @@
     text-align: left;
     font: inherit;
     color: var(--text);
-    background: linear-gradient(to bottom, #063754, #022a42);
+    background: linear-gradient(to bottom, var(--surface-top), var(--surface-bot));
     border: 1px solid var(--gold-15);
-    border-top: 3px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
+    border-top: 3px solid var(--fac-accent, var(--gold-55));   /* основной цвет факультета */
     border-radius: 0 6px 6px 6px;
     cursor: pointer;
     transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
@@ -69,8 +232,8 @@
 button.pc-card:hover,
 button.pc-card:focus-visible {
     border-color: var(--hover-line);
-    border-top-color: var(--fac-main, var(--gold-55));
-    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+    border-top-color: var(--fac-accent, var(--gold-55));
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
     outline: none;
 }
 
@@ -98,7 +261,7 @@ button.pc-card:focus-visible {
     height: 5rem;
     object-fit: cover;
     border-radius: 3px;
-    background: #022a42;
+    background: var(--pop-bg);
     box-shadow: 0 0 0 1px var(--gold-15);
 }
 
@@ -109,7 +272,7 @@ button.pc-card:focus-visible {
     font-family: 'Greengoth', 'FallbackSerif', serif;
     font-size: 2rem;
     color: var(--gold-80);
-    background: radial-gradient(circle at 50% 35%, #0a3d5c, #001929);
+    background: radial-gradient(circle at 50% 35%, var(--ava-a), var(--ava-b));
 }
 
 .pc-card-info {
@@ -167,7 +330,7 @@ button.pc-card:focus-visible {
 
 .pc-link:hover,
 .pc-link:focus-visible {
-    color: #fff;
+    color: var(--hi);
     border-color: var(--hover-line);
     outline: none;
 }
@@ -181,6 +344,12 @@ button.pc-card:focus-visible {
     margin: 0 auto 0.5rem;
 }
 
+.pc-search .pc-search-input {
+    padding-top: 0.32rem;
+    padding-bottom: 0.32rem;
+    font-size: 0.85rem;
+}
+
 .pc-search-list {
     position: absolute;
     z-index: 30;
@@ -190,7 +359,7 @@ button.pc-card:focus-visible {
     list-style: none;
     margin: 0;
     padding: 0.3rem;
-    background: #022a42;
+    background: var(--pop-bg);
     border: 1px solid var(--gold-15);
     border-radius: 0.8rem;
     box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
@@ -305,7 +474,7 @@ button.pc-card:focus-visible {
 
 .pc-sort-btn:hover,
 .pc-sort-btn:focus-visible {
-    color: #fff;
+    color: var(--hi);
     outline: none;
 }
 
@@ -345,8 +514,8 @@ button.pc-card:focus-visible {
 /* карточка в центре раскрытой картотеки — подсвечена, по нажатию открывается */
 .pc-file-card.is-center .pc-card {
     border-color: var(--hover-line);
-    border-top-color: var(--fac-main, var(--gold-55));
-    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+    border-top-color: var(--fac-accent, var(--gold-55));
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
 }
 
 .pc-screen:not(.is-open) .pc-file-card .pc-card {
@@ -386,7 +555,7 @@ button.pc-card:focus-visible {
 
 .pc-fold:hover,
 .pc-fold:focus-visible {
-    color: #fff;
+    color: var(--hi);
     border-color: var(--hover-line);
     background-color: var(--hover);
     outline: none;
@@ -446,7 +615,7 @@ button.pc-card:focus-visible {
 
 .pc-arrow:hover span,
 .pc-arrow:focus-visible span {
-    border-color: #fff;
+    border-color: var(--hi);
 }
 
 @media (max-width: 768px) {
@@ -458,6 +627,19 @@ button.pc-card:focus-visible {
         width: 2rem;
         height: 2rem;
     }
+
+    /* на телефоне стрелки внизу экрана, поверх края карточки */
+    .pc-pager {
+        top: auto;
+        bottom: 0.8rem;
+        transform: none;
+        width: 2.6rem;
+        height: 2.6rem;
+        background: var(--pager-bg);
+    }
+
+    .pc-pager--prev { left: 0.8rem; }
+    .pc-pager--next { right: 0.8rem; }
 }
 
 /* ---------- Окно большой карточки ---------- */
@@ -482,8 +664,7 @@ html.pc-open .main-scroll-viewport {
 .pc-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 12, 22, 0.72);
-    backdrop-filter: blur(3px);
+    background: var(--backdrop);
     opacity: 0;
     transition: opacity 0.25s ease;
 }
@@ -492,7 +673,11 @@ html.pc-open .main-scroll-viewport {
     position: relative;
     width: min(40rem, calc(100% - 2rem));
     max-height: calc(100% - 2rem);
+    overflow-x: hidden;                  /* раскладывание анкеты не даёт горизонтальной прокрутки */
     overflow-y: auto;
+    scrollbar-gutter: stable;            /* место под полосу прокрутки заранее — без рывка после анимации */
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
     padding-top: 1.6rem;                 /* место под вкладки сверху карточки */
     font-family: var(--font-main);
     color: var(--text);
@@ -509,38 +694,124 @@ html.pc-open .main-scroll-viewport {
 
 .pc-big {
     position: relative;
-    padding: 1.6rem 1.8rem 1.4rem;
-    background: linear-gradient(to bottom, #063754, #01223a);
-    border: 1px solid var(--gold-15);
-    border-top: 4px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
-    border-radius: 0 8px 8px 8px;
-    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.5);
+    --card-bg: var(--card-surface);
 }
 
+/* большая карточка факультета — цельная, без билетных блоков */
+.fc-big .fc-block {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.fc-big .fc-block .fc-list:last-child {
+    margin-bottom: 0;
+}
+
+.fc-big .pc-ribbon {
+    right: 3.4rem;
+    height: 9rem;
+}
+
+/* у факультета нет вкладок — верхний левый угол тоже скруглён */
+.fc-big .pc-seg--head {
+    border-top-left-radius: 6px;
+}
+
+/* ---------- Карточка персонажа (как в прототипе Figma) ----------
+   Блоки со скруглёнными углами стоят вплотную, между ними — пунктир в основном цвете факультета. */
+
+.pc-ticket {
+    display: flex;
+    flex-direction: column;
+    --seam: var(--fac-accent, var(--gold-55));
+}
+
+.pc-top {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.pc-seg {
+    position: relative;
+    padding: 1rem 1.8rem;
+    background: var(--card-bg);
+    border-radius: 6px;
+}
+
+/* пунктир на стыке с предыдущим блоком */
+.pc-seg + .pc-seg::after,
+.pc-top + .pc-seg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    transform: translateY(-50%);
+    transform: translateY(-50%) scaleY(0.6);
+    background: repeating-linear-gradient(to right, var(--seam) 0 3px, transparent 3px 7px);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* у последнего стыка вместо пунктира — линия со звёздочкой */
+.pc-seg.pc-seg--foot::after {
+    content: none;
+}
+
+.pc-seg--head {
+    padding-top: 1.4rem;
+    padding-bottom: 1.3rem;
+    border-top-left-radius: 0;           /* к углу примыкает ярлычок карточки */
+}
+
+.pc-seg--foot {
+    height: 1.4rem;
+    padding: 0;
+}
+
+/* вкладки над карточкой: свой «ярлычок» карточки, за ним ссылки; каждая следующая светлее */
 .pc-tabs {
     position: absolute;
-    left: -1px;
+    left: 0;
     bottom: 100%;
     display: flex;
-    gap: 0.25rem;
+    align-items: flex-end;
+}
+
+.pc-tab-own {
+    position: relative;
+    z-index: 5;
+    width: 5.5rem;
+    height: 1.55rem;
+    background: var(--card-bg);
+    border-radius: 6px 0 0 0;
+    clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 100%, 0 100%);
 }
 
 .pc-tab {
-    padding: 0.25rem 1.2rem 0.2rem 0.9rem;
-    font-size: 0.75rem;
+    --tab-mix: 14%;
+    position: relative;
+    margin-left: -0.45rem;
+    padding: 0.32rem 1.6rem 0.22rem 1.6rem;
+    font-size: 0.72rem;
+    line-height: 1;
     color: var(--text-80);
     text-decoration: none;
-    background: #0a3e5d;
-    border: 1px solid var(--gold-15);
-    border-bottom: 0;
-    clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 100%, 0 100%);
+    background: color-mix(in srgb, var(--fac-accent, #888f85) var(--tab-mix), var(--card-bg));
+    clip-path: polygon(0.9rem 0, calc(100% - 0.9rem) 0, 100% 100%, 0 100%);
     transition: color 0.25s ease, background-color 0.25s ease;
 }
 
+.pc-tab:nth-child(2) { z-index: 4; --tab-mix: 14%; }
+.pc-tab:nth-child(3) { z-index: 3; --tab-mix: 26%; }
+.pc-tab:nth-child(4) { z-index: 2; --tab-mix: 38%; }
+
 .pc-tab:hover,
 .pc-tab:focus-visible {
-    color: #fff;
-    background: #104a6c;
+    color: var(--hi);
+    --tab-mix: 55%;
     outline: none;
 }
 
@@ -548,7 +819,7 @@ html.pc-open .main-scroll-viewport {
     position: absolute;
     top: 0.4rem;
     right: 0.6rem;
-    z-index: 2;
+    z-index: 4;
     width: 2rem;
     height: 2rem;
     font-size: 1.5rem;
@@ -562,11 +833,11 @@ html.pc-open .main-scroll-viewport {
 
 .pc-close:hover,
 .pc-close:focus-visible {
-    color: #fff;
+    color: var(--hi);
     outline: none;
 }
 
-/* закладка-лента в цветах факультета, как галстук */
+/* закладка карточки факультета */
 .pc-bookmark {
     position: absolute;
     top: -1px;
@@ -582,35 +853,97 @@ html.pc-open .main-scroll-viewport {
     opacity: 0.9;
 }
 
+/* лента карточки персонажа: нависает над верхним краем на пару пикселей
+   и свисает до блока с параметрами; внутренняя обводка — второй цвет факультета */
+.pc-ribbon {
+    transform-origin: 50% 0;           /* лента откидывается вокруг верхнего края */
+    position: absolute;
+    z-index: 3;
+    top: -3px;
+    right: 3.4rem;
+    width: 5.4rem;
+    height: calc(100% - 3.1rem + 3px);
+    max-height: 13.5rem;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.pc-ribbon-body {
+    fill: var(--fac-main, #8a8f88);
+}
+
+/* свет от мыши на внутренней полосе: белое ядро → второй цвет факультета (как у полосы шапки) */
+.pc-ribbon-glow-core { stop-color: #fff; }
+.pc-ribbon-glow-mid { stop-color: color-mix(in srgb, #fff 45%, var(--fac-stripe, #cccccc)); }
+.pc-ribbon-glow-edge { stop-color: var(--fac-stripe, #cccccc); }
+
+.pc-ribbon-line {
+    fill: none;
+    stroke: url(#pc-ribbon-glow);
+    stroke-width: 4;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: miter;
+}
+
 .pc-head {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0 1.4rem;
     align-items: center;
-    padding-right: 5rem;                 /* не залезать под ленту */
+    padding-right: 9.5rem;               /* не залезать под ленту */
 }
 
 .pc-ava.pc-big-avatar {
-    width: 9rem;
-    height: 9rem;
-    border-radius: 4px;
-    font-size: 2.6rem;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 3px;
+    font-size: 2.4rem;
+}
+
+/* рамка 3px полупрозрачного золота; свет от курсора — как у полосы внизу шапки
+   (белое ядро → #B6AF98 → #888F85, радиус 400px). Координаты --gx/--gy ставит js/site.js */
+.pc-ava-frame {
+    display: inline-block;
+    padding: 3px;
+    line-height: 0;
+    border-radius: 5px;
+    background:
+        radial-gradient(circle 400px at var(--gx, -999px) var(--gy, -999px),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
 }
 
 .pc-head-info .pc-k {
-    margin-top: 0.35rem;
+    margin-top: 0.3rem;
+}
+
+.pc-head-info > .pc-k:first-child {
+    margin-top: 0;
 }
 
 .pc-big-name {
     margin: 0;
-    font-size: 1.45rem;
+    font-size: 1.3rem;
     font-weight: 600;
     color: var(--text);
 }
 
+.pc-fac-link {
+    display: block;
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.pc-fac-link:hover,
+.pc-fac-link:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
 .pc-big-fac {
-    margin-top: 0.45rem;
-    font-size: 0.9rem;
+    margin-top: 0.4rem;
+    font-size: 0.88rem;
+    line-height: 1.35;
     color: var(--text-80);
 }
 
@@ -618,56 +951,145 @@ html.pc-open .main-scroll-viewport {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.5rem;
-    margin: 1.4rem -1.8rem 0;
-    padding: 0.9rem 1.8rem;
-    border-top: 1px solid var(--gold-15);
-    border-bottom: 1px solid var(--gold-15);
+    padding-top: 0.95rem;
+    padding-bottom: 0.95rem;
     text-align: center;
 }
 
 .pc-stat .pc-v {
     margin-top: 0.15rem;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    line-height: 1.3;
 }
 
-.pc-extra {
-    list-style: none;
-    margin: 1.1rem 0 0;
-    padding: 0;
-    display: grid;
-    gap: 0.35rem;
-    font-size: 0.92rem;
+/* звёздочка у «проживает» и подсказка со статусом комнаты */
+.pc-room {
+    position: relative;
+    display: inline-block;
+}
+
+.pc-room-info {
+    display: none;
+}
+
+.pc-room-star {
+    margin-left: 0.3rem;
+    padding: 0 0.15rem;
+    font: inherit;
+    font-size: 0.8em;
+    line-height: 1;
+    color: var(--gold-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.pc-room-star--yes { color: #8fd4a7; }
+.pc-room-star--no { color: var(--text-55); }
+
+.pc-room-star:hover,
+.pc-room-star:focus-visible,
+.pc-room-star[aria-expanded="true"] {
+    color: var(--hi);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    outline: none;
+}
+
+.pc-room-pop {
+    position: absolute;
+    z-index: 10;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 14rem;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--text);
+    background: var(--pop-bg2);
+    border: 1px solid var(--gold-15);
+    border-radius: 6px;
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.4);
+}
+
+.pc-room-pop[hidden] {
+    display: none;
+}
+
+/* узкий блок «взаимодействия» над биографией */
+.pc-interaction {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.2rem 0.6rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    text-align: center;
     color: var(--text-80);
 }
 
-.pc-extra .pc-k {
-    display: inline-block;
-    min-width: 7.5rem;
+.pc-interaction .pc-k {
+    margin-right: 0.3rem;
 }
 
 .pc-section-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin: 1.4rem 0 0.6rem;
+    margin: 0 0 0.55rem;
+    text-align: center;
     font-weight: normal;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
     color: var(--text-55);
 }
 
-.pc-section-title::before,
-.pc-section-title::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--gold-15);
+.pc-subtitle {
+    margin: 0.9rem 0 0.45rem;
+    text-align: center;
+    font-weight: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--text-55);
+}
+
+/* текст с собственной прокруткой, полоса в цвете факультета */
+.pc-scroll {
+    overflow-y: auto;
+    padding-right: 0.9rem;
+    margin-right: -0.9rem;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fac-accent, var(--gold-55)) var(--hover);
+}
+
+.pc-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.pc-scroll::-webkit-scrollbar-track {
+    background: var(--hover);
+    border-radius: 2px;
+}
+
+.pc-scroll::-webkit-scrollbar-thumb {
+    background: var(--fac-accent, var(--gold-55));
+    border-radius: 2px;
+}
+
+.pc-scroll--bio {
+    max-height: 16rem;
+}
+
+.pc-scroll--facts {
+    max-height: 8rem;
 }
 
 .pc-text p {
-    margin: 0 0 0.7rem;
-    line-height: 1.6;
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.38;
     color: var(--text-80);
 }
 
@@ -675,14 +1097,33 @@ html.pc-open .main-scroll-viewport {
     margin-bottom: 0;
 }
 
+/* полупрозрачный герб на фоне фактов */
+.pc-seg--facts::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 2.2rem;
+    width: 9rem;
+    height: 9rem;
+    transform: translateY(-50%);
+    background: url("../img/crest-light.png") center / contain no-repeat;
+    opacity: 0.07;
+    pointer-events: none;
+}
+
+.pc-seg--facts > * {
+    position: relative;
+}
+
 .pc-facts {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.35rem;
+    font-size: 0.9rem;
     color: var(--text-80);
-    line-height: 1.5;
+    line-height: 1.35;
 }
 
 .pc-facts li {
@@ -697,26 +1138,153 @@ html.pc-open .main-scroll-viewport {
     top: 0.05em;
     font-size: 0.75em;
     color: var(--gold-55);
+    transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
-.pc-shared {
-    margin: 1.1rem 0 0;
-    text-align: center;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    color: var(--text-55);
+/* наведение на факт — его звёздочка загорается */
+.pc-facts li:hover::before {
+    color: var(--hi);
+    transition: color 0.12s ease;
 }
 
-.pc-interaction,
-.pc-topic {
-    margin: 1.2rem 0 0;
-    font-size: 0.9rem;
-    color: var(--text-80);
+/* наведение на текст анкеты — подсвечивается заголовок его блока (без свечения вокруг) */
+.pc-ticket .pc-k,
+.pc-ticket .pc-section-title,
+.pc-ticket .pc-subtitle {
+    transition: color 0.4s ease;
 }
 
-.pc-interaction .pc-k {
-    display: inline-block;
-    min-width: 7.5rem;
+.pc-stat:hover .pc-k,
+.pc-head-info .pc-k:has(+ .pc-v:hover, + .pc-big-name:hover),
+.pc-interaction:hover .pc-k,
+.pc-text:hover .pc-section-title {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+/* разделитель со звёздочкой на стыке двух нижних блоков (цвет факультета);
+   при наведении на звёздочку вспыхивают и она, и линия */
+.pc-seam-star {
+    position: relative;
+    z-index: 2;
+    height: 0;
+}
+
+.pc-seam-star::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 2.2rem;
+    right: 2.2rem;
+    height: 1px;
+    transform: translateY(-50%);
+    background: linear-gradient(to right, transparent, var(--seam) 30%, var(--seam) 70%, transparent);
+    opacity: 0.8;
+}
+
+.pc-seam-dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -52%);
+    padding: 0.2rem 0.45rem;
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--seam);
+    pointer-events: auto;
+    cursor: default;
+    transition: color 0.5s ease;
+}
+
+.pc-seam-star::before {
+    transition: background 0.5s ease, opacity 0.5s ease;
+}
+
+.pc-seam-star:has(.pc-seam-dot:hover)::before {
+    background: linear-gradient(to right, transparent, var(--hi) 30%, var(--hi) 70%, transparent);
+    opacity: 1;
+    transition: background 0.12s ease, opacity 0.12s ease;
+}
+
+.pc-seam-dot:hover {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+
+/* ---------- Открытие анкеты: карточка увеличивается, нижняя часть раскладывается ---------- */
+
+.pc-modal-body:has(.pc-ticket) {
+    transform: none;
+}
+
+/* шаги анимации — в js/pages/characters.js (unfoldCard); здесь только точки поворота */
+.pc-ticket .pc-seg,
+.pc-ticket .pc-seam-star {
+    transform-origin: 50% 0;
+}
+
+/* окно с анкетой появляется сразу — плавность даёт сама анимация карточки */
+.pc-modal-body:has(.pc-ticket) {
+    transition: none;
+}
+
+/* при смене карточки новая въезжает из-за края экрана — окно её не обрезает */
+.pc-modal-body.is-swapping {
+    overflow: visible;
+}
+
+/* копия уезжающей карточки поверх окна */
+.pc-card-ghost {
+    z-index: 3;
+    pointer-events: none;
+    font-family: var(--font-main);
+    color: var(--text);
+}
+
+.pc-ticket.is-sliding-next { animation: pc-slide-next 0.3s ease both; }
+.pc-ticket.is-sliding-prev { animation: pc-slide-prev 0.3s ease both; }
+
+@keyframes pc-slide-next {
+    from { transform: translateX(2.5rem); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes pc-slide-prev {
+    from { transform: translateX(-2.5rem); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pc-ticket,
+    .pc-ticket * {
+        animation: none !important;
+    }
+}
+
+/* стрелки листания анкет — по краям экрана */
+.pc-pager {
+    position: fixed;
+    z-index: 2;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    background: var(--pager-bg);
+    opacity: 0;
+    transition: opacity 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-pager--prev { left: max(1rem, calc(50% - 20rem - 5rem)); }
+.pc-pager--next { right: max(1rem, calc(50% - 20rem - 5rem)); }
+
+.pc-modal.is-shown:has(.pc-ticket) .pc-pager {
+    opacity: 1;
+}
+
+.pc-modal:not(:has(.pc-ticket)) .pc-pager,
+.pc-pager:disabled {
+    visibility: hidden;
 }
 
 /* ---------- Факультеты ---------- */
@@ -737,7 +1305,7 @@ html.pc-open .main-scroll-viewport {
     text-align: left;
     font: inherit;
     color: var(--text);
-    background: linear-gradient(to bottom, #063754, #022a42);
+    background: linear-gradient(to bottom, var(--surface-top), var(--surface-bot));
     border: 1px solid var(--gold-15);
     border-radius: 6px;
     cursor: pointer;
@@ -747,7 +1315,7 @@ html.pc-open .main-scroll-viewport {
 .fc-card:hover,
 .fc-card:focus-visible {
     border-color: var(--hover-line);
-    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
     transform: translateY(-2px);
     outline: none;
 }
@@ -777,8 +1345,41 @@ html.pc-open .main-scroll-viewport {
     color: var(--text-55);
 }
 
+/* предметы, которые уже кто-то ведёт */
+.fc-card-subjects {
+    margin-top: -0.15rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--text-80);
+}
+
+.fc-dean {
+    margin: 0.55rem 0 0;
+    font-size: 0.95rem;
+    color: var(--text-80);
+}
+
+.fc-dean .pc-k {
+    margin-right: 0.5rem;
+}
+
+/* место в броне */
+.fc-bron {
+    display: inline-block;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-55);
+    border: 1px dashed var(--gold-15);
+    border-radius: 1rem;
+}
+
+.fc-list--npc {
+    margin-top: 1.1rem;
+}
+
 .fc-head {
-    padding-right: 5rem;
+    padding-right: 9rem;
 }
 
 .fc-subjects {
@@ -1016,15 +1617,36 @@ html.pc-open .main-scroll-viewport {
 /* ---------- Телефон ---------- */
 
 @media (max-width: 768px) {
-    .pc-big {
-        padding: 1.3rem 1.1rem 1.1rem;
+    .fc-head {
+        padding-right: 5.5rem;
+    }
+
+    .fc-big .pc-ribbon {
+        right: 2.8rem;
+        height: 7rem;
+    }
+
+    .pc-seg {
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
     }
 
     .pc-head {
         grid-template-columns: 1fr;
         justify-items: start;
         gap: 0.8rem;
-        padding-right: 3rem;
+        padding-right: 6rem;
+    }
+
+    .pc-ava.pc-big-avatar {
+        width: 7rem;
+        height: 7rem;
+    }
+
+    .pc-ribbon {
+        right: 2.8rem;
+        width: 3.6rem;
+        height: 8.5rem;
     }
 
     .pc-bookmark {
@@ -1035,12 +1657,28 @@ html.pc-open .main-scroll-viewport {
 
     .pc-stats {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        margin: 1.2rem -1.1rem 0;
-        padding: 0.8rem 1.1rem;
         row-gap: 0.8rem;
     }
 
-    .pc-extra .pc-k,
+    .pc-tab-own {
+        width: 3rem;
+    }
+
+    .pc-tab {
+        padding-left: 1.2rem;
+        padding-right: 1.3rem;
+    }
+
+    .pc-scroll--bio {
+        max-height: 14rem;
+    }
+
+    .pc-seg--facts::before {
+        right: 1rem;
+        width: 7rem;
+        height: 7rem;
+    }
+
     .fc-list .pc-k {
         display: block;
         min-width: 0;
