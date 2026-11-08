@@ -84,7 +84,6 @@
             } else if (me) {
                 summary = `<h2 class="user-title">Вы на ${esc(me.place)} месте (${esc(me.sum)} ${plural(me.sumNum, 'балл', 'балла', 'баллов')})</h2>`;
             }
-            if (summary) summary += RCU.dividerHTML();
 
             root.innerHTML = `
                 ${summary}

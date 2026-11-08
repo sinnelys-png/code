@@ -86,8 +86,22 @@
             peekTimer = setTimeout(() => setPeek(false), 350);
         });
         header.addEventListener('mouseenter', () => clearTimeout(peekTimer));
-        // палец: нажатие мимо шапки или по пункту меню — шапка прячется
+        // мышь у верхнего края страницы (выше основного блока) — тоже показываем шапку
+        const block = document.querySelector('.main-content-block');
+        document.addEventListener('pointermove', (e) => {
+            if (e.pointerType !== 'mouse' || !html.classList.contains('is-section')
+                || html.classList.contains('intro') || html.classList.contains('header-peek')) return;
+            const top = block ? block.getBoundingClientRect().top : 0;
+            if (e.clientY <= top + 4) setPeek(true);
+        }, { passive: true });
+
         document.addEventListener('click', (e) => {
+            // нажатие на ленту с названием раздела показывает / прячет шапку
+            if (e.target.closest('.page-ribbon') && html.classList.contains('is-section')) {
+                setPeek(!html.classList.contains('header-peek'));
+                return;
+            }
+            // палец: нажатие мимо шапки или по пункту меню — шапка прячется
             if (!html.classList.contains('header-peek')) return;
             if (!e.target.closest('header') || e.target.closest('header a')) setPeek(false);
         });

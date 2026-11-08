@@ -141,7 +141,7 @@ html.intro .page-ribbon {
    ========================================================================== */
 
 .dl-section--mine {
-    margin-bottom: 0;
+    margin-bottom: 1.25rem;   /* отступ до вкладок вместо прежнего разделителя */
 }
 
 .user-title {
@@ -317,7 +317,7 @@ html.intro .page-ribbon {
 .sc-tag:hover,
 .sc-tag:focus-visible {
     color: #fff;
-    border-color: var(--gold-55);
+    border-color: var(--hover-line);
     opacity: 1;
     outline: none;
 }
@@ -489,8 +489,8 @@ a.ac-name-link:hover {
 
 /* Строка того, кто смотрит */
 .ac-row.is-me {
-    background-color: rgba(227, 207, 172, 0.12);
-    box-shadow: inset 2px 0 0 var(--gold);
+    background-color: rgba(204, 204, 204, 0.1);
+    box-shadow: inset 2px 0 0 #cccccc;
 }
 
 /* ---------- Телефон: две строки на человека ---------- */

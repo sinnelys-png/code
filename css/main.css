@@ -362,7 +362,7 @@ header a.is-glaring {
 }
 
 .main-scroll-viewport::-webkit-scrollbar-thumb:hover {
-    background: rgba(227, 207, 172, 0.6);
+    background: rgba(204, 204, 204, 0.6);
 }
 
 

@@ -159,3 +159,9 @@ html.is-section:not(.intro) .main-scroll-text {
         transition: none;
     }
 }
+
+/* Лента с названием раздела — нажатие показывает шапку */
+html.is-section .page-ribbon {
+    pointer-events: auto;
+    cursor: pointer;
+}

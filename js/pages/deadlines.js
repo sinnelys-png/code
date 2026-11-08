@@ -228,7 +228,12 @@
         });
 
         const mine = root.querySelector('.dl-section--mine');
-        if (mine) mine.hidden = !!q && !mine.querySelector('.dl-card:not([hidden])');
+        if (mine) {
+            const visible = mine.querySelectorAll('.dl-card:not([hidden])').length;
+            mine.hidden = !!q && !visible;
+            const count = mine.querySelector('.dl-group-count');
+            if (count) count.textContent = q ? visible : count.dataset.total;
+        }
 
         const empty = root.querySelector('.dl-empty');
         if (empty) empty.hidden = !q || found > 0 || (mine && !mine.hidden);
@@ -309,17 +314,7 @@
             const sorted = sortRows(rows);
             let html = '';
 
-            const mine = viewerId ? sorted.filter(r => r.playerId === viewerId) : [];
-            if (mine.length) {
-                html += `
-                    <section class="dl-section dl-section--mine">
-                        <h2 class="dl-section-title dl-mine-title">ваши персонажи</h2>
-                        ${mine.map(card).join('')}
-                        ${RCU.dividerHTML()}
-                    </section>`;
-            }
-
-            // Поиск и переключатель — под блоком «Ваши персонажи» и разделителем
+            // Поиск и переключатель — в самом верху
             html += `
                 <div class="dl-toolbar">
                     <label class="dl-search">
@@ -331,6 +326,23 @@
                         <span class="dl-toggle-dot" aria-hidden="true"></span>ближайшие
                     </button>
                 </div>`;
+
+            // Свои персонажи — под поиском
+            const mine = viewerId ? sorted.filter(r => r.playerId === viewerId) : [];
+            if (mine.length) {
+                // сворачивается так же, как вкладки, но по умолчанию открыт
+                html += `
+                    <details class="dl-section dl-group dl-section--mine" open>
+                        <summary class="dl-section-title dl-mine-title">
+                            <span class="dl-group-name">ваши персонажи</span>
+                            <span class="dl-group-count" data-total="${mine.length}">${mine.length}</span>
+                            <span class="dl-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="dl-group-body">
+                            ${mine.map(card).join('')}
+                        </div>
+                    </details>`;
+            }
 
             // По ролям (вкладки)
             const groups = [];
