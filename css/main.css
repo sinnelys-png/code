@@ -301,8 +301,8 @@ header a.is-glaring {
     /* ИСПРАВЛЕНО: Отключаем скроллбар на этом уровне, чтобы он не улетал в срез clip-path */
     overflow: hidden;
 
-    /* Безопасный padding под срез 90px, чтобы текст не залезал на пустоту */
-    padding: 6.5rem 0 0 0;
+    /* Отступ сверху: под срезом «галочки» + немного воздуха до текста */
+    padding: 8rem 0 0 0;
     box-sizing: border-box;
     position: relative;
 }
@@ -315,7 +315,7 @@ header a.is-glaring {
 
     /* Высота рассчитывается автоматически с учетом верхнего padding родителя, 
        чтобы блок идеально уперся в нижнюю границу сайта */
-    height: calc(100% - 2rem);
+    height: 100%;
 
     /* Включаем вертикальный скроллбар СТРОГО здесь. 
        Поскольку родитель (.main-scroll-text) уже сдвинул контент вниз на 6.5rem (около 104px), 
@@ -328,7 +328,10 @@ header a.is-glaring {
     scrollbar-gutter: stable both-edges;
 
     /* Внутренние аккуратные отступы для самого текста внутри скролл-зоны */
-    padding: 0 2.5rem 0.5rem 2.5rem;
+    /* --pad-x — поля текста от краёв блока; им же пользуются строки,
+       чтобы подсветка тянулась на всю ширину блока */
+    --pad-x: 5rem;
+    padding: 0 var(--pad-x) 0.5rem;
     box-sizing: border-box;
 
     display: flex;
@@ -385,7 +388,7 @@ header a.is-glaring {
     max-width: 50rem;
     margin-top: 0px;
     box-sizing: border-box;
-    padding: 0rem 2.5rem 2rem 2.5rem;
+    padding: 0 0 1.5rem;
     position: relative;
 
     /* ИСПРАВЛЕНО: Базовый цвет текста делаем прозрачным, так как цвет 
@@ -423,12 +426,12 @@ header a.is-glaring {
     background-image:
         radial-gradient(circle var(--glow-r, 400px) at var(--glow2-x, -999px) var(--glow2-y, -999px),
             #ffffff 0%,
-            rgb(227 207 172 / 80%) 50%,
-            rgb(227 207 172 / 0%) 100%),
+            #b6af98 50%,
+            rgb(182 175 152 / 0%) 100%),
         radial-gradient(circle var(--glow-r, 400px) at var(--mouse-x) var(--mouse-y),
             #ffffff 0%,
-            rgb(227 207 172 / 80%) 50%,
-            rgb(227 207 172 / 60%) 100%);
+            #b6af98 50%,
+            #888f85 100%);
 
     clip-path: polygon(0% 0%, 50% var(--tri), 100% 0%, 100% 100%, 0% 100%);
     transition: background-image 0.1s ease;
@@ -524,19 +527,20 @@ header a.is-glaring {
         width: 100%;
         max-width: 100%;
         margin-top: 0;
-        padding: 0 1.5rem 1rem;
+        padding: 0 0 1rem;
         height: 100%;
         max-height: none;
     }
 
     /* 3. ТЕКСТ: начинается под вырезом, скролл внутри */
     .main-scroll-text {
-        padding-top: calc(var(--tri) + 1.5rem);
+        padding-top: calc(var(--tri) + 2.75rem);
     }
 
     .main-scroll-viewport {
         height: 100%;
-        padding: 0 1rem 1rem 1rem;
+        --pad-x: 2.5rem;
+        padding: 0 var(--pad-x) 0.5rem;
     }
 }
 

@@ -100,6 +100,18 @@ window.RCU = (() => {
         return viewerPromise;
     }
 
+    // Разделитель между блоком «Ваши …» и основным списком: ✦ —— ✦✦✦ —— ✦
+    function dividerHTML() {
+        return `
+            <div class="star-divider" aria-hidden="true">
+                <span class="sd-star">✦</span>
+                <span class="sd-line"></span>
+                <span class="sd-mid"><span class="sd-star">✦</span><span class="sd-star sd-big">✦</span><span class="sd-star">✦</span></span>
+                <span class="sd-line"></span>
+                <span class="sd-star">✦</span>
+            </div>`;
+    }
+
     // Песочные часы на время загрузки (стили — css/pages.css, блок «ЗАГРУЗКА»)
     let loaderId = 0;
     function loaderHTML(text = 'Загружаем таблицу…') {
@@ -202,5 +214,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, cached, bundle, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, cached, bundle, dataOf, pages };
 })();

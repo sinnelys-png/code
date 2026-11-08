@@ -71,20 +71,11 @@ header a.is-current {
     background: linear-gradient(to right, var(--gold-15), transparent);
 }
 
-/* «Ваши персонажи» — в золотой рамке */
-.dl-section--mine {
-    padding: 0.75rem 1rem 0.25rem;
-    border: 1px solid var(--gold-55);
-    background: linear-gradient(to bottom, rgba(227, 207, 172, 0.07), transparent);
-}
-
-.dl-section--mine .dl-section-title {
-    border-bottom-color: var(--gold-55);
-}
-
 /* ---------- Строка персонажа ---------- */
 
 .dl-card {
+    position: relative;
+    isolation: isolate;
     display: grid;
     grid-template-columns: 4rem minmax(0, 1fr) auto;
     grid-template-areas: "avatar info deadline";
@@ -92,15 +83,43 @@ header a.is-current {
     align-items: center;
     padding: 0.8rem 0.25rem;
     border-bottom: 1px solid var(--gold-08);
-    transition: background-color 0.3s ease;
 }
 
 .dl-card:last-child {
     border-bottom: none;
 }
 
-.dl-card:hover {
+/* подсветка строки — на всю ширину основного блока (за поля текста --pad-x) */
+.dl-card::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * var(--pad-x, 0px));
+    right: calc(-1 * var(--pad-x, 0px));
+    background-color: transparent;
+    transition: background-color 0.3s ease;
+}
+
+.dl-card:hover::before {
     background-color: var(--gold-08);
+}
+
+/* строка, к которой перешли по ссылке «дуэт: …» */
+.dl-card.is-flash::before {
+    animation: dl-flash 1.6s ease-out;
+}
+
+@keyframes dl-flash {
+    0%, 30% { background-color: rgba(227, 207, 172, 0.22); }
+    100% { background-color: transparent; }
+}
+
+.dl-card[hidden],
+.dl-group[hidden],
+.dl-section[hidden] {
+    display: none;
 }
 
 /* При наведении на персонажа подсвечиваются имя, дедлайн и внешняя рамка аватара */
@@ -182,45 +201,68 @@ a.dl-name:hover {
     color: #fff;
 }
 
-/* ---------- Дуэт 👥 с подсказкой ---------- */
+/* ---------- Стрелка «подробнее» и скрытая часть ---------- */
 
-.dl-duet {
-    position: relative;
+.dl-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    padding: 0;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.dl-more .dl-chevron {
+    margin: 0 0 0.15rem;
+}
+
+.dl-more:hover,
+.dl-more:focus-visible {
+    border-color: var(--gold-55);
+    background-color: var(--gold-08);
+    outline: none;
+}
+
+.dl-more:hover .dl-chevron,
+.dl-more:focus-visible .dl-chevron {
+    border-color: #fff;
+}
+
+.dl-card.is-expanded .dl-more .dl-chevron {
+    transform: rotate(-135deg);
+    margin: 0.2rem 0 0;
+}
+
+.dl-extra {
+    animation: dl-unfold 0.3s ease;
+}
+
+.dl-duet-line {
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+    color: var(--gold-80);
+}
+
+.dl-duet-link {
+    padding: 0;
     background: none;
     border: none;
-    padding: 0 0.15rem;
-    font-size: 0.95rem;
-    line-height: 1;
-    cursor: help;
-    filter: sepia(0.6) saturate(0.8);
+    border-bottom: 1px dotted var(--gold-55);
+    font: inherit;
+    color: var(--gold-80);
+    cursor: pointer;
+    transition: color 0.25s ease;
 }
 
-.dl-duet::after {
-    content: attr(data-duet);
-    position: absolute;
-    left: 50%;
-    top: calc(100% + 0.45rem);
-    transform: translate(-50%, -0.25rem);
-    white-space: nowrap;
-    padding: 0.35rem 0.7rem;
-    font-family: sans-serif;
-    font-size: 0.85rem;
-    color: var(--gold);
-    background: #001929;
-    border: 1px solid var(--gold-55);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 5;
-    filter: none;
-}
-
-.dl-duet:hover::after,
-.dl-duet:focus-visible::after,
-.dl-duet.is-open::after {
-    opacity: 1;
-    transform: translate(-50%, 0);
+.dl-duet-link:hover,
+.dl-duet-link:focus-visible {
+    color: #fff;
+    outline: none;
 }
 
 /* ---------- Подроли ---------- */
@@ -241,12 +283,19 @@ a.dl-name:hover {
     color: var(--gold);
 }
 
+.dl-subs > .dl-label {
+    display: block;
+    margin-top: 0.35rem;
+}
+
+/* очередь подролей — всегда по одной в строке */
 .dl-queue {
     list-style: none;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    margin: 0.35rem 0 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    margin: 0.25rem 0 0;
     padding: 0;
     counter-reset: q;
 }
@@ -309,15 +358,66 @@ a.dl-name:hover {
     color: var(--overdue);
 }
 
+/* метки из колонки H: админ, новичок, отпуск, отсрочка… */
+.dl-labels {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+}
+
+.dl-tag {
+    padding: 0 0.45rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 1rem;
+    font-size: 0.72rem;
+    color: var(--gold-80);
+    white-space: nowrap;
+}
+
+/* ---------- Поиск ---------- */
+
+.dl-search {
+    display: block;
+    margin: 0 0 1.5rem;
+}
+
+.dl-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--gold);
+    background:
+        no-repeat 0.85rem 50% / 0.85rem
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3CFAC' stroke-opacity='.6' stroke-width='1.6'%3E%3Ccircle cx='6.5' cy='6.5' r='5'/%3E%3Cpath d='M10.3 10.3 15 15'/%3E%3C/svg%3E"),
+        var(--gold-08);
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dl-search-input::placeholder {
+    color: var(--gold-55);
+}
+
+.dl-search-input:focus {
+    border-color: var(--gold-55);
+    box-shadow: 0 0 0.6rem rgba(227, 207, 172, 0.15);
+}
+
 /* ---------- Телефон ---------- */
 
 @media (max-width: 768px) {
+    /* слева аватар и имя, справа дедлайн; не влезает — переносится внутри своей половины */
     .dl-card {
-        grid-template-columns: 3.2rem minmax(0, 1fr);
-        grid-template-areas:
-            "avatar info"
-            "avatar deadline";
-        gap: 0.3rem 0.8rem;
+        grid-template-columns: 3.2rem minmax(0, 1fr) minmax(0, 40%);
+        gap: 0 0.7rem;
         align-items: start;
     }
 
@@ -326,36 +426,18 @@ a.dl-name:hover {
         height: 3.2rem;
     }
 
+    .dl-name {
+        font-size: 1rem;
+        overflow-wrap: anywhere;
+    }
+
     .dl-deadline {
-        text-align: left;
         white-space: normal;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0 0.6rem;
+        overflow-wrap: anywhere;
     }
 
-    .dl-days {
-        margin-top: 0;
-    }
-
-    .dl-section--mine {
-        padding: 0.6rem 0.6rem 0.1rem;
-    }
-
-    /* подсказка дуэта не должна вылезать за край экрана */
-    .dl-duet::after {
-        left: 0;
-        transform: translate(0, -0.25rem);
-        white-space: normal;
-        width: max-content;
-        max-width: 60vw;
-    }
-
-    .dl-duet:hover::after,
-    .dl-duet:focus-visible::after,
-    .dl-duet.is-open::after {
-        transform: translate(0, 0);
+    .dl-date {
+        font-size: 0.88rem;
     }
 }
 
@@ -365,13 +447,24 @@ a.dl-name:hover {
     margin-bottom: 0.4rem;
 }
 
+/* Заголовок вкладки остаётся наверху, пока листаешь её содержимое.
+   Фон — того же цвета, что блок на этой высоте, а сам заголовок растянут
+   на всю ширину блока, чтобы строки уезжали под него целиком. */
 .dl-group > summary {
     list-style: none;
     cursor: pointer;
     user-select: none;
-    padding: 0.55rem 0.25rem 0.5rem;
-    margin: 0;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--pad-x, 0px));
+    padding: 0.55rem calc(var(--pad-x, 0px) + 0.25rem) 0.5rem;
+    transition: color 0.25s ease;
+}
+
+/* фон нужен только закреплённому заголовку — иначе ниже он был бы светлее блока */
+.dl-group > summary.is-stuck {
+    background-color: var(--sticky-bg, #002c45);
 }
 
 .dl-group > summary::-webkit-details-marker {
@@ -380,7 +473,7 @@ a.dl-name:hover {
 
 .dl-group > summary:hover,
 .dl-group > summary:focus-visible {
-    background-color: var(--gold-08);
+    background-image: linear-gradient(var(--gold-08), var(--gold-08));
     color: #fff;
 }
 
@@ -396,8 +489,7 @@ a.dl-name:hover {
 }
 
 .dl-group > summary:focus-visible {
-    outline: 1px solid var(--gold-55);
-    outline-offset: 2px;
+    outline: none;
 }
 
 /* у вкладок линии-разделителя нет, стрелка прижата к правому краю */
@@ -405,7 +497,7 @@ a.dl-name:hover {
     display: none;
 }
 
-.dl-group .dl-chevron {
+.dl-group > summary .dl-chevron {
     margin-left: auto;
 }
 

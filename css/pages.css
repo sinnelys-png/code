@@ -10,9 +10,32 @@
     opacity: 0;
 }
 
+/* текст проявляется снизу вверх — так же, как в заставке при открытии сайта */
+.page-view.is-entering,
+.page-root.is-entering {
+    animation: page-in 0.5s ease-out both;
+}
+
+@keyframes page-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.6rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .page-view {
         transition: none;
+    }
+
+    .page-view.is-entering,
+    .page-root.is-entering {
+        animation: none;
     }
 }
 
@@ -55,16 +78,15 @@
 
     /* Одноцветная, того же цвета, что золотые полоски блока, и подсвечивается вместе с ними:
        те же два пятна света, что у .main-inner-content::before (координаты ставит js/site.js) */
-    background-color: #00263b;
     background-image:
         radial-gradient(circle var(--glow-r, 400px) at var(--glow2-x, -999px) var(--glow2-y, -999px),
             #ffffff 0%,
-            rgb(227 207 172 / 80%) 50%,
-            rgb(227 207 172 / 0%) 100%),
+            #b6af98 50%,
+            rgb(182 175 152 / 0%) 100%),
         radial-gradient(circle var(--glow-r, 400px) at var(--mouse-x, -999px) var(--mouse-y, -999px),
             #ffffff 0%,
-            rgb(227 207 172 / 80%) 50%,
-            rgb(227 207 172 / 60%) 100%);
+            #b6af98 50%,
+            #888f85 100%);
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--ribbon-notch)), 0 100%);
 
     pointer-events: none;
@@ -115,6 +137,93 @@ html.intro .page-ribbon {
 }
 
 /* ==========================================================================
+   БЛОК «ВАШИ …» НАВЕРХУ СТРАНИЦЫ И РАЗДЕЛИТЕЛЬ ✦ —— ✦✦✦ —— ✦
+   ========================================================================== */
+
+.dl-section--mine {
+    margin-bottom: 0;
+}
+
+.user-title {
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 2rem;
+    line-height: 1.2;
+    color: var(--gold);
+    text-align: center;
+    margin: 0 0 1rem;
+}
+
+.user-title.is-long {
+    font-size: 1.5rem;
+}
+
+.star-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.75rem 0;
+    color: var(--gold);
+    opacity: 0.35;
+    transition: opacity 0.35s ease;
+}
+
+.sd-line {
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+}
+
+.sd-star {
+    display: inline-block;
+    font-family: sans-serif;
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: transform 0.35s ease, text-shadow 0.35s ease, color 0.35s ease;
+}
+
+.sd-mid {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.sd-mid .sd-star {
+    font-size: 0.85rem;
+}
+
+.sd-mid .sd-big {
+    font-size: 1.35rem;
+}
+
+.star-divider:hover {
+    opacity: 1;
+}
+
+.star-divider:hover .sd-star {
+    color: #fff;
+    text-shadow: 0 0 0.5rem rgba(227, 207, 172, 0.9);
+}
+
+.star-divider:hover .sd-mid .sd-star {
+    transform: scale(1.25);
+}
+
+.star-divider:hover .sd-mid .sd-big {
+    transform: scale(1.4);
+}
+
+@media (max-width: 768px) {
+    .user-title {
+        font-size: 1.6rem;
+    }
+
+    .user-title.is-long {
+        font-size: 1.2rem;
+    }
+}
+
+/* ==========================================================================
    РАСПИСАНИЕ БУДУЩИХ ПОСТОВ
    ========================================================================== */
 
@@ -122,8 +231,18 @@ html.intro .page-ribbon {
     margin-bottom: 2.75rem;
 }
 
+/* Дата остаётся наверху, пока её не «собьёт» следующая.
+   Фон того же цвета, что блок на этой высоте, растянут на всю ширину блока. */
 .sc-day-title {
-    font-size: 1.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.25rem;
+    padding: 0.55rem calc(var(--pad-x, 0px) + 0.25rem) 0.5rem;
+}
+
+.sc-day-title.is-stuck {
+    background-color: var(--sticky-bg, #002c45);
 }
 
 .sc-when {
@@ -184,17 +303,28 @@ html.intro .page-ribbon {
 }
 
 .sc-tag {
+    display: block;
     padding: 0.15rem 0.6rem;
     border: 1px solid var(--gold-15);
     background: var(--gold-08);
     color: var(--gold-80);
     font-size: 0.85rem;
+    text-decoration: none;
     overflow-wrap: anywhere;
+    transition: color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+}
+
+.sc-tag:hover,
+.sc-tag:focus-visible {
+    color: #fff;
+    border-color: var(--gold-55);
+    opacity: 1;
+    outline: none;
 }
 
 /* «Ваши посты» наверху расписания */
 .sc-mine {
-    margin-bottom: 2.75rem;
+    margin-bottom: 0;
 }
 
 .sc-mine .sc-day {
@@ -213,35 +343,6 @@ html.intro .page-ribbon {
 /* ==========================================================================
    АКТИВНОСТЬ (рейтинг)
    ========================================================================== */
-
-/* «Ваше место» */
-.ac-me {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 0.8rem;
-    margin: 0 0 1.2rem;
-    padding: 0.7rem 1rem;
-    border: 1px solid var(--gold-55);
-    background: linear-gradient(to bottom, rgba(227, 207, 172, 0.07), transparent);
-}
-
-.ac-me-label {
-    color: var(--gold-80);
-    font-size: 0.9rem;
-}
-
-.ac-me-place {
-    font-family: 'Greengoth', 'FallbackSerif', serif;
-    font-size: 2rem;
-    line-height: 1;
-    color: var(--gold);
-}
-
-.ac-me-sum {
-    color: var(--gold-55);
-    font-size: 0.85rem;
-}
 
 /* Таблица */
 .ac-row {

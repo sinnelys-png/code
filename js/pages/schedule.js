@@ -4,6 +4,8 @@
 
     const SHEET_ID = '1KTZmUktm284bdyGc_LfDpv9BVUDCqcEU8Av29s-NXVU';
     const SHEET_GID = '1309259642';
+    // Поиск по стене группы: + тег вместе с «#»
+    const TAG_SEARCH = 'https://vk.ru/wall-196210590?q=';
 
     // Тег персонажа — «#Имя_Фамилия_RCU», где имя совпадает с персонажем со страницы «Дедлайны».
     // Все остальные теги (#Др_RCU, #Mafia_RCU, #Преподаватели_RCU…) — служебные, они приглушены.
@@ -65,7 +67,7 @@
             <div class="sc-post">
                 <div class="sc-time">${esc(p.time) || '—'}</div>
                 <ul class="sc-tags">
-                    ${p.tags.map(t => `<li class="sc-tag${t.character ? '' : ' is-service'}">${esc(t.text)}</li>`).join('')}
+                    ${p.tags.map(t => `<li><a class="sc-tag${t.character ? '' : ' is-service'}" href="${esc(TAG_SEARCH + encodeURIComponent(t.text))}" target="_blank" rel="noopener">${esc(t.text)}</a></li>`).join('')}
                 </ul>
             </div>`;
     }
@@ -101,9 +103,10 @@
             root.innerHTML =
                 (mine.length ? `
                     <section class="dl-section dl-section--mine sc-mine">
-                        <h2 class="dl-section-title">Ваши посты</h2>
+                        <h2 class="user-title">Ваши посты</h2>
                         ${daysHTML(mine)}
-                    </section>` : '') +
+                    </section>
+                    ${RCU.dividerHTML()}` : '') +
                 daysHTML(posts);
         },
     };

@@ -78,12 +78,13 @@
         render(root, { people, viewerId }) {
             const me = viewerId ? people.find(p => p.id === viewerId) : null;
 
-            const summary = me ? `
-                <div class="ac-me">
-                    <span class="ac-me-label">Ваше место</span>
-                    <span class="ac-me-place">${esc(me.place)}</span>
-                    <span class="ac-me-sum">${esc(me.sum)} ${plural(me.sumNum, 'балл', 'балла', 'баллов')}</span>
-                </div>` : '';
+            let summary = '';
+            if (me && me.winner) {
+                summary = `<h2 class="user-title is-long">Вы победили в прошлом месяце, поэтому не попадаете в рейтинг этого</h2>`;
+            } else if (me) {
+                summary = `<h2 class="user-title">Вы на ${esc(me.place)} месте (${esc(me.sum)} ${plural(me.sumNum, 'балл', 'балла', 'баллов')})</h2>`;
+            }
+            if (summary) summary += RCU.dividerHTML();
 
             root.innerHTML = `
                 ${summary}

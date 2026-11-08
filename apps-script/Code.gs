@@ -37,6 +37,7 @@ const COL = {
   duet: 3,      // C
   role: 4,      // D
   player: 5,    // E  — =HYPERLINK(...)
+  labels: 8,    // H  — метки: админ, новичок, отпуск, отсрочка…
   deadline: 10, // J
   noSub: 12,    // L  — ответы без подроли
   activeSub: 13,// M  — актуальная подроль
@@ -110,6 +111,7 @@ function deadlines_(ss) {
       noSub: d[COL.noSub - 1].trim(),
       activeSub: d[COL.activeSub - 1].trim(),
       status: d[COL.status - 1].trim(),
+      labels: d[COL.labels - 1].trim(),
       queue: d[COL.queue - 1].split('\n').map(s => s.trim()).filter(Boolean),
     });
   }

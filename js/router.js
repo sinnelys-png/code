@@ -37,6 +37,13 @@
         }
     }
 
+    // Проявление текста снизу вверх, как при первом открытии
+    function enter(el) {
+        el.classList.remove('is-entering');
+        void el.offsetWidth;
+        el.classList.add('is-entering');
+    }
+
     async function show() {
         const name = currentPage();
         const token = ++navToken;
@@ -54,6 +61,7 @@
 
         if (!name) {
             view.innerHTML = homeHTML;
+            enter(view);
             document.title = 'ROYAL CROSSBREED UNIVERSITY';
         } else {
             const page = RCU.pages[name];
@@ -63,10 +71,12 @@
                 <div class="page-root">${RCU.loaderHTML()}</div>`;
             const root = view.querySelector('.page-root');
             view.classList.remove('is-leaving');   // показываем «Загружаем…», пока ждём данные
+            view.classList.remove('is-entering');
             try {
                 const data = await dataOf(name);
                 if (token !== navToken) return;
                 page.render(root, data);
+                enter(root);
             } catch (err) {
                 console.error(err);
                 if (token === navToken) {
@@ -80,6 +90,35 @@
     }
 
     window.addEventListener('hashchange', show);
+
+    // Закреплённые заголовки (вкладки, даты) закрашиваются цветом блока на высоте
+    // верхнего края области прокрутки: блок — градиент от #002F4A сверху к #001929 снизу.
+    function updateStickyBg() {
+        const block = document.querySelector('.main-inner-content');
+        if (!block || !scroller) return;
+        const b = block.getBoundingClientRect();
+        const t = Math.min(1, Math.max(0, (scroller.getBoundingClientRect().top - b.top) / b.height));
+        const mix = (from, to) => Math.round(from + (to - from) * t);
+        scroller.style.setProperty('--sticky-bg', `rgb(${mix(0, 0)}, ${mix(47, 25)}, ${mix(74, 41)})`);
+    }
+    // Отмечаем заголовки, которые сейчас прилипли к верху области прокрутки
+    let stuckFrame = 0;
+    function markStuck() {
+        stuckFrame = 0;
+        if (!scroller) return;
+        const top = scroller.getBoundingClientRect().top;
+        view.querySelectorAll('.dl-group > summary, .sc-day-title').forEach(h => {
+            const stuck = scroller.scrollTop > 0 && Math.abs(h.getBoundingClientRect().top - top) < 1.5;
+            h.classList.toggle('is-stuck', stuck);
+        });
+    }
+    if (scroller) scroller.addEventListener('scroll', () => {
+        if (!stuckFrame) stuckFrame = requestAnimationFrame(markStuck);
+    }, { passive: true });
+
+    updateStickyBg();
+    setTimeout(updateStickyBg, 3200);   // после заставки (во время неё блок сдвинут)
+    window.addEventListener('resize', updateStickyBg);
 
     // В фоне пришли обновлённые таблицы — тихо перерисовываем открытый раздел,
     // сохраняя прокрутку и раскрытые вкладки
