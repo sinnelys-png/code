@@ -156,8 +156,9 @@
         stuckFrame = 0;
         if (!scroller) return;
         const top = scroller.getBoundingClientRect().top;
-        view.querySelectorAll('.dl-group > summary, .sc-day-title').forEach(h => {
-            const stuck = scroller.scrollTop > 0 && Math.abs(h.getBoundingClientRect().top - top) < 1.5;
+        view.querySelectorAll('.dl-group > summary, .sc-day-title, .dl-search, .dl-mine-title').forEach(h => {
+            const offset = parseFloat(getComputedStyle(h).top) || 0;   // заголовки вкладок липнут под поиском
+            const stuck = scroller.scrollTop > 0 && Math.abs(h.getBoundingClientRect().top - top - offset) < 1.5;
             h.classList.toggle('is-stuck', stuck);
         });
     }

@@ -149,7 +149,7 @@ html.intro .page-ribbon {
     font-weight: normal;
     font-size: 2rem;
     line-height: 1.2;
-    color: var(--gold);
+    color: var(--text);
     text-align: center;
     margin: 0 0 1rem;
 }
@@ -163,7 +163,7 @@ html.intro .page-ribbon {
     align-items: center;
     gap: 0.5rem;
     margin: 1.75rem 0;
-    color: var(--gold);
+    color: var(--text);
     opacity: 0.35;
     transition: opacity 0.35s ease;
 }
@@ -248,7 +248,7 @@ html.intro .page-ribbon {
 .sc-when {
     font-family: sans-serif;
     font-size: 0.72rem;
-    color: var(--gold-55);
+    color: var(--text-55);
     padding: 0.05rem 0.5rem;
     border: 1px solid var(--gold-15);
     border-radius: 1rem;
@@ -261,7 +261,7 @@ html.intro .page-ribbon {
 }
 
 .sc-when.is-soon {
-    color: var(--gold);
+    color: var(--text);
     border-color: var(--gold-55);
 }
 
@@ -288,7 +288,7 @@ html.intro .page-ribbon {
 }
 
 .sc-time {
-    color: var(--gold);
+    color: var(--text);
     font-weight: bold;
     font-variant-numeric: tabular-nums;
 }
@@ -307,7 +307,7 @@ html.intro .page-ribbon {
     padding: 0.15rem 0.6rem;
     border: 1px solid var(--gold-15);
     background: var(--gold-08);
-    color: var(--gold-80);
+    color: var(--text-80);
     font-size: 0.85rem;
     text-decoration: none;
     overflow-wrap: anywhere;
@@ -367,14 +367,14 @@ html.intro .page-ribbon {
     background: #00223a;
     border-bottom: 1px solid var(--gold-15);
     font-size: 0.72rem;
-    color: var(--gold-55);
+    color: var(--text-55);
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
 }
 
 .ac-place {
     text-align: center;
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 .ac-name {
@@ -389,7 +389,7 @@ html.intro .page-ribbon {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--gold);
+    color: var(--text);
     text-decoration: none;
 }
 
@@ -415,7 +415,7 @@ html.intro .page-ribbon {
     padding: 0.35rem 0.7rem;
     font-family: sans-serif;
     font-size: 0.8rem;
-    color: var(--gold);
+    color: var(--text);
     background: #001929;
     border: 1px solid var(--gold-55);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -442,23 +442,23 @@ a.ac-name-link:hover {
 }
 
 .ac-sum {
-    color: var(--gold);
+    color: var(--text);
     font-weight: bold;
 }
 
 .ac-stat {
-    color: var(--gold-80);
+    color: var(--text-80);
     font-size: 0.9rem;
 }
 
 .ac-stat.is-zero {
-    color: rgba(227, 207, 172, 0.3);
+    color: var(--text-30);
 }
 
 .ac-head .ac-sum,
 .ac-head .ac-stat {
     font-weight: normal;
-    color: var(--gold-55);
+    color: var(--text-55);
     font-size: inherit;
 }
 
@@ -526,11 +526,11 @@ a.ac-name-link:hover {
         content: attr(data-label);
         display: block;
         font-size: 0.68rem;
-        color: var(--gold-55);
+        color: var(--text-55);
     }
 
     .ac-stat.is-zero::before {
-        color: rgba(227, 207, 172, 0.3);
+        color: var(--text-30);
     }
 }
 
@@ -609,7 +609,7 @@ a.ac-name-link:hover {
     font-family: 'Greengoth', 'FallbackSerif', serif;
     font-size: 1.1rem;
     letter-spacing: 0.04em;
-    color: rgba(227, 207, 172, 0.7);
+    color: var(--text-70);
     animation: hg-breathe 3s ease-in-out infinite;
 }
 
@@ -663,14 +663,14 @@ a.ac-name-link:hover {
     font-weight: normal;
     font-size: 2.2rem;
     line-height: 1.2;
-    color: var(--gold);
+    color: var(--text);
     text-align: center;
     margin: 0 0 0.5rem;
 }
 
 .home-lead {
     text-align: center;
-    color: var(--gold-80);
+    color: var(--text-80);
     margin: 0 auto 1rem;
     max-width: 34rem;
 }
@@ -755,7 +755,7 @@ a.ac-name-link:hover {
 }
 
 .home-post-day {
-    color: var(--gold-80);
+    color: var(--text-80);
 }
 
 .home-post-tags {
@@ -768,7 +768,7 @@ a.ac-name-link:hover {
     padding: 0.1rem 0.5rem;
     border: 1px solid var(--gold-15);
     background: var(--gold-08);
-    color: var(--gold-80);
+    color: var(--text-80);
     font-size: 0.82rem;
     overflow-wrap: anywhere;
 }
@@ -780,12 +780,12 @@ a.ac-name-link:hover {
 .home-activity {
     margin: 0.6rem 0.25rem;
     font-size: 1.05rem;
-    color: var(--gold);
+    color: var(--text);
 }
 
 .home-empty {
     margin: 0.6rem 0.25rem;
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 .home-more {
@@ -793,7 +793,7 @@ a.ac-name-link:hover {
     margin-top: 0.5rem;
     padding: 0 0.25rem;
     font-size: 0.85rem;
-    color: var(--gold-55);
+    color: var(--text-55);
     text-decoration: none;
     transition: color 0.25s ease;
 }
@@ -817,4 +817,30 @@ a.ac-name-link:hover {
     .home-row-side {
         max-width: 9rem;
     }
+}
+
+/* золотые: разделитель со звёздами и подпись под песочными часами */
+.star-divider {
+    color: var(--gold);
+}
+
+.hg-text {
+    color: rgba(227, 207, 172, 0.7);
+}
+
+/* ---------- Заголовки и украшения остаются золотыми (правило в конце, чтобы перекрыть остальные) ---------- */
+.page-title,
+.dl-section-title,
+.user-title,
+.home-title {
+    color: var(--gold);
+}
+
+.dl-section-title::before {
+    color: var(--gold-55);
+}
+
+.dl-group > summary:hover,
+.dl-group > summary:focus-visible {
+    color: #fff;
 }

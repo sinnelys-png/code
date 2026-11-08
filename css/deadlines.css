@@ -10,12 +10,19 @@
     --gold-08: rgba(227, 207, 172, 0.08);
     --urgent: #F0B36B;
     --overdue: #E8877A;
+
+    /* основной текст — светло-серый #cccccc, с той же прозрачностью, что была у золотого */
+    --text: #cccccc;
+    --text-80: rgba(204, 204, 204, 0.8);
+    --text-70: rgba(204, 204, 204, 0.7);
+    --text-55: rgba(204, 204, 204, 0.55);
+    --text-30: rgba(204, 204, 204, 0.3);
 }
 
 .page-title {
     font-family: 'Greengoth', 'FallbackSerif', serif;
     font-weight: normal;
-    color: var(--gold);
+    color: var(--text);
     text-align: center;
     margin: 0 0 1rem;
 }
@@ -26,7 +33,7 @@
 
 .dl-status {
     text-align: center;
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 /* Текущая страница в меню */
@@ -47,7 +54,7 @@ header a.is-current {
     font-family: 'Greengoth', 'FallbackSerif', serif;
     font-weight: normal;
     font-size: 1.35rem;
-    color: var(--gold);
+    color: var(--text);
     margin: 0 0 0.25rem;
     padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--gold-15);
@@ -61,7 +68,7 @@ header a.is-current {
     content: "✦";
     font-family: sans-serif;
     font-size: 0.7em;
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 .dl-section-title::after {
@@ -144,36 +151,28 @@ header a.is-current {
     transition: box-shadow 0.3s ease;
 }
 
-/* Рамка в цветах факультета, как галстук: кольцо основного цвета,
-   через него наискосок (45°) три пары полосок — по центру, левее и правее.
-   В паре две полоски по 2px с промежутком 2px.
-   Кольцо — это поле (padding) вокруг картинки, закрашенное фоном;
-   между кольцом и картинкой — тёмный зазор 2px (верхний слой фона).
-   Видимая толщина кольца = --ring − 2px. */
+/* Рамка в цветах факультета: кольцо основного цвета галстука,
+   по середине кольца — тонкая круговая полоска цвета его полосок.
+
+   Все размеры — доли размера аватара (--av), поэтому на телефоне и на главной
+   пропорции те же, что на компьютере (64px: зазор 2px, кольцо 3px = 1 + полоска 1 + 1). */
 .dl-avatar.has-faculty {
-    --ring: 6px;          /* кольцо 4px + зазор 2px */
-    --pair-gap: 18px;     /* расстояние между центрами пар */
-    --m: var(--fac-main);
-    --s: var(--fac-stripe);
+    --av: 4rem;
+    --u: calc(var(--av) / 64);              /* «пиксель» в масштабе аватара 64px */
+    --ring: calc(var(--u) * 5);             /* зазор 2 + кольцо 3 */
+    /* зазор до картинки — тёмный, затем кольцо: основной цвет / полоска / основной цвет */
+    /* каждая граница размыта на ~0,7px — так круги не «лесенкой» */
+    --e: 0.35px;
     --gap-ring: radial-gradient(circle closest-side,
-        #001929 calc(100% - var(--ring) + 2px), transparent calc(100% - var(--ring) + 2px));
-    --stripes: linear-gradient(135deg,
-        var(--m) calc(50% - var(--pair-gap) - 3px),
-        var(--s) calc(50% - var(--pair-gap) - 3px) calc(50% - var(--pair-gap) - 1px),
-        var(--m) calc(50% - var(--pair-gap) - 1px) calc(50% - var(--pair-gap) + 1px),
-        var(--s) calc(50% - var(--pair-gap) + 1px) calc(50% - var(--pair-gap) + 3px),
-        var(--m) calc(50% - var(--pair-gap) + 3px) calc(50% - 3px),
-        var(--s) calc(50% - 3px) calc(50% - 1px),
-        var(--m) calc(50% - 1px) calc(50% + 1px),
-        var(--s) calc(50% + 1px) calc(50% + 3px),
-        var(--m) calc(50% + 3px) calc(50% + var(--pair-gap) - 3px),
-        var(--s) calc(50% + var(--pair-gap) - 3px) calc(50% + var(--pair-gap) - 1px),
-        var(--m) calc(50% + var(--pair-gap) - 1px) calc(50% + var(--pair-gap) + 1px),
-        var(--s) calc(50% + var(--pair-gap) + 1px) calc(50% + var(--pair-gap) + 3px),
-        var(--m) calc(50% + var(--pair-gap) + 3px));
+        #001929 calc(100% - var(--u) * 3 - var(--e)),
+        var(--fac-main) calc(100% - var(--u) * 3 + var(--e)) calc(100% - var(--u) * 2 - var(--e)),
+        var(--fac-stripe) calc(100% - var(--u) * 2 + var(--e)) calc(100% - var(--u) - var(--e)),
+        var(--fac-main) calc(100% - var(--u) + var(--e)));
+    width: var(--av);
+    height: var(--av);
     border: 0;
     padding: var(--ring);
-    background: var(--gap-ring), var(--stripes);
+    background: var(--gap-ring);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
@@ -181,8 +180,7 @@ header a.is-current {
 .dl-avatar--empty.has-faculty {
     background:
         radial-gradient(circle at 50% 35%, #0a3d5c, #001929) content-box,
-        var(--gap-ring) border-box,
-        var(--stripes) border-box;
+        var(--gap-ring) border-box;
 }
 
 /* без свечения при наведении */
@@ -192,8 +190,7 @@ header a.is-current {
 }
 
 .home-avatar.has-faculty {
-    --ring: 5px;          /* кольцо 3px + зазор 2px */
-    --pair-gap: 12px;
+    --av: 2.6rem;
 }
 
 .dl-avatar--empty {
@@ -202,7 +199,7 @@ header a.is-current {
     justify-content: center;
     font-family: 'Greengoth', 'FallbackSerif', serif;
     font-size: 1.6rem;
-    color: var(--gold-80);
+    color: var(--text-80);
     background: radial-gradient(circle at 50% 35%, #0a3d5c, #001929);
 }
 
@@ -219,7 +216,7 @@ header a.is-current {
 }
 
 .dl-name {
-    color: var(--gold);
+    color: var(--text);
     font-weight: bold;
     font-size: 1.05rem;
     text-decoration: none;
@@ -233,18 +230,18 @@ a.dl-name:hover {
 }
 
 .dl-label {
-    color: var(--gold-55);
+    color: var(--text-55);
     font-size: 0.85em;
 }
 
 .dl-player {
     margin-top: 0.2rem;
     font-size: 0.9rem;
-    color: var(--gold-80);
+    color: var(--text-80);
 }
 
 .dl-player-link {
-    color: var(--gold-80);
+    color: var(--text-80);
     text-decoration: none;
     border-bottom: 1px dotted var(--gold-55);
 }
@@ -297,7 +294,7 @@ a.dl-name:hover {
 .dl-duet-line {
     margin-top: 0.2rem;
     font-size: 0.9rem;
-    color: var(--gold-80);
+    color: var(--text-80);
 }
 
 .dl-duet-link {
@@ -306,7 +303,7 @@ a.dl-name:hover {
     border: none;
     border-bottom: 1px dotted var(--gold-55);
     font: inherit;
-    color: var(--gold-80);
+    color: var(--text-80);
     cursor: pointer;
     transition: color 0.25s ease;
 }
@@ -322,7 +319,7 @@ a.dl-name:hover {
 .dl-subs {
     margin-top: 0.35rem;
     font-size: 0.85rem;
-    color: var(--gold-80);
+    color: var(--text-80);
 }
 
 .dl-counter {
@@ -332,7 +329,7 @@ a.dl-name:hover {
     border: 1px solid var(--gold-55);
     border-radius: 1rem;
     font-size: 0.8em;
-    color: var(--gold);
+    color: var(--text);
 }
 
 .dl-subs > .dl-label {
@@ -356,7 +353,7 @@ a.dl-name:hover {
     counter-increment: q;
     padding: 0.1rem 0.5rem;
     border: 1px solid var(--gold-15);
-    color: var(--gold-55);
+    color: var(--text-55);
     font-size: 0.8rem;
 }
 
@@ -367,7 +364,7 @@ a.dl-name:hover {
 
 .dl-chip.is-active {
     border-color: var(--gold-55);
-    color: var(--gold);
+    color: var(--text);
     background: var(--gold-08);
 }
 
@@ -380,7 +377,7 @@ a.dl-name:hover {
 }
 
 .dl-date {
-    color: var(--gold);
+    color: var(--text);
     font-size: 0.95rem;
     transition: color 0.25s ease;
 }
@@ -388,18 +385,18 @@ a.dl-name:hover {
 /* «пост скоро выйдет» (колонка P) */
 .dl-date.is-queued {
     font-style: italic;
-    color: var(--gold-80);
+    color: var(--text-80);
 }
 
 .dl-days {
     display: inline-block;
     margin-top: 0.25rem;
     font-size: 0.78rem;
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 .dl-days.is-soon {
-    color: var(--gold);
+    color: var(--text);
 }
 
 .dl-days.is-urgent {
@@ -426,15 +423,38 @@ a.dl-name:hover {
     border: 1px solid var(--gold-15);
     border-radius: 1rem;
     font-size: 0.72rem;
-    color: var(--gold-80);
+    color: var(--text-80);
     white-space: nowrap;
 }
 
 /* ---------- Поиск ---------- */
 
+/* Поиск закреплён наверху, пока листаешь вкладки; растянут на всю ширину блока,
+   чтобы строки уезжали под него целиком. Фон — только когда он прилип. */
 .dl-search {
     display: block;
-    margin: 0 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.75rem;
+    padding: 0.5rem var(--pad-x, 0px);
+}
+
+.dl-search.is-stuck {
+    background-color: var(--sticky-bg, #002c45);
+}
+
+/* «Ваши персонажи» держится наверху, пока его не «собьёт» поиск */
+.dl-mine-title {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.5rem;
+    padding: 0.4rem var(--pad-x, 0px);
+}
+
+.dl-mine-title.is-stuck {
+    background-color: var(--sticky-bg, #002c45);
 }
 
 .dl-search-input {
@@ -443,7 +463,7 @@ a.dl-name:hover {
     padding: 0.55rem 0.9rem 0.55rem 2.2rem;
     font: inherit;
     font-size: 0.95rem;
-    color: var(--gold);
+    color: var(--text);
     background:
         no-repeat 0.85rem 50% / 0.85rem
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3CFAC' stroke-opacity='.6' stroke-width='1.6'%3E%3Ccircle cx='6.5' cy='6.5' r='5'/%3E%3Cpath d='M10.3 10.3 15 15'/%3E%3C/svg%3E"),
@@ -455,7 +475,7 @@ a.dl-name:hover {
 }
 
 .dl-search-input::placeholder {
-    color: var(--gold-55);
+    color: var(--text-55);
 }
 
 .dl-search-input:focus {
@@ -476,6 +496,10 @@ a.dl-name:hover {
     .dl-avatar {
         width: 3.2rem;
         height: 3.2rem;
+    }
+
+    .dl-avatar.has-faculty {
+        --av: 3.2rem;
     }
 
     .dl-name {
@@ -507,7 +531,7 @@ a.dl-name:hover {
     cursor: pointer;
     user-select: none;
     position: sticky;
-    top: 0;
+    top: var(--search-h, 0px);
     z-index: 4;
     margin: 0 calc(-1 * var(--pad-x, 0px));
     padding: 0.55rem calc(var(--pad-x, 0px) + 0.25rem) 0.5rem;
@@ -536,7 +560,7 @@ a.dl-name:hover {
 
 .dl-group > summary:hover .dl-group-count,
 .dl-group > summary:focus-visible .dl-group-count {
-    color: var(--gold-80);
+    color: var(--text-80);
     border-color: var(--gold-55);
 }
 
@@ -567,7 +591,7 @@ a.dl-name:hover {
 .dl-group-count {
     font-family: sans-serif;
     font-size: 0.75rem;
-    color: var(--gold-55);
+    color: var(--text-55);
     padding: 0.05rem 0.45rem;
     border: 1px solid var(--gold-15);
     border-radius: 1rem;

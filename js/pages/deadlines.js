@@ -227,12 +227,7 @@
         });
 
         const mine = root.querySelector('.dl-section--mine');
-        if (mine) {
-            const hide = !!q && !mine.querySelector('.dl-card:not([hidden])');
-            mine.hidden = hide;
-            const divider = mine.nextElementSibling;
-            if (divider && divider.classList.contains('star-divider')) divider.hidden = hide;
-        }
+        if (mine) mine.hidden = !!q && !mine.querySelector('.dl-card:not([hidden])');
 
         const empty = root.querySelector('.dl-empty');
         if (empty) empty.hidden = !q || found > 0 || (mine && !mine.hidden);
@@ -288,22 +283,26 @@
         render(root, [rows, viewerId]) {
             byName = new Map(rows.map(r => [r.name, r]));
             const sorted = sortRows(rows);
-            let html = `
+            let html = '';
+
+            const mine = viewerId ? sorted.filter(r => r.playerId === viewerId) : [];
+            if (mine.length) {
+                html += `
+                    <section class="dl-section dl-section--mine">
+                        <h2 class="user-title dl-mine-title">Ваши персонажи</h2>
+                        ${mine.map(card).join('')}
+                        ${RCU.dividerHTML()}
+                    </section>`;
+            }
+
+            // Поиск — под блоком «Ваши персонажи» и разделителем
+            html += `
                 <label class="dl-search">
                     <span class="visually-hidden">Поиск</span>
                     <input class="dl-search-input" type="search" autocomplete="off"
                         placeholder="поиск: персонаж, подроль или отвечающий" value="${esc(query)}">
                 </label>`;
 
-            const mine = viewerId ? sorted.filter(r => r.playerId === viewerId) : [];
-            if (mine.length) {
-                html += `
-                    <section class="dl-section dl-section--mine">
-                        <h2 class="user-title">Ваши персонажи</h2>
-                        ${mine.map(card).join('')}
-                    </section>
-                    ${RCU.dividerHTML()}`;
-            }
 
             const groups = [];
             sorted.forEach(r => {
@@ -315,6 +314,12 @@
             html += '<p class="dl-status dl-empty" hidden>Никого не нашлось.</p>';
 
             root.innerHTML = html;
+
+            // заголовки вкладок липнут прямо под закреплённым поиском
+            const search = root.querySelector('.dl-search');
+            const setSearchH = () => root.style.setProperty('--search-h', `${search.offsetHeight}px`);
+            setSearchH();
+            requestAnimationFrame(setSearchH);
 
             const input = root.querySelector('.dl-search-input');
             input.addEventListener('input', () => { query = input.value; applySearch(root); });
