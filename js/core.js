@@ -191,16 +191,28 @@ window.RCU = (() => {
         try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), data })); } catch (e) { /* нет места или запрещено */ }
     }
 
+    // Когда были получены данные, которые сейчас на экране (по ключам кэша)
+    const shownAt = {};
+
     function cached(key, fetcher) {
         if (inFlight[key]) return inFlight[key];
         const saved = readCache(key);
         const age = saved ? Date.now() - saved.t : Infinity;
 
-        if (age < FRESH_MS) return (inFlight[key] = Promise.resolve(saved.data));
+        if (age < FRESH_MS) {
+            shownAt[key] = saved.t;
+            return (inFlight[key] = Promise.resolve(saved.data));
+        }
 
-        const fresh = fetcher().then(data => { writeCache(key, data); return data; });
+        const fresh = fetcher().then(data => {
+            writeCache(key, data);
+            shownAt[key] = Date.now();
+            window.dispatchEvent(new CustomEvent('rcu:fresh', { detail: key }));
+            return data;
+        });
 
         if (age < STALE_MS) {
+            shownAt[key] = saved.t;
             inFlight[key] = Promise.resolve(saved.data);
             fresh.then(data => {
                 inFlight[key] = Promise.resolve(data);
@@ -214,7 +226,7 @@ window.RCU = (() => {
 
         inFlight[key] = fresh.catch(err => {
             delete inFlight[key];
-            if (saved) return saved.data;    // Google не ответил — лучше старое, чем ничего
+            if (saved) { shownAt[key] = saved.t; return saved.data; }   // Google не ответил — лучше старое, чем ничего
             throw err;
         });
         return inFlight[key];
@@ -225,12 +237,35 @@ window.RCU = (() => {
        и сам держит его в кэше 5 минут, так что таблицы читаются не чаще раза в 5 минут. */
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyouZZ0u90sUDVKC_ZdB2SO5P8dlDP3BnE1OImeih3xgMoXQLBzwbwceDkbxZAfX09Z/exec';
 
+    let bundleUpdated = 0;   // когда скрипт прочитал таблицы (поле updated в ответе)
     function bundle() {
         return cached('bundle', async () => {
             const data = await (await fetch(SCRIPT_URL)).json();
             if (data.error) throw new Error(data.error);
             return data;
+        }).then(data => {
+            const t = Date.parse(data.updated || '');
+            if (t) bundleUpdated = t;
+            return data;
         });
+    }
+
+    // Насколько свежи данные на экране: для ответа скрипта — когда он читал таблицы,
+    // для запасных выгрузок — когда их скачали. Берём самые старые.
+    function updatedAt() {
+        const times = Object.entries(shownAt).map(([k, t]) => (k === 'bundle' && bundleUpdated) ? bundleUpdated : t);
+        return times.length ? Math.min(...times) : 0;
+    }
+
+    // «обновлено 5 минут назад»
+    function updatedText() {
+        const t = updatedAt();
+        if (!t) return '';
+        const min = Math.max(0, Math.floor((Date.now() - t) / 60000));
+        if (min < 1) return 'обновлено только что';
+        if (min < 60) return `обновлено ${min} ${plural(min, 'минуту', 'минуты', 'минут')} назад`;
+        const h = Math.floor(min / 60);
+        return `обновлено ${h} ${plural(h, 'час', 'часа', 'часов')} назад`;
     }
 
     function dataOf(name) {
@@ -244,5 +279,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, cached, bundle, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, cached, bundle, updatedText, dataOf, pages };
 })();

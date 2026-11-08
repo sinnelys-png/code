@@ -49,6 +49,7 @@
         const dash = view.querySelector('.home-dash');
         if (!dash || !RCU.home) return;
         await RCU.home.render(dash, view.querySelector('.home-title'));
+        addUpdated(dash);
         if (token === navToken) enter(dash);
     }
 
@@ -91,6 +92,24 @@
         });
     }
 
+    /* ---------- «обновлено N минут назад» внизу раздела ---------- */
+    function addUpdated(root) {
+        let p = root.querySelector(':scope > .page-updated');
+        if (!p) {
+            p = document.createElement('p');
+            p.className = 'page-updated';
+            p.title = 'Сайт берёт данные из таблиц с небольшой задержкой';
+            root.appendChild(p);
+        }
+        p.textContent = RCU.updatedText();
+    }
+
+    function tickUpdated() {
+        view.querySelectorAll('.page-updated').forEach(p => { p.textContent = RCU.updatedText(); });
+    }
+    setInterval(tickUpdated, 30000);
+    window.addEventListener('rcu:fresh', () => setTimeout(tickUpdated, 0));
+
     async function show() {
         const name = currentPage();
         const token = ++navToken;
@@ -125,6 +144,7 @@
                 const data = await dataOf(name);
                 if (token !== navToken) return;
                 page.render(root, data);
+                addUpdated(root);
                 enter(root);
             } catch (err) {
                 console.error(err);
@@ -156,7 +176,7 @@
         stuckFrame = 0;
         if (!scroller) return;
         const top = scroller.getBoundingClientRect().top;
-        view.querySelectorAll('.dl-group > summary, .sc-day-title, .dl-search, .dl-mine-title').forEach(h => {
+        view.querySelectorAll('.dl-group > summary, .sc-day-title, .dl-toolbar, .dl-mine-title').forEach(h => {
             const offset = parseFloat(getComputedStyle(h).top) || 0;   // заголовки вкладок липнут под поиском
             const stuck = scroller.scrollTop > 0 && Math.abs(h.getBoundingClientRect().top - top - offset) < 1.5;
             h.classList.toggle('is-stuck', stuck);
@@ -185,6 +205,7 @@
             const openGroups = [...root.querySelectorAll('details[open] > summary')].map(label);
             const scrollTop = scroller ? scroller.scrollTop : 0;
             RCU.pages[name].render(root, data);
+            addUpdated(root);
             root.querySelectorAll('details > summary').forEach(s => {
                 if (openGroups.includes(label(s))) s.parentElement.open = true;
             });

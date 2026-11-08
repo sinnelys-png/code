@@ -187,7 +187,38 @@
                 setGlow('--mouse-x', `${e.clientX - mRect.left}px`);
                 setGlow('--mouse-y', `${e.clientY - mRect.top}px`);
             }
+            lastMouse = e;
+            if (!ringFrame) ringFrame = requestAnimationFrame(glowRings);
         });
+
+        // Свечение рамок факультетов у аватаров: то же пятно света, что у полосок блока.
+        // Координаты ставим только аватарам рядом с мышью (в радиусе свечения), остальным гасим.
+        let lastMouse = null;
+        let ringFrame = 0;
+        const RING_GLOW_R = 150;
+        function glowRings() {
+            ringFrame = 0;
+            if (!lastMouse) return;
+            const { clientX: x, clientY: y } = lastMouse;
+            document.querySelectorAll('.dl-avatar.has-faculty').forEach(a => {
+                const r = a.getBoundingClientRect();
+                const near = r.width && x > r.left - RING_GLOW_R && x < r.right + RING_GLOW_R
+                    && y > r.top - RING_GLOW_R && y < r.bottom + RING_GLOW_R;
+                if (near) {
+                    a.style.setProperty('--gx', `${x - r.left}px`);
+                    a.style.setProperty('--gy', `${y - r.top}px`);
+                    a.dataset.lit = '1';
+                } else if (a.dataset.lit) {
+                    a.style.removeProperty('--gx');
+                    a.style.removeProperty('--gy');
+                    delete a.dataset.lit;
+                }
+            });
+        }
+        // при прокрутке аватары двигаются под неподвижной мышью — пересчитываем
+        document.addEventListener('scroll', () => {
+            if (!ringFrame) ringFrame = requestAnimationFrame(glowRings);
+        }, true);
     }
 
     // Восстанавливаем генерацию строгой диагональной сетки точек (работает только на ПК)

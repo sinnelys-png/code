@@ -208,7 +208,8 @@
         root.querySelectorAll('.dl-card').forEach(c => {
             const hit = !q || c.dataset.q.includes(q);
             c.hidden = !hit;
-            if (hit && !c.closest('.dl-section--mine')) found++;
+            const list = c.closest('.dl-by-role, .dl-by-deadline');
+            if (hit && list && !list.hidden) found++;
         });
 
         root.querySelectorAll('.dl-group').forEach(g => {
@@ -233,6 +234,28 @@
         if (empty) empty.hidden = !q || found > 0 || (mine && !mine.hidden);
     }
 
+    /* ===================== «БЛИЖАЙШИЕ» ===================== */
+
+    // Один список по близости дедлайна: просроченные и ближайшие сверху,
+    // «пост скоро выйдет» и без даты — в конце. Выбор запоминается в браузере.
+    const URGENT_KEY = 'rcu-deadlines-urgent';
+    let urgentMode = false;
+    try { urgentMode = localStorage.getItem(URGENT_KEY) === '1'; } catch (e) { /* без хранилища */ }
+
+    function byDeadline(rows) {
+        const key = (r) => isQueued(r.status) ? 100000 : (daysUntil(r.deadlineISO) ?? 200000);
+        return [...rows].sort((a, b) => (key(a) - key(b)) || a.name.localeCompare(b.name, 'ru'));
+    }
+
+    function applyMode(root) {
+        root.querySelector('.dl-by-role').hidden = urgentMode;
+        root.querySelector('.dl-by-deadline').hidden = !urgentMode;
+        const btn = root.querySelector('.dl-urgent-toggle');
+        btn.setAttribute('aria-pressed', String(urgentMode));
+        btn.classList.toggle('is-on', urgentMode);
+        applySearch(root);
+    }
+
     /* ===================== ДЕЙСТВИЯ ===================== */
 
     function scroller() { return document.querySelector('.main-scroll-viewport'); }
@@ -255,7 +278,8 @@
             const root = jump.closest('.page-root');
             const name = jump.dataset.target;
             const cards = [...root.querySelectorAll('.dl-card')].filter(c => c.dataset.name === name);
-            const target = cards.find(c => !c.closest('.dl-section--mine')) || cards[0];
+            const inShownList = (c) => { const l = c.closest('.dl-by-role, .dl-by-deadline'); return l && !l.hidden; };
+            const target = cards.find(inShownList) || cards[0];
             if (!target) return;
             if (target.hidden) {                       // скрыта поиском — сбрасываем поиск
                 const input = root.querySelector('.dl-search-input');
@@ -295,35 +319,54 @@
                     </section>`;
             }
 
-            // Поиск — под блоком «Ваши персонажи» и разделителем
+            // Поиск и переключатель — под блоком «Ваши персонажи» и разделителем
             html += `
-                <label class="dl-search">
-                    <span class="visually-hidden">Поиск</span>
-                    <input class="dl-search-input" type="search" autocomplete="off"
-                        placeholder="поиск: персонаж, подроль или отвечающий" value="${esc(query)}">
-                </label>`;
+                <div class="dl-toolbar">
+                    <label class="dl-search">
+                        <span class="visually-hidden">Поиск</span>
+                        <input class="dl-search-input" type="search" autocomplete="off"
+                            placeholder="поиск: персонаж, подроль или отвечающий" value="${esc(query)}">
+                    </label>
+                    <button class="dl-urgent-toggle" type="button" aria-pressed="false">
+                        <span class="dl-toggle-dot" aria-hidden="true"></span>ближайшие
+                    </button>
+                </div>`;
 
-
+            // По ролям (вкладки)
             const groups = [];
             sorted.forEach(r => {
                 let g = groups.find(g => g.role === r.role);
                 if (!g) groups.push(g = { role: r.role, rows: [] });
                 g.rows.push(r);
             });
-            groups.forEach(g => { html += collapsible(ROLE_TITLES[g.role] || g.role, g.rows); });
+            html += `<div class="dl-by-role">${groups.map(g => collapsible(ROLE_TITLES[g.role] || g.role, g.rows)).join('')}</div>`;
+
+            // Все одним списком по сроку
+            html += `
+                <div class="dl-by-deadline" hidden>
+                    <section class="dl-section">
+                        ${byDeadline(rows).map(card).join('')}
+                    </section>
+                </div>`;
             html += '<p class="dl-status dl-empty" hidden>Никого не нашлось.</p>';
 
             root.innerHTML = html;
 
-            // заголовки вкладок липнут прямо под закреплённым поиском
-            const search = root.querySelector('.dl-search');
+            // заголовки вкладок липнут прямо под закреплённой строкой поиска
+            const search = root.querySelector('.dl-toolbar');
             const setSearchH = () => root.style.setProperty('--search-h', `${search.offsetHeight}px`);
             setSearchH();
             requestAnimationFrame(setSearchH);
 
             const input = root.querySelector('.dl-search-input');
             input.addEventListener('input', () => { query = input.value; applySearch(root); });
-            if (query) applySearch(root);
+
+            root.querySelector('.dl-urgent-toggle').addEventListener('click', () => {
+                urgentMode = !urgentMode;
+                try { localStorage.setItem(URGENT_KEY, urgentMode ? '1' : '0'); } catch (e) { /* без хранилища */ }
+                applyMode(root);
+            });
+            applyMode(root);
         },
     };
 })();

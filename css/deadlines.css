@@ -8,6 +8,8 @@
     --gold-55: rgba(227, 207, 172, 0.55);
     --gold-15: rgba(227, 207, 172, 0.15);
     --gold-08: rgba(227, 207, 172, 0.08);
+    /* подсветка при наведении — нейтральный серый, без желтизны */
+    --hover: rgba(204, 204, 204, 0.08);
     --urgent: #F0B36B;
     --overdue: #E8877A;
 
@@ -110,7 +112,7 @@ header a.is-current {
 }
 
 .dl-card:hover::before {
-    background-color: var(--gold-08);
+    background-color: var(--hover);
 }
 
 /* строка, к которой перешли по ссылке «дуэт: …» */
@@ -151,28 +153,46 @@ header a.is-current {
     transition: box-shadow 0.3s ease;
 }
 
-/* Рамка в цветах факультета: кольцо основного цвета галстука,
-   по середине кольца — тонкая круговая полоска цвета его полосок.
+/* Рамка в цветах факультета, как галстук: кольцо основного цвета
+   с парами диагональных (45°) полосок.
 
    Все размеры — доли размера аватара (--av), поэтому на телефоне и на главной
-   пропорции те же, что на компьютере (64px: зазор 2px, кольцо 3px = 1 + полоска 1 + 1). */
+   пропорции те же, что на компьютере (64px: кольцо 3px, зазор 2px, полоски 2px).
+
+   Три пары: по центру и на ~0,7 радиуса левее и правее.
+
+   Свечение: при приближении мыши кольцо подсвечивается белым пятном, как золотые
+   полоски блока. Координаты мыши относительно аватара (--gx, --gy) ставит js/site.js. */
 .dl-avatar.has-faculty {
     --av: 4rem;
     --u: calc(var(--av) / 64);              /* «пиксель» в масштабе аватара 64px */
     --ring: calc(var(--u) * 5);             /* зазор 2 + кольцо 3 */
-    /* зазор до картинки — тёмный, затем кольцо: основной цвет / полоска / основной цвет */
-    /* каждая граница размыта на ~0,7px — так круги не «лесенкой» */
-    --e: 0.35px;
+    --pair: calc(var(--av) * 0.354);        /* ≈ 0,7 радиуса */
+    --m: var(--fac-main);
+    --s: var(--fac-stripe);
     --gap-ring: radial-gradient(circle closest-side,
-        #001929 calc(100% - var(--u) * 3 - var(--e)),
-        var(--fac-main) calc(100% - var(--u) * 3 + var(--e)) calc(100% - var(--u) * 2 - var(--e)),
-        var(--fac-stripe) calc(100% - var(--u) * 2 + var(--e)) calc(100% - var(--u) - var(--e)),
-        var(--fac-main) calc(100% - var(--u) + var(--e)));
+        #001929 calc(100% - var(--ring) + var(--u) * 2), transparent calc(100% - var(--ring) + var(--u) * 2));
+    --stripes: linear-gradient(135deg,
+        var(--m) calc(50% - var(--pair) - var(--u) * 3),
+        var(--s) calc(50% - var(--pair) - var(--u) * 3) calc(50% - var(--pair) - var(--u)),
+        var(--m) calc(50% - var(--pair) - var(--u)) calc(50% - var(--pair) + var(--u)),
+        var(--s) calc(50% - var(--pair) + var(--u)) calc(50% - var(--pair) + var(--u) * 3),
+        var(--m) calc(50% - var(--pair) + var(--u) * 3) calc(50% - var(--u) * 3),
+        var(--s) calc(50% - var(--u) * 3) calc(50% - var(--u)),
+        var(--m) calc(50% - var(--u)) calc(50% + var(--u)),
+        var(--s) calc(50% + var(--u)) calc(50% + var(--u) * 3),
+        var(--m) calc(50% + var(--u) * 3) calc(50% + var(--pair) - var(--u) * 3),
+        var(--s) calc(50% + var(--pair) - var(--u) * 3) calc(50% + var(--pair) - var(--u)),
+        var(--m) calc(50% + var(--pair) - var(--u)) calc(50% + var(--pair) + var(--u)),
+        var(--s) calc(50% + var(--pair) + var(--u)) calc(50% + var(--pair) + var(--u) * 3),
+        var(--m) calc(50% + var(--pair) + var(--u) * 3));
     width: var(--av);
     height: var(--av);
     border: 0;
     padding: var(--ring);
-    background: var(--gap-ring);
+    --glow: radial-gradient(circle 150px at var(--gx, -999px) var(--gy, -999px),
+        rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.3) 45%, rgba(255, 255, 255, 0) 100%);
+    background: var(--gap-ring), var(--glow), var(--stripes);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
@@ -180,7 +200,9 @@ header a.is-current {
 .dl-avatar--empty.has-faculty {
     background:
         radial-gradient(circle at 50% 35%, #0a3d5c, #001929) content-box,
-        var(--gap-ring) border-box;
+        var(--gap-ring) border-box,
+        var(--glow) border-box,
+        var(--stripes) border-box;
 }
 
 /* без свечения при наведении */
@@ -273,7 +295,7 @@ a.dl-name:hover {
 .dl-more:hover,
 .dl-more:focus-visible {
     border-color: var(--gold-55);
-    background-color: var(--gold-08);
+    background-color: var(--hover);
     outline: none;
 }
 
@@ -431,8 +453,11 @@ a.dl-name:hover {
 
 /* Поиск закреплён наверху, пока листаешь вкладки; растянут на всю ширину блока,
    чтобы строки уезжали под него целиком. Фон — только когда он прилип. */
-.dl-search {
-    display: block;
+.dl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
     position: sticky;
     top: 0;
     z-index: 5;
@@ -440,8 +465,62 @@ a.dl-name:hover {
     padding: 0.5rem var(--pad-x, 0px);
 }
 
-.dl-search.is-stuck {
+.dl-toolbar.is-stuck {
     background-color: var(--sticky-bg, #002c45);
+}
+
+.dl-search {
+    display: block;
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+/* переключатель «ближайшие» */
+.dl-urgent-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: none;
+    padding: 0.5rem 0.9rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--text-80);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.dl-urgent-toggle:hover,
+.dl-urgent-toggle:focus-visible {
+    color: #fff;
+    border-color: var(--gold-55);
+    outline: none;
+}
+
+.dl-toggle-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    border: 1px solid var(--gold-55);
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dl-urgent-toggle.is-on {
+    color: #fff;
+    border-color: var(--gold-55);
+    background-color: var(--hover);
+}
+
+.dl-urgent-toggle.is-on .dl-toggle-dot {
+    background-color: var(--gold-55);
+}
+
+.dl-by-role[hidden],
+.dl-by-deadline[hidden] {
+    display: none;
 }
 
 /* «Ваши персонажи» держится наверху, пока его не «собьёт» поиск */
@@ -549,7 +628,7 @@ a.dl-name:hover {
 
 .dl-group > summary:hover,
 .dl-group > summary:focus-visible {
-    background-image: linear-gradient(var(--gold-08), var(--gold-08));
+    background-image: linear-gradient(var(--hover), var(--hover));
     color: #fff;
 }
 

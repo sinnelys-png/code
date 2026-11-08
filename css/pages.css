@@ -284,7 +284,7 @@ html.intro .page-ribbon {
 }
 
 .sc-post:hover {
-    background-color: var(--gold-08);
+    background-color: var(--hover);
 }
 
 .sc-time {
@@ -357,7 +357,7 @@ html.intro .page-ribbon {
 }
 
 .ac-row:not(.ac-head):hover {
-    background-color: var(--gold-08);
+    background-color: var(--hover);
 }
 
 .ac-head {
@@ -712,7 +712,7 @@ a.ac-name-link:hover {
 }
 
 .home-row:hover::before {
-    background-color: var(--gold-08);
+    background-color: var(--hover);
 }
 
 .home-row:hover .dl-name,
@@ -843,4 +843,13 @@ a.ac-name-link:hover {
 .dl-group > summary:hover,
 .dl-group > summary:focus-visible {
     color: #fff;
+}
+
+/* «обновлено N минут назад» внизу раздела */
+.page-updated {
+    margin: 2rem 0 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(204, 204, 204, 0.4);
+    cursor: help;
 }
