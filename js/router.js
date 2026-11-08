@@ -81,6 +81,29 @@
 
     window.addEventListener('hashchange', show);
 
+    // В фоне пришли обновлённые таблицы — тихо перерисовываем открытый раздел,
+    // сохраняя прокрутку и раскрытые вкладки
+    window.addEventListener('rcu:updated', async () => {
+        const name = currentPage();
+        const root = view.querySelector('.page-root');
+        if (!name || !root) return;
+        const token = navToken;
+        try {
+            const data = await dataOf(name);
+            if (token !== navToken) return;
+            const label = (s) => (s.querySelector('.dl-group-name') || s).textContent.trim();
+            const openGroups = [...root.querySelectorAll('details[open] > summary')].map(label);
+            const scrollTop = scroller ? scroller.scrollTop : 0;
+            RCU.pages[name].render(root, data);
+            root.querySelectorAll('details > summary').forEach(s => {
+                if (openGroups.includes(label(s))) s.parentElement.open = true;
+            });
+            if (scroller) scroller.scrollTop = scrollTop;
+        } catch (err) {
+            console.warn('Не удалось обновить раздел:', err);
+        }
+    });
+
     // Герб ведёт на главную
     if (logo) {
         logo.style.cursor = 'pointer';

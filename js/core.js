@@ -1,5 +1,24 @@
 // Общие помощники для страниц с таблицами + реестр страниц (RCU.pages).
 window.RCU = (() => {
+    /* ---------- Параметры запуска ВКонтакте ----------
+       ВК открывает мини-приложение с параметрами в адресе (vk_user_id, sign и др.).
+       Запоминаем их и убираем из адреса, чтобы они не показывались при наведении
+       на ссылки и не попадали в скопированную ссылку. */
+    const LAUNCH_KEY = 'rcu-launch';
+    const launch = (() => {
+        const params = new URLSearchParams(location.search);
+        const own = [...params.keys()].filter(k => k.startsWith('vk_') || k === 'sign' || k === 'odr_enabled');
+        if (own.length) {
+            const saved = Object.fromEntries(own.map(k => [k, params.get(k)]));
+            try { sessionStorage.setItem(LAUNCH_KEY, JSON.stringify(saved)); } catch (e) { /* без хранилища */ }
+            own.forEach(k => params.delete(k));
+            const rest = params.toString();
+            history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+            return saved;
+        }
+        try { return JSON.parse(sessionStorage.getItem(LAUNCH_KEY)) || {}; } catch (e) { return {}; }
+    })();
+
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, ch =>
         ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
@@ -75,7 +94,7 @@ window.RCU = (() => {
                         if (user && user.id) return String(user.id);
                     }
                 } catch (e) { /* открыто не во ВКонтакте */ }
-                return new URLSearchParams(location.search).get('vk_user_id') || '';
+                return launch.vk_user_id || '';
             })();
         }
         return viewerPromise;
@@ -109,8 +128,69 @@ window.RCU = (() => {
             </div>`;
     }
 
-    // Данные страницы (каждая таблица грузится один раз и доступна всем страницам)
+    // Данные страниц (каждая собирается один раз и доступна всем страницам)
     const loaded = {};
+
+    /* ---------- Кэш таблиц в браузере ----------
+       Свежие данные (моложе FRESH_MS) берутся из памяти браузера без запроса к Google.
+       Чуть устаревшие (моложе STALE_MS) показываются сразу, а в фоне скачиваются новые;
+       если они отличаются, страница тихо перерисовывается (событие 'rcu:updated').
+       Совсем старые сразу не показываются — ждём свежие. */
+    const FRESH_MS = 5 * 60 * 1000;
+    const STALE_MS = 30 * 60 * 1000;
+    const CACHE_PREFIX = 'rcu-cache:';
+    const inFlight = {};   // один запрос на ключ за сессию, даже если его просят несколько страниц
+
+    function readCache(key) {
+        try { return JSON.parse(localStorage.getItem(CACHE_PREFIX + key)); } catch (e) { return null; }
+    }
+
+    function writeCache(key, data) {
+        try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), data })); } catch (e) { /* нет места или запрещено */ }
+    }
+
+    function cached(key, fetcher) {
+        if (inFlight[key]) return inFlight[key];
+        const saved = readCache(key);
+        const age = saved ? Date.now() - saved.t : Infinity;
+
+        if (age < FRESH_MS) return (inFlight[key] = Promise.resolve(saved.data));
+
+        const fresh = fetcher().then(data => { writeCache(key, data); return data; });
+
+        if (age < STALE_MS) {
+            inFlight[key] = Promise.resolve(saved.data);
+            fresh.then(data => {
+                inFlight[key] = Promise.resolve(data);
+                if (JSON.stringify(data) !== JSON.stringify(saved.data)) {
+                    for (const k in loaded) delete loaded[k];   // страницы пересоберут данные из новых
+                    window.dispatchEvent(new CustomEvent('rcu:updated', { detail: key }));
+                }
+            }).catch(err => console.warn('Не удалось обновить', key, err));
+            return inFlight[key];
+        }
+
+        inFlight[key] = fresh.catch(err => {
+            delete inFlight[key];
+            if (saved) return saved.data;    // Google не ответил — лучше старое, чем ничего
+            throw err;
+        });
+        return inFlight[key];
+    }
+
+    /* ---------- Один запрос за всеми таблицами ----------
+       Apps Script (apps-script/Code.gs) отдаёт дедлайны, расписание и активность одним ответом
+       и сам держит его в кэше 5 минут, так что таблицы читаются не чаще раза в 5 минут. */
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk19tuN3_KujHDRSQM-OHpjLgkfb9_ygmvvpaZLro9JLLG0WpPcP74IxDe0SH5OWD_Pg/exec';
+
+    function bundle() {
+        return cached('bundle', async () => {
+            const data = await (await fetch(SCRIPT_URL)).json();
+            if (data.error) throw new Error(data.error);
+            return data;
+        });
+    }
+
     function dataOf(name) {
         if (!loaded[name]) {
             loaded[name] = pages[name].load().catch(err => {
@@ -122,5 +202,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, cached, bundle, dataOf, pages };
 })();

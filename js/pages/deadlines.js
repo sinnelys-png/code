@@ -5,8 +5,7 @@
 
     /* ===================== НАСТРОЙКИ ===================== */
 
-    // Развёрнутый Apps Script (apps-script/Code.gs) — даёт аватары и ссылки.
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk19tuN3_KujHDRSQM-OHpjLgkfb9_ygmvvpaZLro9JLLG0WpPcP74IxDe0SH5OWD_Pg/exec';
+    // Основной источник — Apps Script (apps-script/Code.gs, адрес — в js/core.js): даёт аватары и ссылки.
 
     // Запасной вариант, если скрипт не ответил: публичная выгрузка (без аватаров)
     const SHEET_ID = '1KTZmUktm284bdyGc_LfDpv9BVUDCqcEU8Av29s-NXVU';
@@ -28,30 +27,8 @@
 
     /* ===================== ЗАГРУЗКА ===================== */
 
-    async function addStatusFromSheet(rows) {
-        try {
-            const sheet = await loadGviz(SHEET_ID, SHEET_GID);
-            const byName = new Map(sheet.map(cell => [cell.text('B'), cell.text('P')]));
-            rows.forEach(r => { r.status = byName.get(r.name) || ''; });
-        } catch (e) {
-            console.warn('Не удалось прочитать колонку P:', e);
-        }
-    }
-
-    async function loadRows() {
-        if (APPS_SCRIPT_URL) {
-            try {
-                const data = await (await fetch(APPS_SCRIPT_URL)).json();
-                if (data.error) throw new Error(data.error);
-                if (data.rows.length && !('status' in data.rows[0])) {
-                    // Старая версия скрипта без колонки P — берём её из публичной выгрузки
-                    await addStatusFromSheet(data.rows);
-                }
-                return data.rows;
-            } catch (e) {
-                console.warn('Apps Script недоступен, беру публичную выгрузку:', e);
-            }
-        }
+    // Запасной вариант: публичная выгрузка листа (без аватаров)
+    async function gvizRows() {
         const rows = await loadGviz(SHEET_ID, SHEET_GID);
         return rows
             .map(cell => {
@@ -75,6 +52,30 @@
                 };
             })
             .filter(r => r.name && r.role && r.role !== 'Роль');
+    }
+
+    // Старая версия скрипта не отдаёт колонку P — берём её из публичной выгрузки
+    async function addStatus(rows) {
+        try {
+            const statusByName = await RCU.cached('deadlines-status', async () => {
+                const sheet = await loadGviz(SHEET_ID, SHEET_GID);
+                return Object.fromEntries(sheet.map(cell => [cell.text('B'), cell.text('P')]));
+            });
+            return rows.map(r => ({ ...r, status: statusByName[r.name] || '' }));
+        } catch (e) {
+            console.warn('Не удалось прочитать колонку P:', e);
+            return rows;
+        }
+    }
+
+    async function loadRows() {
+        try {
+            const rows = (await RCU.bundle()).rows;
+            return rows.length && !('status' in rows[0]) ? addStatus(rows) : rows;
+        } catch (e) {
+            console.warn('Apps Script недоступен, беру публичную выгрузку:', e);
+            return RCU.cached('deadlines', gvizRows);
+        }
     }
 
     /* ===================== ОТРИСОВКА ===================== */

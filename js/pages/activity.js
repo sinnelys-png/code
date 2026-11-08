@@ -16,23 +16,34 @@
         ['S', 'доп. баллы'],
     ];
 
-    async function load() {
-        const [rows, viewerId] = await Promise.all([loadGviz(SHEET_ID, SHEET_GID), getViewerId()]);
-        const people = rows
+    // Строки рейтинга в том виде, в каком их отдаёт Apps Script; публичная выгрузка — запасной вариант
+    async function gvizRows() {
+        const rows = await loadGviz(SHEET_ID, SHEET_GID);
+        return rows
             .filter(cell => typeof cell('A')?.v === 'number' && cell.text('C'))
-            .map(cell => {
-                const id = cell('B')?.v != null ? String(Math.round(cell('B').v)) : '';
-                return {
-                    place: cell('A').v,
-                    name: cell.text('C'),
-                    url: id ? PROFILE_PREFIX + id : '',
-                    id,
-                    sum: cell.text('D') || '0',
-                    sumNum: Number(cell('D')?.v) || 0,
-                    stats: STATS.map(([col]) => cell.text(col) || '0'),
-                    statNums: STATS.map(([col]) => Number(cell(col)?.v) || 0),
-                };
-            })
+            .map(cell => ({
+                place: cell('A').v,
+                id: cell('B')?.v != null ? String(Math.round(cell('B').v)) : '',
+                name: cell.text('C'),
+                sum: cell.text('D') || '0',
+                sumNum: Number(cell('D')?.v) || 0,
+                stats: STATS.map(([col]) => cell.text(col) || '0'),
+                statNums: STATS.map(([col]) => Number(cell(col)?.v) || 0),
+            }));
+    }
+
+    async function sheetRows() {
+        try {
+            const data = await RCU.bundle();
+            if (Array.isArray(data.activity)) return data.activity;
+        } catch (e) { /* скрипт недоступен */ }
+        return RCU.cached('activity', gvizRows);
+    }
+
+    async function load() {
+        const [rows, viewerId] = await Promise.all([sheetRows(), getViewerId()]);
+        const people = rows
+            .map(p => ({ ...p, url: p.id ? PROFILE_PREFIX + p.id : '' }))
             // С нулевой суммой показываем только тех, у кого есть что-то в остальных столбцах —
             // это победитель прошлого месяца, ему ставим корону
             .filter(p => p.sumNum !== 0 || p.statNums.some(n => n !== 0))

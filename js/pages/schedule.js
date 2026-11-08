@@ -10,23 +10,38 @@
     const norm = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е')
         .replace(/^#/, '').replace(/_rcu$/, '').replace(/[_\s-]+/g, ' ').trim();
 
+    // Строки листа в виде { b: дата как в таблице, iso: "YYYY-MM-DD", c: теги } —
+    // так их отдаёт Apps Script; публичная выгрузка — запасной вариант
+    async function gvizRows() {
+        const rows = await loadGviz(SHEET_ID, SHEET_GID);
+        return rows
+            .filter(cell => cell('B')?.v && cell.text('C'))
+            .map(cell => ({ b: cell.text('B'), iso: gvizDateToISO(cell('B').v), c: cell.text('C') }));
+    }
+
+    async function sheetRows() {
+        try {
+            const data = await RCU.bundle();
+            if (Array.isArray(data.schedule)) return data.schedule;
+        } catch (e) { /* скрипт недоступен */ }
+        return RCU.cached('schedule', gvizRows);
+    }
+
     async function load() {
         const [rows, [characters, viewerId]] = await Promise.all([
-            loadGviz(SHEET_ID, SHEET_GID),
+            sheetRows(),
             RCU.dataOf('deadlines').catch(() => [[], '']),   // без дедлайнов просто не будет подсветки
         ]);
 
         const byName = new Map(characters.map(c => [norm(c.name), c]));
 
         const posts = rows
-            .filter(cell => cell('B')?.v && cell.text('C'))
-            .map(cell => {
-                const shown = cell.text('B');                  // «вс, 8 ноября в 14:00»
-                const [day, time = ''] = shown.split(/\s+в\s+(?=\d)/);
-                const tags = cell.text('C').split('//').map(t => t.trim()).filter(Boolean)
+            .map(row => {
+                const [day, time = ''] = row.b.split(/\s+в\s+(?=\d)/);   // «вс, 8 ноября в 14:00»
+                const tags = row.c.split('//').map(t => t.trim()).filter(Boolean)
                     .map(t => ({ text: t, character: byName.get(norm(t)) || null }));
                 return {
-                    iso: gvizDateToISO(cell('B').v),
+                    iso: row.iso,
                     day: day.trim(),
                     time: time.trim(),
                     tags,

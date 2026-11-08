@@ -1,25 +1,36 @@
 /**
- * Выдача листа «Дедлайн» в виде JSON для страницы deadlines.html.
+ * Данные для сайта одним ответом: дедлайны, расписание будущих постов и активность.
+ * Ответ кэшируется на 5 минут, поэтому таблицы читаются не чаще раза в 5 минут,
+ * сколько бы человек ни открывало сайт.
  *
  * КАК ПОДКЛЮЧИТЬ (один раз):
- *  1. Откройте таблицу → Расширения → Apps Script.
+ *  1. Откройте таблицу с дедлайнами → Расширения → Apps Script.
  *  2. Сотрите всё в файле Code.gs и вставьте этот код целиком. Сохраните (Ctrl+S).
  *  3. Нажмите «Начать развертывание» → «Новое развертывание».
  *     Тип: «Веб-приложение».
  *     Запуск от имени: «От моего имени».
  *     У кого есть доступ: «Все».
- *  4. Разрешите доступ к таблице, когда Google спросит.
+ *  4. Разрешите доступ к таблицам, когда Google спросит.
  *  5. Скопируйте «URL веб-приложения» (заканчивается на /exec)
- *     и вставьте его в js/deadlines.js в строку APPS_SCRIPT_URL.
+ *     и вставьте его в js/core.js в строку SCRIPT_URL.
  *
  * Если потом поменяете этот код — «Начать развертывание» → «Управление развертываниями» →
  * карандаш → Версия: «Новая версия» → «Развернуть». Ссылка при этом не меняется.
+ * (Google может ещё раз попросить разрешение — теперь скрипт читает и таблицу активности.)
  */
 
-const SHEET_GID = 236702218;   // лист «Дедлайн» (число после gid= в адресе таблицы)
 const CACHE_SECONDS = 300;     // как часто обновлять данные (5 минут)
+const CACHE_KEY = 'site-v2';
 
-// Номера колонок (A = 1)
+// Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
+const SHEET_GID = 236702218;
+// Лист «Расписание будущих постов» в этой же таблице
+const SCHEDULE_GID = 1309259642;
+// Таблица активности (отдельный файл) и её лист
+const ACTIVITY_SHEET_ID = '1P3xjGhIAfUgq1savZwkf7bkBy0uhG8nV2i0iaiEDlNw';
+const ACTIVITY_GID = 712278003;
+
+// Номера колонок листа «Дедлайн» (A = 1)
 const COL = {
   avatar: 1,    // A  — =IMAGE("...")
   name: 2,      // B  — =HYPERLINK(...)
@@ -35,15 +46,36 @@ const COL = {
   playerId: 29, // AC — id отвечающего
 };
 
+// Колонки счётчиков в таблице активности: E лайки, I комментарии, N вопросы, S доп. баллы
+const ACTIVITY_STATS = [5, 9, 14, 19];
+
 function doGet() {
-  const cache = CacheService.getScriptCache();
-  const cached = cache.get('deadlines');
+  const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheets().find(s => s.getSheetId() === SHEET_GID);
-  if (!sheet) return json_(JSON.stringify({ error: 'Лист не найден' }));
+  const out = { updated: new Date().toISOString() };
 
+  // Каждая часть собирается отдельно: если одна сломается, остальные всё равно придут
+  // (сайт для сломанной части сам возьмёт публичную выгрузку)
+  out.rows = deadlines_(ss);
+  try { out.schedule = schedule_(ss); } catch (e) { out.scheduleError = String(e); }
+  try { out.activity = activity_(); } catch (e) { out.activityError = String(e); }
+
+  const text = JSON.stringify(out);
+  cachePut_(CACHE_KEY, text);
+  return json_(text);
+}
+
+function sheetByGid_(ss, gid) {
+  const sheet = ss.getSheets().find(s => s.getSheetId() === gid);
+  if (!sheet) throw new Error('Лист ' + gid + ' не найден');
+  return sheet;
+}
+
+/** Лист «Дедлайн» */
+function deadlines_(ss) {
+  const sheet = sheetByGid_(ss, SHEET_GID);
   const range = sheet.getRange(1, 1, sheet.getLastRow(), COL.playerId);
   const values = range.getValues();
   const display = range.getDisplayValues();
@@ -81,10 +113,78 @@ function doGet() {
       queue: d[COL.queue - 1].split('\n').map(s => s.trim()).filter(Boolean),
     });
   }
+  return rows;
+}
 
-  const out = JSON.stringify({ updated: new Date().toISOString(), rows: rows });
-  try { cache.put('deadlines', out, CACHE_SECONDS); } catch (e) { /* слишком большой ответ — просто без кэша */ }
-  return json_(out);
+/** Лист «Расписание будущих постов»: B — дата и время, C — теги */
+function schedule_(ss) {
+  const sheet = sheetByGid_(ss, SCHEDULE_GID);
+  const range = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 3);
+  const values = range.getValues();
+  const display = range.getDisplayValues();
+  const tz = ss.getSpreadsheetTimeZone();
+
+  const rows = [];
+  for (let i = 0; i < values.length; i++) {
+    const date = values[i][1];
+    const tags = display[i][2].trim();
+    if (!(date instanceof Date) || !tags) continue;
+    rows.push({
+      b: display[i][1].trim(),                              // «вс, 8 ноября в 14:00»
+      iso: Utilities.formatDate(date, tz, 'yyyy-MM-dd'),
+      c: tags,
+    });
+  }
+  return rows;
+}
+
+/** Таблица активности: A место, B VK ID, C имя, D сумма, E/I/N/S счётчики */
+function activity_() {
+  const book = SpreadsheetApp.openById(ACTIVITY_SHEET_ID);
+  const sheet = sheetByGid_(book, ACTIVITY_GID);
+  const range = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 19);
+  const values = range.getValues();
+  const display = range.getDisplayValues();
+
+  const rows = [];
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    const d = display[i];
+    const name = d[2].trim();
+    if (typeof v[0] !== 'number' || !name) continue;
+    rows.push({
+      place: v[0],
+      id: typeof v[1] === 'number' ? String(Math.round(v[1])) : String(v[1]).replace(/\D/g, ''),
+      name: name,
+      sum: d[3].trim() || '0',
+      sumNum: Number(v[3]) || 0,
+      stats: ACTIVITY_STATS.map(c => d[c - 1].trim() || '0'),
+      statNums: ACTIVITY_STATS.map(c => Number(v[c - 1]) || 0),
+    });
+  }
+  return rows;
+}
+
+/* Кэш скрипта хранит не больше 100 КБ на ключ — длинный ответ кладём по кусочкам */
+function cachePut_(key, text) {
+  const cache = CacheService.getScriptCache();
+  const size = 90000;
+  const parts = {};
+  let n = 0;
+  for (let i = 0; i < text.length; i += size) parts[key + ':' + (n++)] = text.slice(i, i + size);
+  parts[key] = String(n);
+  try { cache.putAll(parts, CACHE_SECONDS); } catch (e) { /* не влезло — просто без кэша */ }
+}
+
+function cacheGet_(key) {
+  const cache = CacheService.getScriptCache();
+  const n = Number(cache.get(key));
+  if (!n) return null;
+  const keys = [];
+  for (let i = 0; i < n; i++) keys.push(key + ':' + i);
+  const parts = cache.getAll(keys);
+  if (keys.some(k => parts[k] == null)) return null;
+  return keys.map(k => parts[k]).join('');
 }
 
 /** Первая строка в кавычках из формулы: =IMAGE("url") → url */

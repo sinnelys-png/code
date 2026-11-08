@@ -135,9 +135,14 @@
     <script src="js/site.js"></script>
 
     <!-- Интеграция VK Bridge -->
-    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <!-- Версия закреплена, а integrity не даст выполниться файлу, если его кто-то подменит.
+         Чтобы обновить vk-bridge: поменять версию в адресе и пересчитать integrity
+         (например, на https://www.srihash.org/). -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge@3.0.2/dist/browser.min.js"
+        integrity="sha384-8K7KdNdtyf4bfQKPtkFUE/XpmZs7mvXeU35WT+sO8mWa2ThX7Cz4y4kzyAVcp2B2"
+        crossorigin="anonymous"></script>
     <script>
-        vkBridge.send('VKWebAppInit');
+        if (window.vkBridge) vkBridge.send('VKWebAppInit');
     </script>
 
     <!-- Страницы с таблицами и переключение между ними без перезагрузки -->
