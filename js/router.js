@@ -13,8 +13,10 @@
     const { dataOf } = RCU;
     let navToken = 0;    // чтобы медленный ответ старой страницы не перерисовал новую
 
+    // «#characters/Аден_Кингсли» → страница characters, параметр «Аден_Кингсли» (RCU.routeParam)
     function currentPage() {
-        const name = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+        const [name, ...rest] = decodeURIComponent(location.hash.replace(/^#\/?/, '')).split('/');
+        RCU.routeParam = rest.join('/');
         return RCU.pages[name] ? name : '';
     }
 

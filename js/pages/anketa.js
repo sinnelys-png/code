@@ -27,7 +27,7 @@
     ];
 
     // значки, которыми начинаются пункты списков (не начало раздела)
-    const BULLET = /^[\s–—\-−>•*☆♡♤♧◇◆✦✧·]+/;
+    const BULLET = /^[\s–—\-−>›»•*☆♡♤♧◇◆✦✧·]+/;
     const isLetterOrDigit = (ch) => /[\p{L}\p{N}]/u.test(ch);
 
     const clean = (s) => String(s || '').replace(/\r/g, '').trim();
@@ -157,9 +157,15 @@
 
     function parseParams(text, idx) {
         const t = String(text || '');
-        const height = (t.match(/рост\s*:?\s*(\d{2,3}(?:\s*\/\s*\d{2,3})?)/i) || t.match(/(\d{2,3}(?:\s*\/\s*\d{2,3})?)\s*см/i) || [])[1];
+        // рост: «рост: 187», «187 см», а если единиц нет — отдельное число от 100 до 249 (не килограммы)
+        const height = (t.match(/рост\s*:?\s*(\d{2,3}(?:\s*\/\s*\d{2,3})?)/i) || t.match(/(\d{2,3}(?:\s*\/\s*\d{2,3})?)\s*см/i)
+            || t.match(/(?:^|[^\d\/])((?:1\d\d|2[0-4]\d)(?:\s*\/\s*(?:1\d\d|2[0-4]\d))?)(?!\s*кг)(?=[^\d]|$)/i) || [])[1];
         const weight = (t.match(/вес\s*:?\s*(\d{2,3}(?:\s*\/\s*\d{2,3})?)/i) || t.match(/(\d{2,3}(?:\s*\/\s*\d{2,3})?)\s*кг/i) || [])[1];
         let species = (t.match(/(?:порода|вид)\s*:?\s*([^\n;]+)/i) || [])[1];
+        // параметры списком («› 170 / › 60 кг / › лисица») — вид: строка без цифр
+        const plines = t.split('\n').map(l => l.replace(BULLET, '').trim()).filter(Boolean);
+        const noDigits = plines.filter(l => !/\d/.test(l) && !/^(рост|вес)/i.test(l));
+        if (!species && plines.length > 1 && noDigits.length) species = noDigits[noDigits.length - 1];
         if (!species) {
             // «188 см, 97 кг, непородистый котик.» — то, что осталось после цифр
             species = t.replace(/рост|вес/gi, '')

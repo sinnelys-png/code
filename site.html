@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROYAL CROSSBREED UNIVERSITY</title>
     <!-- Публичная версия сайта (мини-приложение ВК — index.html) -->
+    <meta name="description" content="ROYAL CROSSBREED UNIVERSITY — персонажи, факультеты, общежитие и город ролевой.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ROYAL CROSSBREED UNIVERSITY">
+    <meta property="og:title" content="ROYAL CROSSBREED UNIVERSITY">
+    <meta property="og:description" content="Персонажи, факультеты, общежитие и город ролевой.">
+    <meta property="og:url" content="https://sinnelys-png.github.io/code/site.html">
+    <meta property="og:image" content="https://sinnelys-png.github.io/code/img/gerb.png">
+    <meta property="og:image:width" content="560">
+    <meta property="og:image:height" content="532">
+    <meta name="twitter:card" content="summary">
     <!-- Основной шрифт текста -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,21 +44,14 @@
     <!-- ИСПРАВЛЕНО: Теперь header — это изолированная и правильная структура -->
     <header>
         <div class="header-center-wrapper">
-            <nav class="nav-left">
-                <a href="#faculties">факультеты</a>
-                <span class="star-separator">✦</span>
-                <a href="#characters">персонажи</a>
-            </nav>
+            <!-- пункты меню строит js/menu.js из списка SITE_MENU (ниже, перед скриптами) -->
+            <nav class="nav-left"></nav>
 
             <div class="logo-container">
                 <img src="img/gerb.png" alt="logo" class="logo">
             </div>
 
-            <nav class="nav-right">
-                <a href="#city">город</a>
-                <span class="star-separator">✦</span>
-                <a href="#dorm">общежитие</a>
-            </nav>
+            <nav class="nav-right"></nav>
 
             <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
             <!-- Кончик шапки в разделах: наведение или нажатие показывает шапку (css/sections.css) -->
@@ -102,12 +105,8 @@
     <template id="home-template">
         <h1 class="home-title">Добро пожаловать</h1>
         <!-- Здесь можно добавить вступительный текст: <p class="home-lead">…</p> -->
-        <nav class="pub-home-links">
-            <a href="#faculties">факультеты</a>
-            <a href="#characters">персонажи</a>
-            <a href="#city">город</a>
-            <a href="#dorm">общежитие</a>
-        </nav>
+        <!-- ссылки на разделы заполняет js/menu.js из SITE_MENU -->
+        <nav class="pub-home-links"></nav>
     </template>
 
     <!-- Большая карточка персонажа (заполняет js/pages/characters.js) -->
@@ -116,6 +115,18 @@
         <div class="pc-modal-body" role="dialog" aria-modal="true" aria-label="Карточка персонажа"></div>
     </div>
 
+    <!-- Меню сайта: [адрес раздела, название]. Чтобы добавить раздел — дописать строку сюда
+         и подключить его страницу ниже (js/pages/…). Больше 6 пунктов — лишние уйдут в «ещё ▾». -->
+    <script>
+        window.SITE_MENU = [
+            ['#faculties', 'факультеты'],
+            ['#characters', 'персонажи'],
+            ['#student-activity', 'студенческая активность'],
+            ['#city', 'город'],
+            ['#dorm', 'общежитие'],
+        ];
+    </script>
+    <script src="js/menu.js"></script>
     <script src="js/site.js"></script>
 
     <!-- Страницы с таблицами и переключение между ними без перезагрузки -->
@@ -125,6 +136,7 @@
     <script src="js/pages/anketa.js"></script>
     <script src="js/pages/characters.js"></script>
     <script src="js/pages/city.js"></script>
+    <script src="js/pages/student-activity.js"></script>
     <script src="js/pages/dorm.js"></script>
     <script src="js/router.js"></script>
 </body>

@@ -24,16 +24,29 @@
     // номер дома из ячейки: «18», «д. 18», «Дом 18» → 18
     const houseNo = (v) => { const m = String(v || '').match(/\d+/); return m ? Number(m[0]) : 0; };
 
+    // колонка P «можно ли соседа»: «да» / «нет» / «уточняйте у автора»
+    const neighborState = (v) => {
+        const t = String(v || '').toLowerCase();
+        if (/^да|можно/.test(t)) return 'yes';
+        if (/^нет/.test(t)) return 'no';
+        if (/уточн|автор/.test(t)) return 'ask';
+        return '';
+    };
+    const NEIGHBOR_TEXT = { yes: 'можно подселиться', ask: 'уточняйте у автора', no: 'без соседей' };
+
     function mapSVG(residents) {
         const houses = housePositions().map(h => {
-            const count = (residents[h.n] || []).length;
+            const people = residents[h.n] || [];
+            const count = people.length;
+            const free = people.some(c => neighborState(c.neighbor) === 'yes');
             return `
-                <g class="dm-house dm-${GROUP(h.n)}${count ? ' has-people' : ''}" data-house="${h.n}" tabindex="0" role="button"
-                    aria-label="Дом ${h.n}: ${count ? `${count} ${RCU.plural(count, 'жилец', 'жильца', 'жильцов')}` : 'пусто'}"
+                <g class="dm-house dm-${GROUP(h.n)}${count ? ' has-people' : ''}${free ? ' has-free' : ''}" data-house="${h.n}" tabindex="0" role="button"
+                    aria-label="Дом ${h.n}: ${count ? `${count} ${RCU.plural(count, 'жилец', 'жильца', 'жильцов')}` : 'пусто'}${free ? ', можно подселиться' : ''}"
                     transform="translate(${h.x.toFixed(1)} ${h.y.toFixed(1)})">
                     <rect x="-24" y="-24" width="48" height="48" rx="4" transform="rotate(${h.rot.toFixed(1)})" />
                     <text class="dm-num" y="7">${h.n}</text>
                     ${count ? `<g class="dm-badge" transform="translate(22 -22)"><circle r="12" /><text y="4.5">${count}</text></g>` : ''}
+                    ${free ? `<g class="dm-free" transform="translate(-22 22)"><circle r="11" /><path d="M -5 0 H 5 M 0 -5 V 5" /></g>` : ''}
                 </g>`;
         }).join('');
 
@@ -75,13 +88,30 @@
                 <span class="dl-group-name">дом ${n}</span>
                 <span class="dl-group-count">${people.length}</span>
             </h3>
-            ${people.length
-                ? `<div class="dm-people">${people.map(c => `
-                    <div class="dm-person">
-                        ${RCU.smallCharacterCard(c)}
-                        ${c.room ? `<span class="dm-room">комната ${esc(c.room)}</span>` : ''}
-                    </div>`).join('')}</div>`
-                : '<p class="pc-soon">Здесь пока никто не живёт.</p>'}`;
+            ${people.length ? roomsHTML(people) : '<p class="pc-soon">Здесь пока никто не живёт.</p>'}`;
+    }
+
+    // жильцы по комнатам; у комнаты — можно ли подселиться (по колонке P жильцов)
+    function roomsHTML(people) {
+        const rooms = [];
+        people.forEach(c => {
+            const key = c.room || '';
+            let r = rooms.find(x => x.room === key);
+            if (!r) rooms.push(r = { room: key, people: [] });
+            r.people.push(c);
+        });
+        return rooms.map(r => {
+            const states = r.people.map(c => neighborState(c.neighbor));
+            const state = states.includes('no') ? 'no' : states.includes('yes') ? 'yes' : states.includes('ask') ? 'ask' : '';
+            return `
+                <section class="dm-room-block">
+                    <h4 class="dm-room-title">
+                        ${r.room ? `комната ${esc(r.room)}` : 'комната не указана'}
+                        ${state ? `<span class="dm-tag dm-tag--${state}">${NEIGHBOR_TEXT[state]}</span>` : ''}
+                    </h4>
+                    <div class="dm-people">${r.people.map(c => `<div class="dm-person">${RCU.smallCharacterCard(c)}</div>`).join('')}</div>
+                </section>`;
+        }).join('');
     }
 
     let current = 0;
@@ -103,6 +133,7 @@
                 <div class="dm-wrap">
                     ${mapSVG(residents)}
                     <ul class="dm-legend">
+                        <li><svg class="dm-legend-icon dm-legend-free" viewBox="-12 -12 24 24"><circle r="11" /><path d="M -5 0 H 5 M 0 -5 V 5" /></svg> можно подселиться</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40"><text y="7">£</text></svg> терминал</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40">${'<path class="dm-ico" d="M -13 6 h 20 v 5 h -20 z M 9 6 h 4 v 5 h -4 z M -9 -1 q 3 -4 0 -8 M -4 -1 q 3 -4 0 -8" />'}</svg> зона курения</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40">${'<path class="dm-ico" d="M -12 4 q 12 -18 24 0 z M -14 4 h 28 v 3 h -28 z" />'}</svg> охранная будка</li>

@@ -231,6 +231,7 @@
         if (modal.hidden) lastFocus = document.activeElement;
         modalBody.innerHTML = bigCard(data.byName.get(name));
         modalBody.dataset.name = name;
+        setCardHash(name);
         // анкеты грузятся отдельно — когда придут, перерисуем открытую карточку
         if (!anketaTexts) loadAnketas().then(() => {
             if (!modal.hidden && modalBody.dataset.name === name && modalBody.querySelector('.pc-big:not(.fc-big)')) {
@@ -243,8 +244,18 @@
         modalBody.querySelector('.pc-close').focus({ preventScroll: true });
     }
 
+    const slug = (name) => name.replace(/\s+/g, '_');
+    const unslug = (s) => String(s || '').replace(/_/g, ' ').trim();
+
+    function setCardHash(name) {
+        if (!/^#characters/.test(location.hash)) return;           // только на странице персонажей
+        const h = name ? `#characters/${encodeURIComponent(slug(name))}` : '#characters';
+        if (location.hash !== h) history.replaceState(history.state, '', h);
+    }
+
     function closeCharacter() {
         if (!modal || modal.hidden) return;
+        setCardHash('');
         modal.classList.remove('is-shown');
         document.documentElement.classList.remove('pc-open');
         setTimeout(() => { modal.hidden = true; modalBody.innerHTML = ''; }, 250);
@@ -361,12 +372,12 @@
     const group = () => file.groups[file.gi];
     const clampS = (v) => Math.max(0, Math.min(group().list.length - 1, v));
 
-    async function openFile() {
+    async function openFile(center) {
         if (file.open || file.busy) return;
         file.open = true;
         file.root.querySelector('.pc-screen').classList.add('is-open');
-        // центр — середина группы: карточки разлетаются и вверх, и вниз
-        file.s = file.target = Math.floor((group().list.length - 1) / 2);
+        // центр — середина группы (карточки разлетаются и вверх, и вниз) или нужная карточка
+        file.s = file.target = Number.isInteger(center) ? center : Math.floor((group().list.length - 1) / 2);
         file.stackTop = file.s;
         await animateSpread(1);
     }
@@ -445,11 +456,68 @@
         const screen = file.root.querySelector('.pc-screen');
         if (scroller && screen) {
             const cs = getComputedStyle(scroller);
-            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 40;
+            const search = file.root.querySelector('.pc-search');
+            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 40
+                - (search ? search.offsetHeight + 8 : 0);
             screen.style.height = `${Math.max(320, h)}px`;
         }
-        const first = file.root.querySelector('.pc-file-card');
-        if (first) file.H = first.offsetHeight + GAP;
+        // шаг — по самой высокой карточке, чтобы длинные имена в две строки не наезжали на соседей
+        const cards = file.root.querySelectorAll('.pc-file-card');
+        let max = 0;
+        cards.forEach(el => { max = Math.max(max, el.offsetHeight); });
+        if (max) file.H = max + GAP;
+    }
+
+    // перейти к персонажу: нужная группа, картотека раскрыта, он в центре; при open — открыть карточку
+    async function goTo(name, open) {
+        const gi = file.groups.findIndex(g => g.list.some(c => c.name === name));
+        if (gi < 0 || file.busy) return false;
+        if (gi !== file.gi) {
+            if (file.open) await closeFile();
+            file.gi = gi;
+            renderGroup();
+        }
+        const idx = group().view.findIndex(c => c.name === name);
+        if (file.open) { file.target = idx; kick(); }
+        else await openFile(idx);
+        if (open) openCharacter(name);
+        return true;
+    }
+
+    const norm = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е');
+
+    function bindSearch(root) {
+        const input = root.querySelector('.pc-search-input');
+        const list = root.querySelector('.pc-search-list');
+        let found = [];
+        const close = () => { list.hidden = true; list.innerHTML = ''; };
+        const show = () => {
+            const q = norm(input.value).trim();
+            if (!q) { close(); return; }
+            found = data.characters.filter(c => norm(c.name).includes(q) || norm(c.faculty).includes(q)
+                || norm(c.subject).includes(q) || norm(c.post).includes(q)).slice(0, 8);
+            list.innerHTML = found.length
+                ? found.map((c, i) => `
+                    <li><button class="pc-search-item" type="button" data-i="${i}">
+                        <span class="pc-search-name">${esc(c.name)}</span>
+                        <span class="pc-search-meta">${esc(c.role === 'персонал' ? c.post : shortFaculty(c.faculty))}</span>
+                    </button></li>`).join('')
+                : '<li class="pc-search-none">никого не нашлось</li>';
+            list.hidden = false;
+        };
+        input.addEventListener('input', show);
+        input.addEventListener('focus', show);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && found[0]) { e.preventDefault(); goTo(found[0].name, true); close(); input.blur(); }
+            if (e.key === 'Escape') { close(); input.blur(); }
+        });
+        list.addEventListener('click', (e) => {
+            const b = e.target.closest('.pc-search-item');
+            if (!b) return;
+            goTo(found[Number(b.dataset.i)].name, true);
+            close();
+        });
+        document.addEventListener('click', (e) => { if (!e.target.closest('.pc-search')) close(); });
     }
 
     async function setSort(by) {
@@ -556,6 +624,11 @@
             if (!file.groups.length) { root.innerHTML = '<p class="dl-status">Персонажей пока нет.</p>'; return; }
 
             root.innerHTML = `
+                <div class="pc-search">
+                    <input class="dl-search-input pc-search-input" type="search" autocomplete="off"
+                        placeholder="поиск: имя, факультет, предмет или должность" aria-label="Поиск персонажа">
+                    <ul class="pc-search-list" hidden></ul>
+                </div>
                 <div class="pc-screen">
                     <button class="pc-arrow pc-arrow-prev" type="button" aria-label="Предыдущая группа"><span></span></button>
                     <div class="pc-stage">
@@ -573,7 +646,11 @@
                 </div>`;
             root.querySelector('.pc-fold').addEventListener('click', () => closeFile());
             bindFile(root);
+            bindSearch(root);
             renderGroup();
+            // адрес вида #characters/Аден_Кингсли — сразу открыть его карточку
+            const wanted = unslug(RCU.routeParam);
+            if (wanted && d.byName.has(wanted)) setTimeout(() => goTo(wanted, true), 400);
             // после загрузки шрифтов и картинок и после того, как блок раздела
             // принял форму прямоугольника (≈0,7 с), высота экрана и карточек меняется
             requestAnimationFrame(() => { measure(); layout(); });
