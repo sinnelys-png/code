@@ -193,7 +193,7 @@ window.RCU = (() => {
     /* ---------- Один запрос за всеми таблицами ----------
        Apps Script (apps-script/Code.gs) отдаёт дедлайны, расписание и активность одним ответом
        и сам держит его в кэше 5 минут, так что таблицы читаются не чаще раза в 5 минут. */
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk19tuN3_KujHDRSQM-OHpjLgkfb9_ygmvvpaZLro9JLLG0WpPcP74IxDe0SH5OWD_Pg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyouZZ0u90sUDVKC_ZdB2SO5P8dlDP3BnE1OImeih3xgMoXQLBzwbwceDkbxZAfX09Z/exec';
 
     function bundle() {
         return cached('bundle', async () => {
