@@ -105,7 +105,7 @@
         const mine = dl && viewerId ? dl[0].filter(r => r.playerId === viewerId) : [];
         const me = act && viewerId ? act.people.find(p => p.id === viewerId) : null;
 
-        // Приветствие по имени игрока, если он есть в таблице
+        // Приветствие по имени отвечающего, если он есть в таблице
         if (greetingEl && mine.length && !isEmpty(mine[0].player)) {
             greetingEl.textContent = `Добро пожаловать, ${mine[0].player}`;
         }

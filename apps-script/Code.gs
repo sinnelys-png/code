@@ -26,6 +26,9 @@ const DEADLINES_SHEET_ID = '1KTZmUktm284bdyGc_LfDpv9BVUDCqcEU8Av29s-NXVU';
 // Техтаблица (закрытая): B — имя персонажа, J — факультет
 const FACULTY_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
 const FACULTY_GID = 0;
+// Таблица факультетов (структура: предметы, преподаватели, декан, нпс, студенты по курсам, факультативы)
+const FACULTY_INFO_SHEET_ID = '1Rs16v2rZ_PwRoVF-gNBU0fW4sdw_r5eZ2JjcbEyJ17s';
+const FACULTY_INFO_GID = 1846439865;
 
 // Ответ живёт в кэше 10 минут, а прогрев обновляет его каждые 5 —
 // так кэш никогда не успевает остыть, а данные не старше 5 минут.
@@ -37,7 +40,7 @@ const WARMUP_MINUTES = 5;
 // Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
-const CACHE_KEY = 'site-v4';
+const CACHE_KEY = 'site-v6';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -67,10 +70,36 @@ const COL = {
 // Колонки счётчиков в таблице активности: E лайки, I комментарии, N вопросы, S доп. баллы
 const ACTIVITY_STATS = [5, 9, 14, 19];
 
-function doGet() {
+function doGet(e) {
+  // ?part=anketas — тексты анкет (колонка X Техтаблицы), только для публичного сайта:
+  // они большие, поэтому отдаются отдельно и не грузятся в мини-приложение ВК
+  if (e && e.parameter && e.parameter.part === 'anketas') {
+    const cachedA = cacheGet_(ANKETAS_KEY);
+    if (cachedA) return json_(cachedA);
+    return json_(buildAnketas_());
+  }
   const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
   return json_(build_());
+}
+
+const ANKETAS_KEY = 'anketas-v1';
+const ANKETA_COL = 24;   // X — анкета персонажа
+
+function buildAnketas_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), FACULTY_GID);
+  const last = sheet.getLastRow();
+  const names = sheet.getRange(1, 2, last, 1).getDisplayValues();
+  const texts = sheet.getRange(1, ANKETA_COL, last, 1).getDisplayValues();
+  const anketas = {};
+  for (let i = 0; i < last; i++) {
+    const name = String(names[i][0] || '').trim();
+    const text = String(texts[i][0] || '').trim();
+    if (name && text && name !== 'Имя персонажа') anketas[name] = text;
+  }
+  const out = JSON.stringify({ updated: new Date().toISOString(), anketas: anketas });
+  cachePut_(ANKETAS_KEY, out);
+  return out;
 }
 
 /** Запускается триггером каждые WARMUP_MINUTES минут: перечитывает таблицы заранее */
@@ -79,6 +108,7 @@ function warmCache() {
   const hour = Number(Utilities.formatDate(new Date(), tz, 'H'));
   if (hour >= WARMUP_NIGHT_FROM && hour < WARMUP_NIGHT_TO) return;
   build_();
+  try { buildAnketas_(); } catch (e) { /* анкет может не быть */ }
 }
 
 /** Один раз вручную: завести триггер прогрева (старые триггеры warmCache удаляются) */
@@ -106,6 +136,8 @@ function build_() {
   try { out.schedule = schedule_(ss); } catch (e) { out.scheduleError = String(e); }
   try { out.activity = activity_(); } catch (e) { out.activityError = String(e); }
   try { out.faculties = faculties_(); } catch (e) { out.facultiesError = String(e); }
+  try { out.tech = tech_(); } catch (e) { out.techError = String(e); }
+  try { out.facultyInfo = facultyInfo_(); } catch (e) { out.facultyInfoError = String(e); }
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
@@ -227,6 +259,112 @@ function faculties_() {
     if (name && faculty && faculty !== 'Факультет' && name !== 'Имя персонажа') out[name] = faculty;
   });
   return out;
+}
+
+/**
+ * Техтаблица целиком — для публичного сайта (персонажи, факультеты, общежитие).
+ * Колонки ищутся по заголовкам (строка, где в B написано «Имя персонажа»),
+ * поэтому порядок колонок в таблице можно менять. Безымянные колонки I и L
+ * отдаются как есть (i, l).
+ */
+function tech_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), FACULTY_GID);
+  const display = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 16)).getDisplayValues();
+  let head = -1;
+  for (let i = display.length - 1; i >= 0; i--) {
+    if (display[i][1].trim() === 'Имя персонажа') { head = i; break; }
+  }
+  if (head < 0) throw new Error('Не найдена строка заголовков');
+  const titles = display[head].map(t => t.trim().toLowerCase());
+  const col = (name) => titles.indexOf(name);
+  const C = {
+    role: col('роль'), duet: col('дуэт'), player: col('отвечающий'), topic: col('обсуждение'),
+    album: col('альбом'), faculty: col('факультет'), subrole: col('подроль'),
+    extra: col('доп предметы'), house: col('дом в общежитии'), room: col('комната'), neighbor: col('можно соседа?'),
+  };
+  const url = (v) => { v = String(v || '').trim(); return v && !/^https?:\/\//i.test(v) && /^[\w.-]+\.\w+\//.test(v) ? 'https://' + v : v; };
+  const get = (r, i) => (i >= 0 ? String(r[i] || '').trim() : '');
+
+  const rows = [];
+  for (let i = head + 1; i < display.length; i++) {
+    const r = display[i];
+    const name = r[1].trim();
+    if (!name || name === 'Имя персонажа') continue;
+    rows.push({
+      name: name,
+      role: get(r, C.role),
+      duet: get(r, C.duet),
+      playerUrl: url(get(r, C.player)),
+      topicUrl: url(get(r, C.topic)),
+      albumUrl: url(get(r, C.album)),
+      faculty: get(r, C.faculty),
+      subrole: get(r, C.subrole),
+      extra: get(r, C.extra),
+      house: get(r, C.house),
+      room: get(r, C.room),
+      neighbor: get(r, C.neighbor),
+      i: get(r, 8),     // I — без заголовка
+      l: get(r, 11),    // L — без заголовка
+    });
+  }
+  return rows;
+}
+
+/**
+ * Таблица факультетов. Каждый факультет — блок строк от названия до «✦✦✦»:
+ *   C: название / «Возможные предметы…» / «Преподаватели» / «N/4 ролей занято» /
+ *      предмет преподавателя (E — имя) / «Декан» (E) / «нпс» (E) /
+ *      «Доп. предметы…» → предмет (E «куратор», F имя; E «студенты», F имена)
+ *   J: «N курс», K: имена студентов этого курса (на следующих строках J может быть пустым)
+ */
+function facultyInfo_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_INFO_SHEET_ID), FACULTY_INFO_GID);
+  const d = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 11).getDisplayValues();
+  const C = 2, E = 4, F = 5, J = 9, K = 10;
+  const clean = (v) => String(v || '').trim();
+  const real = (v) => { v = clean(v); return v && !/^[—–-]+$/.test(v) ? v : ''; };
+
+  const list = [];
+  let f = null, mode = '', course = '', elective = null;
+  for (let i = 0; i < d.length; i++) {
+    const r = d[i];
+    const c = clean(r[C]);
+    if (/факультет|^персонал$/i.test(c) && !/^возможные|^доп\. предметы|деканом/i.test(c) && !f) {
+      f = { title: c, subjects: '', roles: '', teachers: [], dean: '', npc: '', courses: [], electives: [] };
+      mode = 'head'; course = ''; elective = null;
+      continue;
+    }
+    if (!f) continue;
+    if (c === '✦✦✦') { list.push(f); f = null; continue; }
+
+    if (/^возможные предметы/i.test(c)) { f.subjects = c.replace(/^возможные предметы[^:]*:\s*/i, ''); continue; }
+    if (/^преподаватели$/i.test(c)) { mode = 'teachers'; continue; }
+    if (/ролей занято/i.test(c)) { f.roles = c; continue; }
+    if (/^декан$/i.test(c)) { f.dean = real(r[E]); mode = 'dean'; }
+    else if (/^нпс$/i.test(c)) { f.npc = real(r[E]); mode = 'npc'; }
+    else if (/^доп\. предметы/i.test(c)) { mode = 'electives'; }
+    else if (/^все имена/i.test(c)) { mode = 'end'; }
+    else if (mode === 'teachers' && c) { if (real(r[E]) || real(c)) f.teachers.push({ subject: real(c), name: real(r[E]) }); }
+    else if (mode === 'electives') {
+      if (c) { elective = { subject: real(c), curator: '', students: [] }; f.electives.push(elective); }
+      if (elective) {
+        const what = clean(r[E]).toLowerCase();
+        if (what === 'куратор') elective.curator = real(r[F]);
+        else if (real(r[F])) elective.students.push(real(r[F]));
+      }
+    }
+
+    // студенты по курсам — правая часть блока
+    const m = clean(r[J]).match(/(\d+)\s*курс/i);
+    if (m) course = Number(m[1]);
+    const student = real(r[K]);
+    if (student && course) {
+      let g = f.courses.find(x => x.course === course);
+      if (!g) f.courses.push(g = { course: course, students: [] });
+      g.students.push(student);
+    }
+  }
+  return list;
 }
 
 /* Кэш скрипта хранит не больше 100 КБ на ключ — длинный ответ кладём по кусочкам */

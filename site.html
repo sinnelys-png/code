@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROYAL CROSSBREED UNIVERSITY</title>
+    <!-- Публичная версия сайта (мини-приложение ВК — index.html) -->
+    <!-- Основной шрифт текста -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/deadlines.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/intro.css">
+    <link rel="stylesheet" href="css/sections.css">
+    <link rel="stylesheet" href="css/public.css">
+    <script>
+        // Заставка «конверт» при загрузке (css/intro.css). Ставим класс сразу,
+        // до отрисовки страницы, чтобы блок не мелькнул на своём месте раньше времени.
+        (function () {
+            if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            var html = document.documentElement;
+            html.classList.add('intro');
+            setTimeout(function () { html.classList.remove('intro'); }, 2900);
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="bg-stripes-container"></div>
+
+    <!-- ИСПРАВЛЕНО: Теперь header — это изолированная и правильная структура -->
+    <header>
+        <div class="header-center-wrapper">
+            <nav class="nav-left">
+                <a href="#faculties">факультеты</a>
+                <span class="star-separator">✦</span>
+                <a href="#characters">персонажи</a>
+            </nav>
+
+            <div class="logo-container">
+                <img src="img/gerb.png" alt="logo" class="logo">
+            </div>
+
+            <nav class="nav-right">
+                <a href="#city">город</a>
+                <span class="star-separator">✦</span>
+                <a href="#dorm">общежитие</a>
+            </nav>
+
+            <!-- Закладка лежит здесь, на одном уровне с меню и гербом -->
+            <!-- Кончик шапки в разделах: наведение или нажатие показывает шапку (css/sections.css) -->
+            <button class="header-tip" type="button" aria-label="Показать меню"><span class="header-tip-chevron"></span></button>
+
+            <div class="header-bookmark">
+                <svg viewBox="0 0 1010 410" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- градиенты на обводке -->
+                        <linearGradient id="header-global-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0"
+                            y2="400">
+                            <stop offset="0%" stop-color="#02304b" />
+                            <stop offset="40%" stop-color="#012d47" />
+                            <stop offset="75%" stop-color="#012a42" />
+                            <stop offset="100%" stop-color="#00263b" />
+                        </linearGradient>
+
+                        <radialGradient id="header-global-stroke" gradientUnits="userSpaceOnUse"
+                            cx="-9999" cy="-9999" r="400">
+                            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" /> <!-- Яркое ядро под мышкой -->
+                            <stop offset="50%" stop-color="#B6AF98" />
+                            <stop offset="100%" stop-color="#888F85" />
+                        </radialGradient>
+                    </defs>
+
+                    <!-- Чистое тело шапки -->
+                    <polygon points="0,0 1010,0 1010,305 505,405 0,305" fill="url(#header-global-fill)" stroke="none" />
+
+                    <!-- Нижняя обводка 7 пикселей, которая теперь светится СТРОГО под курсором -->
+                    <polyline points="0,305 505,405 1010,305" fill="none" stroke="url(#header-global-stroke)"
+                        stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                </svg>
+            </div>
+        </div> 
+    </header> 
+
+    <!-- Основной контентный блок сайта -->
+    <main class="main-content-block">
+        <!-- Золотая лента с названием раздела (заполняет js/router.js, стили — css/pages.css) -->
+        <div class="page-ribbon is-hidden" aria-hidden="true"><span class="page-ribbon-text"></span></div>
+        <div class="main-inner-content">
+            <div class="main-scroll-text">
+                <div class="main-scroll-viewport">
+                    <div id="view" class="page-view"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Публичный сайт: главная (подставляется роутером) -->
+    <template id="home-template">
+        <h1 class="home-title">Добро пожаловать</h1>
+        <!-- Здесь можно добавить вступительный текст: <p class="home-lead">…</p> -->
+        <nav class="pub-home-links">
+            <a href="#faculties">факультеты</a>
+            <a href="#characters">персонажи</a>
+            <a href="#city">город</a>
+            <a href="#dorm">общежитие</a>
+        </nav>
+    </template>
+
+    <!-- Большая карточка персонажа (заполняет js/pages/characters.js) -->
+    <div class="pc-modal" hidden>
+        <div class="pc-modal-backdrop" data-close></div>
+        <div class="pc-modal-body" role="dialog" aria-modal="true" aria-label="Карточка персонажа"></div>
+    </div>
+
+    <script src="js/site.js"></script>
+
+    <!-- Страницы с таблицами и переключение между ними без перезагрузки -->
+    <script src="js/core.js"></script>
+    <script src="js/pages/public-data.js"></script>
+    <script src="js/pages/faculties.js"></script>
+    <script src="js/pages/anketa.js"></script>
+    <script src="js/pages/characters.js"></script>
+    <script src="js/pages/city.js"></script>
+    <script src="js/pages/dorm.js"></script>
+    <script src="js/router.js"></script>
+</body>
+
+</html>

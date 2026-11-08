@@ -1,0 +1,943 @@
+/* ==========================================================================
+   ПУБЛИЧНЫЙ САЙТ (site.html): персонажи, факультеты, общежитие, город
+   Общий стиль — из main.css / deadlines.css / pages.css, здесь только новое.
+   ========================================================================== */
+
+/* ---------- Главная: ссылки на разделы ---------- */
+
+.pub-home-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.pub-home-links a {
+    padding: 0.6rem 1.3rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    color: var(--text-80);
+    text-decoration: none;
+    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pub-home-links a:hover,
+.pub-home-links a:focus-visible {
+    color: #fff;
+    border-color: var(--hover-line);
+    background-color: var(--hover);
+    outline: none;
+}
+
+.pub-soon {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.pub-soon-title {
+    justify-content: center;
+}
+
+.pub-soon-title::after {
+    display: none;
+}
+
+/* ---------- Маленькая карточка персонажа ---------- */
+
+.pc-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1rem;
+    align-items: center;
+    width: 100%;
+    margin-top: 0.85rem;                 /* место под «вкладку папки» сверху */
+    padding: 0.9rem 1rem;
+    box-sizing: border-box;
+    text-align: left;
+    font: inherit;
+    color: var(--text);
+    background: linear-gradient(to bottom, #063754, #022a42);
+    border: 1px solid var(--gold-15);
+    border-top: 3px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
+    border-radius: 0 6px 6px 6px;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+button.pc-card:hover,
+button.pc-card:focus-visible {
+    border-color: var(--hover-line);
+    border-top-color: var(--fac-main, var(--gold-55));
+    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+    outline: none;
+}
+
+/* «вкладка папки» в цвете факультета */
+.pc-card-tab {
+    position: absolute;
+    left: -1px;
+    bottom: 100%;
+    min-width: 2.6rem;
+    height: 0.85rem;
+    padding: 0 0.6rem;
+    font-size: 0.6rem;
+    line-height: 0.85rem;
+    color: var(--fac-stripe, var(--text-80));
+    background: var(--fac-main, #0a3e5d);
+    border: 1px solid var(--gold-15);
+    border-bottom: 0;
+    clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 100%, 0 100%);
+}
+
+/* квадратный аватар без рамки факультета */
+.pc-ava {
+    display: block;
+    width: 5rem;
+    height: 5rem;
+    object-fit: cover;
+    border-radius: 3px;
+    background: #022a42;
+    box-shadow: 0 0 0 1px var(--gold-15);
+}
+
+.pc-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 2rem;
+    color: var(--gold-80);
+    background: radial-gradient(circle at 50% 35%, #0a3d5c, #001929);
+}
+
+.pc-card-info {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.pc-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.pc-k {
+    font-size: 0.72rem;
+    color: var(--text-55);
+}
+
+.pc-v {
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.pc-name {
+    font-weight: 600;
+}
+
+.pc-fac {
+    font-size: 0.82rem;
+    color: var(--text-80);
+}
+
+.pc-none {
+    color: var(--text-30);
+}
+
+.pc-soon {
+    color: var(--text-55);
+    font-style: italic;
+}
+
+.pc-link {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-bottom: 1px dotted var(--gold-55);
+    font: inherit;
+    color: var(--text-80);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.pc-link:hover,
+.pc-link:focus-visible {
+    color: #fff;
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+/* ---------- Картотека на странице «Персонажи» ---------- */
+
+/* экран: стрелка — картотека — стрелка; высоту ставит js/pages/characters.js */
+.pc-screen {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 0.75rem;
+    min-height: 20rem;
+}
+
+.pc-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    min-height: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.pc-stage.is-leaving-left { transform: translateX(-3rem); opacity: 0; }
+.pc-stage.is-leaving-right { transform: translateX(3rem); opacity: 0; }
+.pc-stage.is-entering-left { transform: translateX(-3rem); opacity: 0; transition: none; }
+.pc-stage.is-entering-right { transform: translateX(3rem); opacity: 0; transition: none; }
+
+.pc-deck-title {
+    margin: 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.7rem;
+    color: var(--gold);
+}
+
+.pc-deck-count {
+    margin: 0.2rem 0 0.4rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-55);
+}
+
+/* сортировка: имя / факультет / курс */
+.pc-sort {
+    display: flex;
+    gap: 0.3rem;
+    margin: 0 0 0.4rem;
+    padding: 0.2rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+}
+
+.pc-sort[hidden] {
+    display: none;
+}
+
+.pc-sort-btn {
+    padding: 0.2rem 0.75rem;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--text-55);
+    background: transparent;
+    border: 0;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-sort-btn:hover,
+.pc-sort-btn:focus-visible {
+    color: #fff;
+    outline: none;
+}
+
+.pc-sort-btn.is-current {
+    color: var(--text);
+    background-color: var(--hover);
+    box-shadow: inset 0 0 0 1px var(--gold-55);
+}
+
+/* сама картотека: карточки стоят абсолютно и двигаются из JS */
+.pc-file {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: pointer;
+    /* края мягко растворяются */
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+}
+
+.pc-file-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(22rem, calc(100% - 1rem));
+    will-change: transform, opacity;
+}
+
+.pc-file-card .pc-card {
+    margin-top: 0.85rem;
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.35);
+}
+
+/* карточка в центре раскрытой картотеки — подсвечена, по нажатию открывается */
+.pc-file-card.is-center .pc-card {
+    border-color: var(--hover-line);
+    border-top-color: var(--fac-main, var(--gold-55));
+    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+}
+
+.pc-screen:not(.is-open) .pc-file-card .pc-card {
+    pointer-events: none;
+}
+
+.pc-hint {
+    min-height: 1.9rem;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-55);
+}
+
+.pc-hint-open {
+    display: none;
+}
+
+.pc-screen.is-open .pc-hint-closed {
+    display: none;
+}
+
+.pc-screen.is-open .pc-hint-open {
+    display: inline-flex;
+}
+
+.pc-fold {
+    padding: 0.3rem 0.9rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--text-80);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-fold:hover,
+.pc-fold:focus-visible {
+    color: #fff;
+    border-color: var(--hover-line);
+    background-color: var(--hover);
+    outline: none;
+}
+
+/* точки — какая группа на экране */
+.pc-dots {
+    display: flex;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+}
+
+.pc-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    border: 1px solid var(--gold-55);
+    transition: background-color 0.25s ease;
+}
+
+.pc-dot.is-current {
+    background-color: var(--gold-55);
+}
+
+/* стрелки перелистывания групп */
+.pc-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-arrow span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-right: 1.5px solid var(--gold-80);
+    border-bottom: 1.5px solid var(--gold-80);
+    transition: border-color 0.25s ease;
+}
+
+.pc-arrow-prev span { transform: translateX(0.12rem) rotate(135deg); }
+.pc-arrow-next span { transform: translateX(-0.12rem) rotate(-45deg); }
+
+.pc-arrow:hover,
+.pc-arrow:focus-visible {
+    border-color: var(--hover-line);
+    background-color: var(--hover);
+    outline: none;
+}
+
+.pc-arrow:hover span,
+.pc-arrow:focus-visible span {
+    border-color: #fff;
+}
+
+@media (max-width: 768px) {
+    .pc-screen {
+        gap: 0 0.3rem;
+    }
+
+    .pc-arrow {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* ---------- Окно большой карточки ---------- */
+
+html.pc-open .main-scroll-viewport {
+    overflow: hidden;
+}
+
+.pc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-modal[hidden] {
+    display: none;
+}
+
+.pc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 12, 22, 0.72);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.pc-modal-body {
+    position: relative;
+    width: min(40rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    overflow-y: auto;
+    padding-top: 1.6rem;                 /* место под вкладки сверху карточки */
+    font-family: var(--font-main);
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(1rem) scale(0.98);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pc-modal.is-shown .pc-modal-backdrop,
+.pc-modal.is-shown .pc-modal-body {
+    opacity: 1;
+    transform: none;
+}
+
+.pc-big {
+    position: relative;
+    padding: 1.6rem 1.8rem 1.4rem;
+    background: linear-gradient(to bottom, #063754, #01223a);
+    border: 1px solid var(--gold-15);
+    border-top: 4px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
+    border-radius: 0 8px 8px 8px;
+    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.5);
+}
+
+.pc-tabs {
+    position: absolute;
+    left: -1px;
+    bottom: 100%;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.pc-tab {
+    padding: 0.25rem 1.2rem 0.2rem 0.9rem;
+    font-size: 0.75rem;
+    color: var(--text-80);
+    text-decoration: none;
+    background: #0a3e5d;
+    border: 1px solid var(--gold-15);
+    border-bottom: 0;
+    clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 100%, 0 100%);
+    transition: color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-tab:hover,
+.pc-tab:focus-visible {
+    color: #fff;
+    background: #104a6c;
+    outline: none;
+}
+
+.pc-close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.6rem;
+    z-index: 2;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.pc-close:hover,
+.pc-close:focus-visible {
+    color: #fff;
+    outline: none;
+}
+
+/* закладка-лента в цветах факультета, как галстук */
+.pc-bookmark {
+    position: absolute;
+    top: -1px;
+    right: 3.4rem;
+    width: 2.4rem;
+    height: 6.5rem;
+    background:
+        linear-gradient(135deg,
+            transparent 0 42%, var(--fac-stripe, #888f85) 42% 47%,
+            transparent 47% 53%, var(--fac-stripe, #888f85) 53% 58%, transparent 58%),
+        var(--fac-main, #888f85);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.9rem), 0 100%);
+    opacity: 0.9;
+}
+
+.pc-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1.4rem;
+    align-items: center;
+    padding-right: 5rem;                 /* не залезать под ленту */
+}
+
+.pc-ava.pc-big-avatar {
+    width: 9rem;
+    height: 9rem;
+    border-radius: 4px;
+    font-size: 2.6rem;
+}
+
+.pc-head-info .pc-k {
+    margin-top: 0.35rem;
+}
+
+.pc-big-name {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pc-big-fac {
+    margin-top: 0.45rem;
+    font-size: 0.9rem;
+    color: var(--text-80);
+}
+
+.pc-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 1.4rem -1.8rem 0;
+    padding: 0.9rem 1.8rem;
+    border-top: 1px solid var(--gold-15);
+    border-bottom: 1px solid var(--gold-15);
+    text-align: center;
+}
+
+.pc-stat .pc-v {
+    margin-top: 0.15rem;
+    font-size: 0.95rem;
+}
+
+.pc-extra {
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+    color: var(--text-80);
+}
+
+.pc-extra .pc-k {
+    display: inline-block;
+    min-width: 7.5rem;
+}
+
+.pc-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1.4rem 0 0.6rem;
+    font-weight: normal;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--text-55);
+}
+
+.pc-section-title::before,
+.pc-section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--gold-15);
+}
+
+.pc-text p {
+    margin: 0 0 0.7rem;
+    line-height: 1.6;
+    color: var(--text-80);
+}
+
+.pc-text p:last-child {
+    margin-bottom: 0;
+}
+
+.pc-facts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+    color: var(--text-80);
+    line-height: 1.5;
+}
+
+.pc-facts li {
+    position: relative;
+    padding-left: 1.2rem;
+}
+
+.pc-facts li::before {
+    content: "✦";
+    position: absolute;
+    left: 0;
+    top: 0.05em;
+    font-size: 0.75em;
+    color: var(--gold-55);
+}
+
+.pc-shared {
+    margin: 1.1rem 0 0;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--text-55);
+}
+
+.pc-interaction,
+.pc-topic {
+    margin: 1.2rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text-80);
+}
+
+.pc-interaction .pc-k {
+    display: inline-block;
+    min-width: 7.5rem;
+}
+
+/* ---------- Факультеты ---------- */
+
+.fc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+    gap: 1rem;
+}
+
+.fc-card {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0 1rem;
+    align-items: stretch;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+    color: var(--text);
+    background: linear-gradient(to bottom, #063754, #022a42);
+    border: 1px solid var(--gold-15);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.fc-card:hover,
+.fc-card:focus-visible {
+    border-color: var(--hover-line);
+    background: linear-gradient(to bottom, #0a3e5d, #042f49);
+    transform: translateY(-2px);
+    outline: none;
+}
+
+/* полоска-галстук в цветах факультета */
+.fc-tie {
+    background:
+        repeating-linear-gradient(135deg,
+            transparent 0 14px, var(--fac-stripe, #888f85) 14px 16px,
+            transparent 16px 18px, var(--fac-stripe, #888f85) 18px 20px, transparent 20px 34px),
+        var(--fac-main, #888f85);
+}
+
+.fc-card-info {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.95rem 1rem 0.95rem 0;
+}
+
+.fc-card-title {
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.fc-card-meta {
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+.fc-head {
+    padding-right: 5rem;
+}
+
+.fc-subjects {
+    margin: 0.7rem 0 0;
+    font-size: 0.92rem;
+    color: var(--text-80);
+    line-height: 1.5;
+}
+
+.fc-block .pc-section-title .dl-group-count {
+    letter-spacing: 0;
+}
+
+.fc-list {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.92rem;
+    color: var(--text-80);
+    line-height: 1.45;
+}
+
+.fc-list .pc-k {
+    display: inline-block;
+    min-width: 7.5rem;
+}
+
+/* ---------- Общежитие ---------- */
+
+.dm-wrap {
+    display: grid;
+    justify-items: center;
+}
+
+.dm-map {
+    display: block;
+    width: 100%;
+    max-width: 34rem;
+    height: auto;
+    font-family: var(--font-main);
+}
+
+.dm-road {
+    fill: none;
+    stroke: #0e3a55;
+    stroke-width: 70;
+}
+
+.dm-road-fill,
+.dm-parking {
+    fill: #0e3a55;
+}
+
+.dm-road-line {
+    stroke: var(--gold-15);
+    stroke-width: 3;
+    stroke-dasharray: 18 14;
+}
+
+.dm-lawn {
+    fill: #23493a;
+}
+
+.dm-parking-lines {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 3;
+}
+
+.dm-gate {
+    fill: none;
+    stroke: var(--gold-55);
+    stroke-width: 4;
+}
+
+.dm-icon rect {
+    fill: #022a42;
+    stroke: var(--gold-55);
+    stroke-width: 2;
+}
+
+.dm-icon text,
+.dm-legend-icon text {
+    fill: var(--gold);
+    font-size: 22px;
+    text-anchor: middle;
+}
+
+.dm-ico {
+    fill: var(--gold-80);
+    stroke: var(--gold-80);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.dm-house {
+    cursor: pointer;
+    outline: none;
+}
+
+.dm-house rect {
+    stroke: rgba(227, 207, 172, 0.55);
+    stroke-width: 3;
+    opacity: 0.55;
+    transition: opacity 0.25s ease, stroke 0.25s ease;
+}
+
+.dm-house.has-people rect {
+    opacity: 1;
+}
+
+.dm-blue rect { fill: #4f7fa8; }
+.dm-violet rect { fill: #7b6aa8; }
+.dm-red rect { fill: #a8483d; }
+
+.dm-num {
+    fill: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.dm-badge circle {
+    fill: var(--gold);
+}
+
+.dm-badge text {
+    fill: #001929;
+    font-size: 14px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.dm-house:hover rect,
+.dm-house:focus-visible rect,
+.dm-house.is-active rect {
+    stroke: #fff;
+    opacity: 1;
+}
+
+.dm-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 1.4rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+.dm-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dm-legend-icon {
+    width: 1.3em;
+    height: 1.3em;
+}
+
+.dm-panel {
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.dm-panel > .pc-soon {
+    text-align: center;
+}
+
+.dm-panel-title::after {
+    display: none;
+}
+
+.dm-people {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.25rem 1rem;
+}
+
+.dm-room {
+    display: block;
+    margin: 0.3rem 0 0 0.2rem;
+    font-size: 0.75rem;
+    color: var(--text-55);
+}
+
+/* ---------- Телефон ---------- */
+
+@media (max-width: 768px) {
+    .pc-big {
+        padding: 1.3rem 1.1rem 1.1rem;
+    }
+
+    .pc-head {
+        grid-template-columns: 1fr;
+        justify-items: start;
+        gap: 0.8rem;
+        padding-right: 3rem;
+    }
+
+    .pc-bookmark {
+        right: 2.6rem;
+        width: 1.8rem;
+        height: 5rem;
+    }
+
+    .pc-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin: 1.2rem -1.1rem 0;
+        padding: 0.8rem 1.1rem;
+        row-gap: 0.8rem;
+    }
+
+    .pc-extra .pc-k,
+    .fc-list .pc-k {
+        display: block;
+        min-width: 0;
+    }
+}

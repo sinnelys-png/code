@@ -135,7 +135,7 @@ window.RCU = (() => {
        (transform: scaleX, стили — css/pages.css, .wide). Растянутый текст занимает больше места,
        чем «видит» вёрстка, поэтому справа добавляем отступ на ту же величину. */
     const WIDE = 1.15;
-    const WIDE_SELECTOR = '.user-title, .sc-mine-title, .home-title, .dl-group-name, .sc-day-title > span:first-child, .home-section > .dl-section-title';
+    const WIDE_SELECTOR = '.user-title, .sc-mine-title, .pc-deck-name, .home-title, .dl-group-name, .sc-day-title > span:first-child, .home-section > .dl-section-title';
 
     function widenHeadings(scope) {
         if (!scope) return;
@@ -311,5 +311,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, widenHeadings, cached, bundle, updatedText, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
 })();
