@@ -17,10 +17,26 @@
  * Если потом поменяете этот код — «Начать развертывание» → «Управление развертываниями» →
  * карандаш → Версия: «Новая версия» → «Развернуть». Ссылка при этом не меняется.
  * (Google может ещё раз попросить разрешение — теперь скрипт читает и таблицу активности.)
+ *
+ * ПРОГРЕВ (чтобы сайт никогда не ждал, пока скрипт читает таблицы):
+ *  В редакторе вверху выберите функцию setupWarmup и нажмите «Выполнить» (один раз).
+ *  Она заведёт триггер: каждые 5 минут скрипт сам перечитывает таблицы и кладёт
+ *  готовый ответ в кэш, а сайт всегда получает его мгновенно.
+ *  Проверить: слева «Триггеры» (значок будильника) — там должна быть строка warmCache.
+ *  Отключить: выполнить функцию removeWarmup.
  */
 
-const CACHE_SECONDS = 300;     // как часто обновлять данные (5 минут)
-const CACHE_KEY = 'site-v2';
+// Ответ живёт в кэше 10 минут, а прогрев обновляет его каждые 5 —
+// так кэш никогда не успевает остыть, а данные не старше 5 минут.
+// (Без прогрева данные просто обновляются при первом заходе после истечения кэша.)
+const CACHE_SECONDS = 600;
+const WARMUP_MINUTES = 5;
+// Ночью прогрев не нужен: в эти часы (по времени таблицы) триггер сразу завершается,
+// почти не расходуя дневной лимит триггеров (90 минут в сутки на аккаунт).
+// Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
+const WARMUP_NIGHT_FROM = 2;   // с 02:00
+const WARMUP_NIGHT_TO = 9;     // до 09:00
+const CACHE_KEY = 'site-v3';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -53,7 +69,33 @@ const ACTIVITY_STATS = [5, 9, 14, 19];
 function doGet() {
   const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
+  return json_(build_());
+}
 
+/** Запускается триггером каждые WARMUP_MINUTES минут: перечитывает таблицы заранее */
+function warmCache() {
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const hour = Number(Utilities.formatDate(new Date(), tz, 'H'));
+  if (hour >= WARMUP_NIGHT_FROM && hour < WARMUP_NIGHT_TO) return;
+  build_();
+}
+
+/** Один раз вручную: завести триггер прогрева (старые триггеры warmCache удаляются) */
+function setupWarmup() {
+  removeWarmup();
+  ScriptApp.newTrigger('warmCache').timeBased().everyMinutes(WARMUP_MINUTES).create();
+  warmCache();
+}
+
+/** Отключить прогрев */
+function removeWarmup() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'warmCache')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+}
+
+/** Собирает ответ для сайта и кладёт его в кэш */
+function build_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const out = { updated: new Date().toISOString() };
 
@@ -65,7 +107,7 @@ function doGet() {
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
-  return json_(text);
+  return text;
 }
 
 function sheetByGid_(ss, gid) {

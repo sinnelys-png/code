@@ -44,6 +44,14 @@
         el.classList.add('is-entering');
     }
 
+    // Сводка на главной (js/pages/home.js)
+    async function renderHome(token) {
+        const dash = view.querySelector('.home-dash');
+        if (!dash || !RCU.home) return;
+        await RCU.home.render(dash, view.querySelector('.home-title'));
+        if (token === navToken) enter(dash);
+    }
+
     async function show() {
         const name = currentPage();
         const token = ++navToken;
@@ -63,6 +71,7 @@
             view.innerHTML = homeHTML;
             enter(view);
             document.title = 'ROYAL CROSSBREED UNIVERSITY';
+            renderHome(token);
         } else {
             const page = RCU.pages[name];
             document.title = `${page.title} — ROYAL CROSSBREED UNIVERSITY`;
@@ -124,8 +133,9 @@
     // сохраняя прокрутку и раскрытые вкладки
     window.addEventListener('rcu:updated', async () => {
         const name = currentPage();
+        if (!name) { renderHome(navToken); return; }
         const root = view.querySelector('.page-root');
-        if (!name || !root) return;
+        if (!root) return;
         const token = navToken;
         try {
             const data = await dataOf(name);

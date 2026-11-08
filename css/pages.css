@@ -653,3 +653,168 @@ a.ac-name-link:hover {
         animation: none;
     }
 }
+
+/* ==========================================================================
+   ГЛАВНАЯ: СВОДКА
+   ========================================================================== */
+
+.home-title {
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 2.2rem;
+    line-height: 1.2;
+    color: var(--gold);
+    text-align: center;
+    margin: 0 0 0.5rem;
+}
+
+.home-lead {
+    text-align: center;
+    color: var(--gold-80);
+    margin: 0 auto 1rem;
+    max-width: 34rem;
+}
+
+.home-dash {
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.home-section {
+    margin-bottom: 2.25rem;
+}
+
+.home-row {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0 0.9rem;
+    align-items: center;
+    padding: 0.55rem 0.25rem;
+    border-bottom: 1px solid var(--gold-08);
+}
+
+.home-row:last-of-type {
+    border-bottom: none;
+}
+
+/* подсветка строки на всю ширину блока, как в дедлайнах */
+.home-row::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * var(--pad-x, 0px));
+    right: calc(-1 * var(--pad-x, 0px));
+    transition: background-color 0.3s ease;
+}
+
+.home-row:hover::before {
+    background-color: var(--gold-08);
+}
+
+.home-row:hover .dl-name,
+.home-row:hover .dl-date {
+    color: #fff;
+}
+
+.home-avatar {
+    grid-area: auto;
+    width: 2.6rem;
+    height: 2.6rem;
+    font-size: 1.1rem;
+}
+
+.home-row-main {
+    min-width: 0;
+}
+
+.home-row-side {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* строка лидеров: место — имя — баллы */
+.home-row.ac-row {
+    grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+    grid-template-areas: none;
+}
+
+.home-row.ac-row .ac-sum {
+    grid-area: auto;
+}
+
+/* посты: когда — теги */
+.home-post {
+    grid-template-columns: 11.5rem minmax(0, 1fr);
+    align-items: baseline;
+}
+
+.home-post-day {
+    color: var(--gold-80);
+}
+
+.home-post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.home-tag {
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--gold-15);
+    background: var(--gold-08);
+    color: var(--gold-80);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+}
+
+.home-tag.is-service {
+    opacity: 0.45;
+}
+
+.home-activity {
+    margin: 0.6rem 0.25rem;
+    font-size: 1.05rem;
+    color: var(--gold);
+}
+
+.home-empty {
+    margin: 0.6rem 0.25rem;
+    color: var(--gold-55);
+}
+
+.home-more {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0 0.25rem;
+    font-size: 0.85rem;
+    color: var(--gold-55);
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.home-more:hover,
+.home-more:focus-visible {
+    color: #fff;
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .home-title {
+        font-size: 1.7rem;
+    }
+
+    .home-post {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+
+    .home-row-side {
+        max-width: 9rem;
+    }
+}
