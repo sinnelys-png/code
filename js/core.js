@@ -100,6 +100,36 @@ window.RCU = (() => {
         return viewerPromise;
     }
 
+    /* ---------- Цвета факультетов (по галстукам) ----------
+       main — основной цвет галстука, stripe — цвет полосок.
+       Факультет узнаётся по ключевому слову в названии из техтаблицы. */
+    const FACULTIES = [
+        ['химико',      '#8e8a5c', '#e8dcc8'],   // Химико-биологический
+        ['философ',     '#3b2620', '#d9b8a8'],   // Философии и социальных наук
+        ['историко',    '#7a5a48', '#e6d2c0'],   // Историко-археологический
+        ['художеств',   '#d9bfa8', '#8a6a58'],   // Художественного и театрального искусства
+        ['журналист',   '#a04e44', '#e8b8ac'],   // Журналистики и международных отношений
+        ['реклам',      '#efebd8', '#1a1a1a'],   // Рекламы и маркетинга
+        ['механико',    '#9cb8c2', '#eef3f5'],   // Механико-математический
+        ['экономич',    '#24402f', '#d8c8a0'],   // Экономический
+        ['гостинич',    '#c4c4da', '#5a3a3a'],   // Гостиничного дела
+        ['филолог',     '#e8d3a6', '#8a7058'],   // Филологический
+        ['спортив',     '#9a5e40', '#efd8c8'],   // Спортивный
+        ['музыкал',     '#6e2e48', '#e8b8c4'],   // Музыкальный
+        ['юридич',      '#151515', '#d8d8d8'],   // Юридический
+    ];
+
+    // Атрибуты для аватара: класс has-faculty, цвета в CSS-переменных и название в подсказке
+    function facultyAttrs(faculty) {
+        const name = String(faculty || '').trim();
+        const hit = name && FACULTIES.find(([key]) => name.toLowerCase().includes(key));
+        if (!hit) return { cls: '', attrs: '' };
+        return {
+            cls: ' has-faculty',
+            attrs: ` style="--fac-main:${hit[1]};--fac-stripe:${hit[2]}" title="${esc(name)}"`,
+        };
+    }
+
     // Разделитель между блоком «Ваши …» и основным списком: ✦ —— ✦✦✦ —— ✦
     function dividerHTML() {
         return `
@@ -214,5 +244,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, cached, bundle, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, cached, bundle, dataOf, pages };
 })();

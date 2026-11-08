@@ -74,8 +74,11 @@
 
     async function loadRows() {
         try {
-            const rows = (await RCU.bundle()).rows;
-            return rows.length && !('labels' in rows[0]) ? addStatus(rows) : rows;
+            const data = await RCU.bundle();
+            let rows = data.rows;
+            if (rows.length && !('labels' in rows[0])) rows = await addStatus(rows);
+            const faculties = data.faculties || {};   // из закрытой техтаблицы (колонка J)
+            return rows.map(r => ({ ...r, faculty: faculties[r.name] || '' }));
         } catch (e) {
             console.warn('Apps Script недоступен, беру публичную выгрузку:', e);
             return RCU.cached('deadlines', gvizRows);
@@ -123,9 +126,10 @@
     }
 
     function card(row) {
+        const fac = RCU.facultyAttrs(row.faculty);
         const avatar = safeUrl(row.avatar)
-            ? `<img class="dl-avatar" src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-            : `<div class="dl-avatar dl-avatar--empty">${esc(row.name.charAt(0))}</div>`;
+            ? `<img class="dl-avatar${fac.cls}"${fac.attrs} src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+            : `<div class="dl-avatar dl-avatar--empty${fac.cls}"${fac.attrs}>${esc(row.name.charAt(0))}</div>`;
 
         // Скрытая часть: дуэт и подроли
         const extra = [];

@@ -144,6 +144,44 @@ header a.is-current {
     transition: box-shadow 0.3s ease;
 }
 
+/* Рамка в цветах факультета, как галстук: кольцо основного цвета,
+   через него наискосок (45°) две полоски по 2px с промежутком 2px.
+   Кольцо — это поле (padding) вокруг картинки, закрашенное фоном. */
+.dl-avatar.has-faculty {
+    --ring: 5px;
+    border: 0;
+    padding: var(--ring);
+    background:
+        linear-gradient(135deg,
+            var(--fac-main) calc(50% - 3px),
+            var(--fac-stripe) calc(50% - 3px) calc(50% - 1px),
+            var(--fac-main) calc(50% - 1px) calc(50% + 1px),
+            var(--fac-stripe) calc(50% + 1px) calc(50% + 3px),
+            var(--fac-main) calc(50% + 3px));
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+/* у аватара-буквы своя заливка — только внутри кольца */
+.dl-avatar--empty.has-faculty {
+    background:
+        radial-gradient(circle at 50% 35%, #0a3d5c, #001929) content-box,
+        linear-gradient(135deg,
+            var(--fac-main) calc(50% - 3px),
+            var(--fac-stripe) calc(50% - 3px) calc(50% - 1px),
+            var(--fac-main) calc(50% - 1px) calc(50% + 1px),
+            var(--fac-stripe) calc(50% + 1px) calc(50% + 3px),
+            var(--fac-main) calc(50% + 3px)) border-box;
+}
+
+.dl-card:hover .dl-avatar.has-faculty,
+.home-row:hover .dl-avatar.has-faculty {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0.9rem var(--fac-stripe);
+}
+
+.home-avatar.has-faculty {
+    --ring: 4px;
+}
+
 .dl-avatar--empty {
     display: flex;
     align-items: center;

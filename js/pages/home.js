@@ -35,9 +35,10 @@
             return (daysUntil(a.deadlineISO) ?? 9999) - (daysUntil(b.deadlineISO) ?? 9999);
         });
         const rows = sorted.map(c => {
+            const fac = RCU.facultyAttrs(c.faculty);
             const avatar = safeUrl(c.avatar)
-                ? `<img class="dl-avatar home-avatar" src="${esc(c.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-                : `<div class="dl-avatar dl-avatar--empty home-avatar">${esc(c.name.charAt(0))}</div>`;
+                ? `<img class="dl-avatar home-avatar${fac.cls}"${fac.attrs} src="${esc(c.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+                : `<div class="dl-avatar dl-avatar--empty home-avatar${fac.cls}"${fac.attrs}>${esc(c.name.charAt(0))}</div>`;
             const w = when(c.deadlineISO);
             const right = isQueued(c.status)
                 ? '<span class="dl-date is-queued">пост скоро выйдет</span>'

@@ -23,6 +23,9 @@
 
 // Таблица с дедлайнами и расписанием (длинный код из её адреса между /d/ и /edit)
 const DEADLINES_SHEET_ID = '1KTZmUktm284bdyGc_LfDpv9BVUDCqcEU8Av29s-NXVU';
+// Техтаблица (закрытая): B — имя персонажа, J — факультет
+const FACULTY_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
+const FACULTY_GID = 0;
 
 // Ответ живёт в кэше 10 минут, а прогрев обновляет его каждые 5 —
 // так кэш никогда не успевает остыть, а данные не старше 5 минут.
@@ -34,7 +37,7 @@ const WARMUP_MINUTES = 5;
 // Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
-const CACHE_KEY = 'site-v3';
+const CACHE_KEY = 'site-v4';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -102,6 +105,7 @@ function build_() {
   out.rows = deadlines_(ss);
   try { out.schedule = schedule_(ss); } catch (e) { out.scheduleError = String(e); }
   try { out.activity = activity_(); } catch (e) { out.activityError = String(e); }
+  try { out.faculties = faculties_(); } catch (e) { out.facultiesError = String(e); }
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
@@ -210,6 +214,19 @@ function activity_() {
     });
   }
   return rows;
+}
+
+/** Техтаблица: { "Имя персонажа": "Факультет …" } */
+function faculties_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), FACULTY_GID);
+  const display = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 10).getDisplayValues();
+  const out = {};
+  display.forEach(r => {
+    const name = r[1].trim();
+    const faculty = r[9].trim();
+    if (name && faculty && faculty !== 'Факультет' && name !== 'Имя персонажа') out[name] = faculty;
+  });
+  return out;
 }
 
 /* Кэш скрипта хранит не больше 100 КБ на ключ — длинный ответ кладём по кусочкам */
