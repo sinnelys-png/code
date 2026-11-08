@@ -39,11 +39,16 @@
 }
 
 /* Текущая страница в меню */
-header a.is-current {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-decoration-color: var(--gold-55);
-    text-underline-offset: 0.35em;
+/* Текущий раздел выделен тем, что остальные пункты меню приглушены */
+/* Неактивные пункты меню в разделах приглушены, при наведении — как обычно */
+html.is-section header a:not(.is-current) {
+    opacity: 0.55;
+    transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+html.is-section header a:not(.is-current):hover,
+html.is-section header a:not(.is-current):focus-visible {
+    opacity: 1;
 }
 
 /* ---------- Группы ---------- */
@@ -239,7 +244,7 @@ header a.is-current {
 
 .dl-name {
     color: var(--text);
-    font-weight: bold;
+    font-weight: 600;   /* полужирный Jost — легче, чем bold (700) */
     font-size: 1.05rem;
     text-decoration: none;
     border-bottom: 1px solid transparent;
@@ -516,6 +521,7 @@ a.dl-name:hover {
 
 .dl-urgent-toggle.is-on .dl-toggle-dot {
     background-color: var(--gold-55);
+    background-clip: padding-box;   /* заливка не заходит под обводку — плотность одинаковая */
 }
 
 .dl-by-role[hidden],
@@ -524,12 +530,25 @@ a.dl-name:hover {
 }
 
 /* «Ваши персонажи» держится наверху, пока его не «собьёт» поиск */
+/* в том же стиле, что заголовки вкладок «студенты» и др.: ✦, слева, линия снизу */
 .dl-mine-title {
     position: sticky;
     top: 0;
     z-index: 4;
-    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.5rem;
-    padding: 0.4rem var(--pad-x, 0px);
+    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.25rem;
+    padding: 0.55rem calc(var(--pad-x, 0px) + 0.25rem) 0.5rem;
+}
+
+.dl-mine-title::after,
+.sc-mine-title::after {
+    display: none;
+}
+
+/* «ваши посты» в расписании — тот же вид, но не закреплён:
+   внутри блока закрепляются даты, и заголовок им бы мешал */
+.sc-mine-title {
+    margin: 0 0 0.25rem;
+    padding: 0.55rem 0.25rem 0.5rem;
 }
 
 .dl-mine-title.is-stuck {
@@ -546,7 +565,7 @@ a.dl-name:hover {
     background:
         no-repeat 0.85rem 50% / 0.85rem
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3CFAC' stroke-opacity='.6' stroke-width='1.6'%3E%3Ccircle cx='6.5' cy='6.5' r='5'/%3E%3Cpath d='M10.3 10.3 15 15'/%3E%3C/svg%3E"),
-        var(--gold-08);
+        var(--hover);
     border: 1px solid var(--gold-15);
     border-radius: 2rem;
     outline: none;
@@ -668,7 +687,7 @@ a.dl-name:hover {
 }
 
 .dl-group-count {
-    font-family: sans-serif;
+    font-family: var(--font-main);
     font-size: 0.75rem;
     color: var(--text-55);
     padding: 0.05rem 0.45rem;

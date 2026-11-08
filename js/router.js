@@ -50,6 +50,7 @@
         if (!dash || !RCU.home) return;
         await RCU.home.render(dash, view.querySelector('.home-title'));
         addUpdated(dash);
+        RCU.widenHeadings(view);
         if (token === navToken) enter(dash);
     }
 
@@ -145,6 +146,7 @@
                 if (token !== navToken) return;
                 page.render(root, data);
                 addUpdated(root);
+                RCU.widenHeadings(root);
                 enter(root);
             } catch (err) {
                 console.error(err);
@@ -206,6 +208,7 @@
             const scrollTop = scroller ? scroller.scrollTop : 0;
             RCU.pages[name].render(root, data);
             addUpdated(root);
+            RCU.widenHeadings(root);
             root.querySelectorAll('details > summary').forEach(s => {
                 if (openGroups.includes(label(s))) s.parentElement.open = true;
             });

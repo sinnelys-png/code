@@ -19,6 +19,8 @@
    --hdr-h : высота рабочей зоны шапки
    --gap   : расстояние между нижней обводкой шапки и верхним краем блока */
 :root {
+    /* Основной шрифт текста — Jost (подключается в index.html с Google Fonts) */
+    --font-main: 'Jost', sans-serif;
     --tri: 90px;
     --hdr-h: 7rem;
     --gap: 1.5rem;
@@ -340,7 +342,7 @@ header a.is-glaring {
     text-align: justify;
 
     color: rgba(204, 204, 204, 0.9);
-    font-family: sans-serif;
+    font-family: var(--font-main);
 }
 
 /* СТИЛИЗАЦИЯ И СДВИГ НОВОГО СКРОЛЛБАРА */
@@ -394,7 +396,7 @@ header a.is-glaring {
     /* ИСПРАВЛЕНО: Базовый цвет текста делаем прозрачным, так как цвет 
        теперь будет плавно «накатывать» из интерактивного фонового градиента */
     color: transparent;
-    font-family: sans-serif;
+    font-family: var(--font-main);
 
     clip-path: polygon(0% 0%, 50% calc(var(--tri) * var(--shape, 1)), 100% 0%, 100% 100%, 0% 100%);
 

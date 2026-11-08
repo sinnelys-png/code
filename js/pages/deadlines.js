@@ -15,9 +15,9 @@
 
     // Заголовки групп по роли из колонки D (если роли нет в списке — выводится как есть)
     const ROLE_TITLES = {
-        'студент': 'Студенты',
-        'преподаватель': 'Преподаватели',
-        'персонал': 'Персонал',
+        'студент': 'студенты',
+        'преподаватель': 'преподаватели',
+        'персонал': 'персонал',
     };
 
     const isEmpty = (s) => !s || /^-*$/.test(s); // «------» в таблице = пусто
@@ -313,7 +313,7 @@
             if (mine.length) {
                 html += `
                     <section class="dl-section dl-section--mine">
-                        <h2 class="user-title dl-mine-title">Ваши персонажи</h2>
+                        <h2 class="dl-section-title dl-mine-title">ваши персонажи</h2>
                         ${mine.map(card).join('')}
                         ${RCU.dividerHTML()}
                     </section>`;

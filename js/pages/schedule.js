@@ -103,7 +103,7 @@
             root.innerHTML =
                 (mine.length ? `
                     <section class="dl-section dl-section--mine sc-mine">
-                        <h2 class="user-title">Ваши посты</h2>
+                        <h2 class="dl-section-title sc-mine-title">ваши посты</h2>
                         ${daysHTML(mine)}
                     </section>
                     ${RCU.dividerHTML()}` : '') +

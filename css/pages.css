@@ -246,7 +246,7 @@ html.intro .page-ribbon {
 }
 
 .sc-when {
-    font-family: sans-serif;
+    font-family: var(--font-main);
     font-size: 0.72rem;
     color: var(--text-55);
     padding: 0.05rem 0.5rem;
@@ -289,7 +289,7 @@ html.intro .page-ribbon {
 
 .sc-time {
     color: var(--text);
-    font-weight: bold;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
@@ -413,7 +413,7 @@ html.intro .page-ribbon {
     transform: translate(-50%, -0.25rem);
     white-space: nowrap;
     padding: 0.35rem 0.7rem;
-    font-family: sans-serif;
+    font-family: var(--font-main);
     font-size: 0.8rem;
     color: var(--text);
     background: #001929;
@@ -443,7 +443,7 @@ a.ac-name-link:hover {
 
 .ac-sum {
     color: var(--text);
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .ac-stat {
@@ -469,7 +469,7 @@ a.ac-name-link:hover {
     height: 1.8rem;
     line-height: 1.8rem;
     border-radius: 50%;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .ac-row.is-top-1 .ac-place {
@@ -852,4 +852,11 @@ a.ac-name-link:hover {
     font-size: 0.75rem;
     color: rgba(204, 204, 204, 0.4);
     cursor: help;
+}
+
+/* Заголовки шрифтом Greengoth, растянутые по ширине на 15% (см. widenHeadings в js/core.js) */
+.wide {
+    display: inline-block;
+    transform: scaleX(1.15);
+    transform-origin: left center;
 }

@@ -130,6 +130,38 @@ window.RCU = (() => {
         };
     }
 
+    /* ---------- Широкие заголовки ----------
+       У Greengoth нет широкого начертания, поэтому заголовки в блоках растягиваем по ширине
+       (transform: scaleX, стили — css/pages.css, .wide). Растянутый текст занимает больше места,
+       чем «видит» вёрстка, поэтому справа добавляем отступ на ту же величину. */
+    const WIDE = 1.15;
+    const WIDE_SELECTOR = '.user-title, .dl-mine-title, .sc-mine-title, .home-title, .dl-group-name, .sc-day-title > span:first-child, .home-section > .dl-section-title';
+
+    function widenHeadings(scope) {
+        if (!scope) return;
+        scope.querySelectorAll(WIDE_SELECTOR).forEach(el => {
+            let target = el;
+            if (el.tagName !== 'SPAN') {
+                target = el.querySelector(':scope > .wide');
+                if (!target) {
+                    target = document.createElement('span');
+                    target.className = 'wide';
+                    while (el.firstChild) target.appendChild(el.firstChild);
+                    el.appendChild(target);
+                }
+            } else {
+                target.classList.add('wide');
+            }
+            target.style.marginRight = `${target.offsetWidth * (WIDE - 1)}px`;
+        });
+    }
+
+    // Пересчитываем после загрузки шрифтов и при смене размера окна (меняется размер текста)
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => widenHeadings(document.getElementById('view')));
+    }
+    window.addEventListener('resize', () => widenHeadings(document.getElementById('view')));
+
     // Разделитель между блоком «Ваши …» и основным списком: ✦ —— ✦✦✦ —— ✦
     function dividerHTML() {
         return `
@@ -279,5 +311,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, cached, bundle, updatedText, dataOf, pages };
+    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, widenHeadings, cached, bundle, updatedText, dataOf, pages };
 })();
