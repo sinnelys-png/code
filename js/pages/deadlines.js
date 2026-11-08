@@ -131,14 +131,17 @@
             ? `<img class="dl-avatar${fac.cls}"${fac.attrs} src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
             : `<div class="dl-avatar dl-avatar--empty${fac.cls}"${fac.attrs}>${esc(row.name.charAt(0))}</div>`;
 
-        // Скрытая часть: дуэт и подроли
-        const extra = [];
+        // Дуэт — видно сразу, под отвечающим
+        let duet = '';
         if (!isEmpty(row.duet)) {
             const partner = byName.get(row.duet)
                 ? `<button class="dl-duet-link" type="button" data-target="${esc(row.duet)}">${esc(row.duet)}</button>`
                 : esc(row.duet);
-            extra.push(`<div class="dl-duet-line"><span class="dl-label">дуэт:</span> ${partner}</div>`);
+            duet = `<div class="dl-duet-line"><span class="dl-label">дуэт:</span> ${partner}</div>`;
         }
+
+        // Скрытая часть: подроли
+        const extra = [];
 
         const active = isEmpty(row.activeSub) ? '' : row.activeSub;
         const current = currentSub(row);   // какую подроль подсветить в очереди
@@ -168,6 +171,7 @@
                 <div class="dl-info">
                     <div class="dl-title">${link(row.topicUrl, row.name, 'dl-name')}${more}</div>
                     <div class="dl-player"><span class="dl-label">отвечает:</span> ${link(row.playerUrl, row.player, 'dl-player-link')}</div>
+                    ${duet}
                     ${extra.length ? `<div class="dl-extra" hidden>${extra.join('')}</div>` : ''}
                 </div>
                 <div class="dl-deadline">

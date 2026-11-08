@@ -1,0 +1,149 @@
+/* ==========================================================================
+   РАЗДЕЛЫ (всё, кроме главной): ШАПКА УБИРАЕТСЯ, БЛОК СТАНОВИТСЯ ПРЯМОУГОЛЬНЫМ
+
+   На главной всё как раньше. В разделах (класс .is-section на <html>, его ставит
+   js/router.js) шапка уезжает вверх и оставляет только кончик треугольника.
+   Наведение на кончик или нажатие на него показывает шапку поверх блока.
+   Основной блок поднимается и плавно меняет форму с пятиугольника на прямоугольник.
+   Во время заставки (.intro) раздел остаётся в обычном виде и переходит в новый уже после.
+   ========================================================================== */
+
+/* «Острота» нижней галочки блока: 1 — пятиугольник, 0 — прямоугольник.
+   Регистрируем как число, чтобы браузер умел плавно её менять. */
+@property --shape {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 1;
+}
+
+:root {
+    --tip: 1.75rem;      /* сколько кончика шапки остаётся видно */
+    --section-ease: cubic-bezier(0.55, 0, 0.2, 1);
+}
+
+header {
+    transition: transform 0.65s var(--section-ease);
+}
+
+.nav-left,
+.nav-right,
+.logo-container {
+    transition: opacity 0.35s ease;
+}
+
+.main-content-block {
+    transition: margin-top 0.65s var(--section-ease), height 0.65s var(--section-ease);
+}
+
+.main-inner-content {
+    transition: --shape 0.65s var(--section-ease);
+}
+
+.main-scroll-text {
+    transition: padding-top 0.65s var(--section-ease);
+}
+
+/* ---------- Шапка: остаётся только кончик ---------- */
+
+html.is-section:not(.intro):not(.header-peek) header {
+    /* низ острия шапки (от её верха) = --hdr-h − --gap + --tri; оставляем видимым --tip */
+    transform: translateY(calc(var(--tip) - var(--hdr-h) + var(--gap) - var(--tri)));
+}
+
+html.is-section:not(.intro):not(.header-peek) :is(.nav-left, .nav-right, .logo-container) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Невидимая «кнопка» на кончике: на неё наводят мышь или нажимают пальцем */
+.header-tip {
+    display: none;
+}
+
+html.is-section .header-tip {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: absolute;
+    z-index: 30;
+    left: 50%;
+    top: calc(var(--hdr-h) - var(--gap) + var(--tri) - var(--tip) - 0.5rem);
+    width: 40%;
+    height: calc(var(--tip) + 0.5rem);
+    transform: translateX(-50%);
+    padding: 0.35rem 0 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* маленькая стрелка-подсказка на кончике */
+.header-tip-chevron {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 1.5px solid #E3CFAC;
+    border-bottom: 1.5px solid #E3CFAC;
+    transform: rotate(45deg);
+    opacity: 0.6;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.header-tip:hover .header-tip-chevron,
+.header-tip:focus-visible .header-tip-chevron {
+    opacity: 1;
+}
+
+html.header-peek .header-tip-chevron {
+    transform: rotate(-135deg) translate(-0.2rem, -0.2rem);
+}
+
+/* показанная шапка лежит поверх блока */
+html.is-section.header-peek .header-bookmark {
+    pointer-events: auto;
+}
+
+/* ---------- Блок: поднимается и становится прямоугольником ---------- */
+
+html.is-section:not(.intro) .main-content-block {
+    margin-top: calc(var(--tip) + 0.75rem - var(--hdr-h));
+    height: calc(81% + var(--hdr-h) - var(--tip) - 0.75rem);
+    /* всё, что выше верхнего края блока, не видно — лента «выходит» из-за края */
+    clip-path: polygon(-100vw 0, 200vw 0, 200vw 300vh, -100vw 300vh);
+}
+
+html.is-section:not(.intro) .main-inner-content {
+    --shape: 0;
+}
+
+html.is-section:not(.intro) .main-scroll-text {
+    padding-top: 2.75rem;
+}
+
+@media (max-width: 768px) {
+    :root {
+        --tip: 1.4rem;
+    }
+
+    html.is-section:not(.intro) .main-content-block {
+        height: calc(100% - var(--tip) - 1.75rem);
+    }
+
+    html.is-section:not(.intro) .main-scroll-text {
+        padding-top: 2.25rem;
+    }
+
+    html.is-section .header-tip {
+        width: 50%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    header,
+    .main-content-block,
+    .main-inner-content,
+    .main-scroll-text {
+        transition: none;
+    }
+}

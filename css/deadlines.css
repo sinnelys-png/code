@@ -129,7 +129,7 @@ header a.is-current {
 }
 
 .dl-card:hover .dl-avatar {
-    box-shadow: 0 0 0 3px rgba(0, 25, 41, 0.9), 0 0 0 4px var(--gold-80), 0 0 0.8rem rgba(227, 207, 172, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 25, 41, 0.9), 0 0 0 4px var(--gold-80);
 }
 
 .dl-avatar {
@@ -145,19 +145,35 @@ header a.is-current {
 }
 
 /* Рамка в цветах факультета, как галстук: кольцо основного цвета,
-   через него наискосок (45°) две полоски по 2px с промежутком 2px.
-   Кольцо — это поле (padding) вокруг картинки, закрашенное фоном. */
+   через него наискосок (45°) три пары полосок — по центру, левее и правее.
+   В паре две полоски по 2px с промежутком 2px.
+   Кольцо — это поле (padding) вокруг картинки, закрашенное фоном;
+   между кольцом и картинкой — тёмный зазор 2px (верхний слой фона).
+   Видимая толщина кольца = --ring − 2px. */
 .dl-avatar.has-faculty {
-    --ring: 5px;
+    --ring: 6px;          /* кольцо 4px + зазор 2px */
+    --pair-gap: 18px;     /* расстояние между центрами пар */
+    --m: var(--fac-main);
+    --s: var(--fac-stripe);
+    --gap-ring: radial-gradient(circle closest-side,
+        #001929 calc(100% - var(--ring) + 2px), transparent calc(100% - var(--ring) + 2px));
+    --stripes: linear-gradient(135deg,
+        var(--m) calc(50% - var(--pair-gap) - 3px),
+        var(--s) calc(50% - var(--pair-gap) - 3px) calc(50% - var(--pair-gap) - 1px),
+        var(--m) calc(50% - var(--pair-gap) - 1px) calc(50% - var(--pair-gap) + 1px),
+        var(--s) calc(50% - var(--pair-gap) + 1px) calc(50% - var(--pair-gap) + 3px),
+        var(--m) calc(50% - var(--pair-gap) + 3px) calc(50% - 3px),
+        var(--s) calc(50% - 3px) calc(50% - 1px),
+        var(--m) calc(50% - 1px) calc(50% + 1px),
+        var(--s) calc(50% + 1px) calc(50% + 3px),
+        var(--m) calc(50% + 3px) calc(50% + var(--pair-gap) - 3px),
+        var(--s) calc(50% + var(--pair-gap) - 3px) calc(50% + var(--pair-gap) - 1px),
+        var(--m) calc(50% + var(--pair-gap) - 1px) calc(50% + var(--pair-gap) + 1px),
+        var(--s) calc(50% + var(--pair-gap) + 1px) calc(50% + var(--pair-gap) + 3px),
+        var(--m) calc(50% + var(--pair-gap) + 3px));
     border: 0;
     padding: var(--ring);
-    background:
-        linear-gradient(135deg,
-            var(--fac-main) calc(50% - 3px),
-            var(--fac-stripe) calc(50% - 3px) calc(50% - 1px),
-            var(--fac-main) calc(50% - 1px) calc(50% + 1px),
-            var(--fac-stripe) calc(50% + 1px) calc(50% + 3px),
-            var(--fac-main) calc(50% + 3px));
+    background: var(--gap-ring), var(--stripes);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
@@ -165,21 +181,19 @@ header a.is-current {
 .dl-avatar--empty.has-faculty {
     background:
         radial-gradient(circle at 50% 35%, #0a3d5c, #001929) content-box,
-        linear-gradient(135deg,
-            var(--fac-main) calc(50% - 3px),
-            var(--fac-stripe) calc(50% - 3px) calc(50% - 1px),
-            var(--fac-main) calc(50% - 1px) calc(50% + 1px),
-            var(--fac-stripe) calc(50% + 1px) calc(50% + 3px),
-            var(--fac-main) calc(50% + 3px)) border-box;
+        var(--gap-ring) border-box,
+        var(--stripes) border-box;
 }
 
+/* без свечения при наведении */
 .dl-card:hover .dl-avatar.has-faculty,
 .home-row:hover .dl-avatar.has-faculty {
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0.9rem var(--fac-stripe);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .home-avatar.has-faculty {
-    --ring: 4px;
+    --ring: 5px;          /* кольцо 3px + зазор 2px */
+    --pair-gap: 12px;
 }
 
 .dl-avatar--empty {

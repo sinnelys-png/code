@@ -52,6 +52,45 @@
         if (token === navToken) enter(dash);
     }
 
+    /* ---------- Разделы: шапка прячется до кончика (css/sections.css) ---------- */
+    const html = document.documentElement;
+    const header = document.querySelector('header');
+    const tip = document.querySelector('.header-tip');
+    let peekTimer = 0;
+
+    function setPeek(on) {
+        clearTimeout(peekTimer);
+        html.classList.toggle('header-peek', on);
+        if (tip) {
+            tip.setAttribute('aria-expanded', String(on));
+            tip.setAttribute('aria-label', on ? 'Скрыть меню' : 'Показать меню');
+        }
+    }
+
+    function setSectionMode(on) {
+        const changed = html.classList.contains('is-section') !== on;
+        html.classList.toggle('is-section', on);
+        setPeek(false);
+        // после смены формы блока пересчитываем цвет фона закреплённых заголовков
+        if (changed) setTimeout(updateStickyBg, 750);
+    }
+
+    if (tip && header) {
+        tip.addEventListener('click', () => setPeek(!html.classList.contains('header-peek')));
+        // мышь: навели на кончик — шапка выезжает; увели с шапки — прячется
+        tip.addEventListener('mouseenter', (e) => { if (e.pointerType !== 'touch') setPeek(true); });
+        header.addEventListener('mouseleave', () => {
+            if (!html.classList.contains('header-peek')) return;
+            peekTimer = setTimeout(() => setPeek(false), 350);
+        });
+        header.addEventListener('mouseenter', () => clearTimeout(peekTimer));
+        // палец: нажатие мимо шапки или по пункту меню — шапка прячется
+        document.addEventListener('click', (e) => {
+            if (!html.classList.contains('header-peek')) return;
+            if (!e.target.closest('header') || e.target.closest('header a')) setPeek(false);
+        });
+    }
+
     async function show() {
         const name = currentPage();
         const token = ++navToken;
@@ -63,6 +102,7 @@
         });
 
         setRibbon(name ? RCU.pages[name].title : '');
+        setSectionMode(!!name);
         view.classList.add('is-leaving');
         await new Promise(r => setTimeout(r, 150));
         if (token !== navToken) return;
@@ -126,7 +166,7 @@
     }, { passive: true });
 
     updateStickyBg();
-    setTimeout(updateStickyBg, 3200);   // после заставки (во время неё блок сдвинут)
+    setTimeout(updateStickyBg, 3700);   // после заставки (во время неё блок сдвинут)
     window.addEventListener('resize', updateStickyBg);
 
     // В фоне пришли обновлённые таблицы — тихо перерисовываем открытый раздел,
