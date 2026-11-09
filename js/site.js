@@ -26,7 +26,10 @@
     const strokeAnim2 = document.getElementById('stroke-anim-2');
 
     // 2. ОПРЕДЕЛЯЕМ: МОБИЛЬНОЕ ЛИ ЭТО УСТРОЙСТВО ИЛИ VK APP НА ТЕЛЕФОНЕ
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    // Режим выбирается один раз при загрузке, поэтому смотрим не на ширину окна (её можно потом
+    // поменять — и свет от мыши пропал бы до перезагрузки), а на то, есть ли у устройства мышь
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.matchMedia('(hover: none)').matches;
 
     if (isMobile) {
         // ==========================================================================

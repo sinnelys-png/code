@@ -195,6 +195,27 @@
                 students: x.students.filter(inTech),
             })).filter(x => x.subject && (x.curator || x.students.length));
 
+            // порядок анкет для листания стрелками — как на карточке факультета: преподаватели,
+            // декан, нпс, студенты по курсам; внутри группы — как в таблице факультетов,
+            // кого в таблице нет — по алфавиту
+            const tableIdx = new Map();
+            [...(info.teachers || []).map(t => t.name), info.dean, info.npc,
+                ...(info.courses || []).flatMap(g => g.students)].forEach((n, k) => {
+                if (n && !tableIdx.has(n)) tableIdx.set(n, k);
+            });
+            const byTable = (x, y) => (tableIdx.has(x.name) ? tableIdx.get(x.name) : 1e6) - (tableIdx.has(y.name) ? tableIdx.get(y.name) : 1e6)
+                || x.name.localeCompare(y.name, 'ru');
+            const memberNames = new Set(members.map(c => c.name));
+            const order = [];
+            const push = (n) => { if (n && memberNames.has(n) && !order.includes(n)) order.push(n); };
+            members.filter(c => c.role === 'преподаватель').sort(byTable).forEach(c => push(c.name));
+            push(info.dean);
+            push(info.npc);
+            members.filter(c => c.role === 'студент')
+                .sort((x, y) => ((Number(x.course) || 99) - (Number(y.course) || 99)) || byTable(x, y))
+                .forEach(c => push(c.name));
+            members.slice().sort(byTable).forEach(c => push(c.name));
+
             return {
                 title,
                 subjects: info.subjects || '',
@@ -203,6 +224,7 @@
                 npc: inTech(info.npc) ? info.npc : '',
                 courses,
                 electives,
+                order,
             };
         }).concat([{
             // персонал — отдельная карточка: должности из Техтаблицы (колонка L) и брони
@@ -212,8 +234,22 @@
                 .map(c => ({ subject: c.post || '', name: c.name }))
                 .concat(bron.filter(x => x.role === 'персонал').map(x => ({ subject: x.post || x.subject, name: x.name, booked: true }))),
             courses: [],
+            order: d.characters.filter(c => c.role === 'персонал').map(c => c.name),
         }]);
     }
+
+    // порядок анкет факультета для листания (персонажи — js/pages/characters.js):
+    // по номеру открытой карточки факультета или по названию факультета
+    let orderCache = { d: null, list: [] };
+    const facultiesOf = (d) => {
+        if (orderCache.d !== d) orderCache = { d, list: buildFaculties(d) };
+        return orderCache.list;
+    };
+    RCU.facultyOrderAt = (i) => (faculties[i] ? faculties[i].order : null);
+    RCU.facultyOrderOf = (d, title) => {
+        const f = d && title && facultiesOf(d).find(x => !x.staff && key(x.title) === key(title));
+        return f ? f.order : null;
+    };
 
     let shown = [];   // факультеты в том порядке, в каком они на странице (для стрелок)
 

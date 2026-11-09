@@ -271,9 +271,15 @@
     const modalBody = modal && modal.querySelector('.pc-modal-body');
     let lastFocus = null;
 
-    // dir: 0 — открытие (карточка вырастает и раскладывается), ±1 — листание (старая уезжает вбок)
-    function openCharacter(name, dir = 0) {
+    // по каким анкетам листать стрелками, если не по группе картотеки (например, состав факультета)
+    let pageContext = null;
+
+    // dir: 0 — открытие (карточка вырастает и раскладывается), ±1 — листание (старая уезжает вбок);
+    // context — список имён для листания (без него листание по группе картотеки)
+    function openCharacter(name, dir = 0, context = null) {
         if (!modal || !data || !data.byName.has(name)) return;
+        if (context) pageContext = context;
+        else if (!dir) pageContext = null;
         const wasHidden = modal.hidden || !modal.classList.contains('is-shown');
         if (modal.hidden) lastFocus = document.activeElement;
         const unfold = wasHidden || !modalBody.querySelector('.pc-ticket');
@@ -341,13 +347,20 @@
             { transform: 'none', opacity: 1 },
             { transform: `translateX(${-dir * dist}px)`, opacity: 0.4 },
         ], { ...timing, fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
-        if (card) {
-            modalBody.classList.add('is-swapping');
-            card.animate([
+        if (!card) return;
+        // новая карточка тоже въезжает копией поверх окна: само окно не меняется
+        // (иначе пришлось бы снимать с него обрезку, и карточка «сужалась» бы в конце)
+        card.style.visibility = 'hidden';
+        requestAnimationFrame(() => {                 // после подгонки шрифта параметров
+            if (!card.isConnected) return;
+            const incoming = ghostOf(card, 'pc-card-ghost').ghost;
+            incoming.style.visibility = 'visible';
+            const done = () => { incoming.remove(); card.style.visibility = ''; };
+            incoming.animate([
                 { transform: `translateX(${dir * dist}px)`, opacity: 0.4 },
                 { transform: 'none', opacity: 1 },
-            ], timing).finished.then(() => modalBody.classList.remove('is-swapping'), () => {});
-        }
+            ], { ...timing, fill: 'forwards' }).finished.then(done, done);
+        });
     }
     RCU.swapCard = swapCard;
 
@@ -434,7 +447,20 @@
        текущей сортировки картотеки. На краях группы стрелка гаснет. */
     function pageList(name) {
         const c = data.byName.get(name);
+        // открыта из карточки факультета — только этот факультет, в порядке таблицы факультетов
+        if (pageContext && pageContext.includes(name)) {
+            return pageContext.map(n => data.byName.get(n)).filter(Boolean);
+        }
         const g = file.groups.find(x => x.list.some(y => y.name === name));
+        // картотека отсортирована по факультету — листаем только факультет этого персонажа
+        if (g && sortState[g.title] === 'faculty' && RCU.facultyOrderOf) {
+            const order = RCU.facultyOrderOf(data, c.faculty);
+            const inGroup = new Set(g.list.map(x => x.name));
+            if (order) {
+                const list = order.filter(n => inGroup.has(n)).map(n => data.byName.get(n));
+                if (list.some(x => x.name === name)) return list;
+            }
+        }
         if (g) return sorted(g.list, sortState[g.title] || 'name');
         return sorted(data.characters.filter(x => x.role === c.role), 'name');
     }
@@ -563,7 +589,12 @@
             if (star) { setRoomPop(star, star.getAttribute('aria-expanded') !== 'true'); return; }
             if (!e.target.closest('.pc-room-pop')) setRoomPop(null, false);
             const link = e.target.closest('.pc-link[data-name]');
-            if (link) openCharacter(link.dataset.name);
+            if (link) {
+                // имя в карточке факультета — дальше листаем состав этого факультета
+                const fac = modalBody.dataset.fac;
+                const context = fac != null && RCU.facultyOrderAt ? RCU.facultyOrderAt(Number(fac)) : null;
+                openCharacter(link.dataset.name, 0, context && context.includes(link.dataset.name) ? context : null);
+            }
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCharacter(); });
         window.addEventListener('hashchange', closeCharacter);

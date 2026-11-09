@@ -2,7 +2,7 @@
 // Данные — таблица взаимоотношений (Apps Script, ?part=relations): легенда (тип → цвет),
 // люди (по колонкам таблицы) и связи «кто → к кому, тип, ещё не обсуждалось?, комментарий».
 // Персонажи стоят по кругу, сгруппированные по факультетам; связи — дуги через центр.
-// Фильтры (выпадающие меню): типы отношений, роли, факультеты, курсы, студенческие активности
+// Фильтры (выпадающие меню): типы отношений, роли, факультеты, курсы, подроли
 // (когда появятся) и персонажи — выбранные персонажи и те, с кем у них есть отношения.
 // Нажатие на персонажа оставляет только его связи и показывает их списком под графом.
 (() => {
@@ -73,7 +73,7 @@
                 faculty,
                 course: String((c && c.course) || p.course || '').replace(/\D+/g, ''),
                 avatar: c && safeUrl(c.avatar) ? c.avatar : '',
-                activities: (c && c.activities) || [],     // студенческие активности — появятся позже
+                activities: (c && c.activities) || [],     // подроли — появятся вместе со страницей подролей
                 group: sheetRole === 'студент' ? (faculty || group) : (sheetRole === 'преподаватель' ? 'преподаватели' : 'персонал'),
             };
         });
@@ -185,8 +185,8 @@
                 ${drop('roles', 'роль', ROLE_TITLES.map(([r, t]) => ({ value: r, label: t })))}
                 ${drop('faculties', 'факультет', model.facultyList.map(f => ({ value: f, label: shortFac(f) })))}
                 ${drop('courses', 'курс', model.courses.map(c => ({ value: c, label: `${c} курс` })))}
-                ${drop('activities', 'активность', allActivities.map(a => ({ value: a, label: a })),
-                    { empty: 'Появятся вместе со страницей студенческой активности.' })}
+                ${drop('activities', 'подроль', allActivities.map(a => ({ value: a, label: a })),
+                    { empty: 'Появятся вместе со страницей подролей.' })}
                 ${drop('types', 'отношение', model.legend.map((l, i) => ({ value: i, key: i, label: l.name.toLowerCase(), dot: visibleOn(l.color, light) })), { types: true })}
                 <button class="rg-reset" type="button">сброс</button>
             </div>`;

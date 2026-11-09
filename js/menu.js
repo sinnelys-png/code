@@ -3,6 +3,7 @@
 //
 // Как раскладывается:
 //   • до 6 пунктов — поровну слева и справа от герба (справа на один больше, если нечётно);
+//     больше 4 — каждая сторона в две строки (звёздочки только между пунктами одной строки);
 //   • больше 6 — первые 5 в шапке, остальные в выпадающем «ещё ▾» справа.
 // Подключается до js/site.js (там на пункты меню вешаются эффекты блика).
 (() => {
@@ -20,8 +21,14 @@
     const join = (list) => list.map(link).join('<span class="star-separator">✦</span>');
 
     const half = Math.floor(visible.length / 2);
-    left.innerHTML = join(visible.slice(0, half));
-    right.innerHTML = join(visible.slice(half)) + (more.length ? `
+    // сторона меню: если пунктов много — две строки, в верхней больше
+    const rows = (list) => {
+        if (visible.length <= 4 || list.length < 2) return join(list);
+        const top = Math.ceil(list.length / 2);
+        return `<div class="nav-row">${join(list.slice(0, top))}</div><div class="nav-row">${join(list.slice(top))}</div>`;
+    };
+    left.innerHTML = rows(visible.slice(0, half));
+    right.innerHTML = rows(visible.slice(half)) + (more.length ? `
         <span class="star-separator">✦</span>
         <div class="nav-more">
             <button class="nav-more-btn" type="button" aria-expanded="false">ещё ▾</button>

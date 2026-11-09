@@ -37,7 +37,7 @@ header {
 }
 
 .main-inner-content {
-    transition: --shape 0.65s var(--section-ease);
+    transition: --shape 0.65s var(--section-ease), height 0.65s var(--section-ease), max-height 0.65s var(--section-ease);
 }
 
 .main-scroll-text {
@@ -127,6 +127,15 @@ html.is-section:not(.intro) .main-content-block {
 
 html.is-section:not(.intro) .main-inner-content {
     --shape: 0;
+}
+
+/* блок поднялся на столько же, на сколько вырос, — внутренняя часть вырастает так же,
+   чтобы её нижний край (полоска) остался на месте (на телефоне она и так на весь блок) */
+@media (min-width: 769px) {
+    html.is-section:not(.intro) .main-inner-content {
+        height: calc(50rem + var(--hdr-h) - var(--tip) + var(--tip-overlap));
+        max-height: calc(50rem + var(--hdr-h) - var(--tip) + var(--tip-overlap));
+    }
 }
 
 html.is-section:not(.intro) .main-scroll-text {

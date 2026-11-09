@@ -1229,11 +1229,6 @@ html.pc-open .main-scroll-viewport {
     transition: none;
 }
 
-/* при смене карточки новая въезжает из-за края экрана — окно её не обрезает */
-.pc-modal-body.is-swapping {
-    overflow: visible;
-}
-
 /* копия уезжающей карточки поверх окна */
 .pc-card-ghost {
     z-index: 3;
@@ -1881,19 +1876,32 @@ html.is-full-bleed .page-root {
 /* ---------- Меню из списка (js/menu.js) ---------- */
 
 /* много пунктов — длинные названия переносятся на две строки по центру */
+/* много пунктов — каждая сторона меню в две строки (js/menu.js), звёздочки поменьше */
 header.has-many-items .nav-left,
 header.has-many-items .nav-right {
-    gap: 0.4rem;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 0.6rem;
+}
+
+header.has-many-items .nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
 }
 
 header.has-many-items .nav-left a,
 header.has-many-items .nav-right a {
-    font-size: 0.85em;
-    padding-left: 0.35rem;
-    padding-right: 0.35rem;
-    white-space: normal;
-    text-align: center;
+    font-size: 0.95em;
+    padding: 0.25rem 0.35rem;
+    white-space: nowrap;
     line-height: 1.05;
+}
+
+header.has-many-items .star-separator {
+    margin-top: 0;
+    font-size: 0.55em;
 }
 
 .nav-more {
