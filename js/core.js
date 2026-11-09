@@ -318,5 +318,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
+    return { launch, esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
 })();

@@ -53,7 +53,10 @@
             return `
                 <div class="home-row">
                     ${avatar}
-                    <div class="home-row-main">${link(c.topicUrl, c.name, 'dl-name')}</div>
+                    <div class="home-row-main">
+                        ${link(c.topicUrl, c.name, 'dl-name')}
+                        ${RCU.deadlineNotes ? RCU.deadlineNotes(c) : ''}
+                    </div>
                     <div class="home-row-side">${right}</div>
                 </div>`;
         }).join('');
@@ -97,6 +100,53 @@
         return section('лидеры активности', rows, { href: '#activity', text: 'весь рейтинг' });
     }
 
+    /* ---------- «В избранное» и «на главный экран» (только внутри ВК) ----------
+       Кнопка показывается, только если это действие доступно и ещё не сделано:
+       избранное — по параметру запуска vk_is_favorite, главный экран — по ответу ВК
+       (он есть только в приложении для Android). */
+    const LAUNCH_KEY = 'rcu-launch';
+
+    function vkSend(method, params) {
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+        return Promise.race([vkBridge.send(method, params || {}), timeout]);
+    }
+
+    async function vkActions(box) {
+        if (!window.vkBridge || !RCU.launch.vk_app_id) return;
+        const buttons = [];
+        if (RCU.launch.vk_is_favorite !== '1') buttons.push(['favorite', 'добавить в избранное']);
+        try {
+            const info = await vkSend('VKWebAppAddToHomeScreenInfo');
+            if (info && info.is_feature_supported && !info.is_added_to_home_screen) buttons.push(['home', 'на главный экран']);
+        } catch (e) { /* не поддерживается */ }
+        if (!buttons.length || !box.isConnected) return;
+
+        box.innerHTML = buttons.map(([act, text]) =>
+            `<button class="home-vk-btn" type="button" data-act="${act}">${text}</button>`).join('');
+        box.hidden = false;
+        box.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.home-vk-btn');
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            try {
+                if (btn.dataset.act === 'favorite') {
+                    const r = await vkSend('VKWebAppAddToFavorites');
+                    if (!r || !r.result) throw new Error('отменено');
+                    RCU.launch.vk_is_favorite = '1';   // и при следующей сборке главной кнопки не будет
+                    try { sessionStorage.setItem(LAUNCH_KEY, JSON.stringify(RCU.launch)); } catch (err) { /* без хранилища */ }
+                    btn.textContent = 'в избранном';
+                } else {
+                    const r = await vkSend('VKWebAppAddToHomeScreen');
+                    if (!r || !r.result) throw new Error('отменено');
+                    btn.textContent = 'добавлено на экран';
+                }
+                btn.classList.add('is-done');
+            } catch (err) {
+                btn.disabled = false;   // отменили или не вышло — можно нажать ещё раз
+            }
+        });
+    }
+
     /* ---------- Сборка ---------- */
 
     async function render(root, greetingEl) {
@@ -122,9 +172,11 @@
                 : postsBlock('ближайшие посты', posts, 'Запланированных постов пока нет.'));
         }
 
-        root.innerHTML = blocks.length
+        root.innerHTML = (blocks.length
             ? blocks.filter(Boolean).join('')
-            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>';
+            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>')
+            + '<div class="home-vk" hidden></div>';
+        vkActions(root.querySelector('.home-vk'));
     }
 
     RCU.home = { render };

@@ -183,6 +183,13 @@
         return done === max ? 'следующий ответ должен содержать подроль' : 'персонаж снят с подроли';
     }
 
+    // Золотые строки карточки: долг в игровой и напоминание о подроли (их же показывает главная)
+    const debtHTML = (row) => row.debts
+        ? `<div class="dl-debt"><span class="dl-label">есть долг в игровой${row.debts.length ? ':' : ''}</span> ${esc(row.debts.join('; '))}</div>`
+        : '';
+    const subNoticeHTML = (row) => subNotice(row.noSub) ? `<div class="dl-sub-notice">${subNotice(row.noSub)}</div>` : '';
+    RCU.deadlineNotes = (row) => debtHTML(row) + subNoticeHTML(row);
+
     // open — карточка сразу раскрыта (свои персонажи)
     function card(row, open) {
         const fac = RCU.facultyAttrs(row.faculty);
@@ -210,7 +217,7 @@
             extra.push(`
                 <div class="dl-subs">
                     ${active ? `<div class="dl-active"><span class="dl-label">текущая подроль:</span> ${esc(active)} ${counter}</div>` : ''}
-                    ${subNotice(row.noSub) ? `<div class="dl-sub-notice">${subNotice(row.noSub)}</div>` : ''}
+                    ${subNoticeHTML(row)}
                     ${queue.length ? `
                         <div class="dl-label">очередь подролей:</div>
                         <ol class="dl-queue">
@@ -231,7 +238,7 @@
                 <div class="dl-info">
                     <div class="dl-title">${link(row.topicUrl, row.name, 'dl-name')}${more}</div>
                     <div class="dl-player"><span class="dl-label">отвечает:</span> ${link(row.playerUrl, row.player, 'dl-player-link')}</div>
-                    ${row.debts ? `<div class="dl-debt"><span class="dl-label">есть долг в игровой${row.debts.length ? ':' : ''}</span> ${esc(row.debts.join('; '))}</div>` : ''}
+                    ${debtHTML(row)}
                     ${duet}
                     ${extra.length ? `<div class="dl-extra"${open ? '' : ' hidden'}>${extra.join('')}</div>` : ''}
                 </div>

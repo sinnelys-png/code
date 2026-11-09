@@ -250,6 +250,19 @@ html.is-section .main-scroll-viewport::after {
     flex-basis: calc(0.75rem + var(--tip-overlap, 0px));
 }
 
+/* На главной блок — пятиугольник, область прокрутки начинается под «галочкой»
+   (сверху 8rem, снизу 2rem). Середину считаем от верхней точки блока. */
+html:not(.is-section) .main-scroll-viewport::after {
+    flex-basis: 6rem;
+}
+
+@media (max-width: 768px) {
+    /* на телефоне сверху --tri + 2.75rem, снизу 1.5rem */
+    html:not(.is-section) .main-scroll-viewport::after {
+        flex-basis: calc(var(--tri) + 1.25rem);
+    }
+}
+
 /* ==========================================================================
    РАСПИСАНИЕ БУДУЩИХ ПОСТОВ
    ========================================================================== */
@@ -808,6 +821,13 @@ a.ac-name-link:hover {
     min-width: 0;
 }
 
+/* золотые строки из дедлайнов под именем: долг в игровой, напоминание о подроли */
+.home-row-main .dl-debt,
+.home-row-main .dl-sub-notice {
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+}
+
 .home-row-side {
     text-align: right;
     display: flex;
@@ -863,6 +883,47 @@ a.ac-name-link:hover {
 .home-empty {
     margin: 0.6rem 0.25rem;
     color: var(--text-55);
+}
+
+/* «добавить в избранное» / «на главный экран» — внизу главной, только внутри ВК */
+.home-vk {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.home-vk[hidden] {
+    display: none;
+}
+
+.home-vk-btn {
+    height: 1.75rem;
+    box-sizing: border-box;
+    padding: 0 0.9rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--text-80);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.home-vk-btn:hover,
+.home-vk-btn:focus-visible {
+    color: #fff;
+    border-color: rgba(204, 204, 204, 0.55);
+    outline: none;
+}
+
+.home-vk-btn.is-done {
+    color: var(--gold);
+    border-color: var(--gold-55);
+    cursor: default;
 }
 
 .home-more {
