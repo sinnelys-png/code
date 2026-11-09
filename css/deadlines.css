@@ -360,6 +360,12 @@ a.dl-name:hover {
     color: var(--text);
 }
 
+/* «следующий ответ должен содержать подроль» / «персонаж снят с подроли» */
+.dl-sub-notice {
+    margin-top: 0.2rem;
+    color: var(--urgent);
+}
+
 .dl-subs > .dl-label {
     display: block;
     margin-top: 0.35rem;

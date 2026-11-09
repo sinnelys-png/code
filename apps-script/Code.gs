@@ -45,8 +45,6 @@ const WARMUP_MINUTES = 5;
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
 const CACHE_KEY = 'site-v8';
-// Отметка «данные поменялись» для ?part=version (живёт 6 часов — максимум кэша)
-const VERSION_KEY = 'site-version';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -89,12 +87,6 @@ function doGet(e) {
     const cachedR = cacheGet_(RELATIONS_KEY);
     if (cachedR) return json_(cachedR);
     return json_(buildRelations_());
-  }
-  // ?part=version — когда данные сайта последний раз МЕНЯЛИСЬ (крошечный ответ, без чтения таблиц).
-  // Браузер спрашивает его раз в минуту и перекачивает всё, только если вышло новее.
-  if (e && e.parameter && e.parameter.part === 'version') {
-    const ver = CacheService.getScriptCache().get(VERSION_KEY);
-    return json_(ver || '{"version":null}');
   }
   const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
@@ -262,22 +254,7 @@ function build_() {
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
-  markVersion_(out);
   return text;
-}
-
-/* Прогрев пересобирает ответ каждые 5 минут, но версия сдвигается, только если данные
-   правда поменялись (сравниваем отпечаток всего, кроме времени сборки). */
-function markVersion_(out) {
-  const copy = Object.assign({}, out);
-  delete copy.updated;
-  const hash = Utilities.base64Encode(Utilities.computeDigest(
-    Utilities.DigestAlgorithm.MD5, JSON.stringify(copy), Utilities.Charset.UTF_8));
-  const cache = CacheService.getScriptCache();
-  let prev = null;
-  try { prev = JSON.parse(cache.get(VERSION_KEY)); } catch (e) { /* нет — начнём заново */ }
-  const version = (prev && prev.hash === hash) ? prev.version : out.updated;
-  cache.put(VERSION_KEY, JSON.stringify({ version: version, hash: hash }), 21600);
 }
 
 /** Таблица с дедлайнами (открывается по ID — скрипт к ней не привязан) */

@@ -214,7 +214,6 @@
     // Один раз на сессию; страницы публичного сайта берут данные отсюда
     let promise = null;
     RCU.publicData = () => (promise = promise || load().catch(err => { promise = null; throw err; }));
-    window.addEventListener('rcu:updated', () => { promise = null; });
 
     RCU.isEmptyValue = isEmpty;
 })();

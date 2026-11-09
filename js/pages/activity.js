@@ -45,13 +45,13 @@
         const people = rows
             .map(p => ({ ...p, url: p.id ? PROFILE_PREFIX + p.id : '' }))
             // С нулевой суммой показываем только тех, у кого есть что-то в остальных столбцах —
-            // это победитель прошлого месяца, ему ставим корону
+            // это победитель прошлого месяца, ему ставим звёздочку
             .filter(p => p.sumNum !== 0 || p.statNums.some(n => n !== 0))
             .map(p => ({ ...p, winner: p.sumNum === 0 }));
         return { people, viewerId };
     }
 
-    const CROWN = `<button class="ac-crown" type="button" data-tip="победитель прошлого месяца" aria-label="Победитель прошлого месяца">👑</button>`;
+    const CROWN = `<button class="ac-crown" type="button" data-tip="победитель прошлого месяца" aria-label="Победитель прошлого месяца">✦</button>`;
 
     // На телефоне наведения нет — подсказка открывается касанием
     document.addEventListener('click', (e) => {

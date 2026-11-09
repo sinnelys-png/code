@@ -173,7 +173,18 @@
             .filter(s => !isEmpty(s)).join(' ').toLowerCase().replace(/ё/g, 'е');
     }
 
-    function card(row) {
+    // Счётчик ответов без подроли «3/3»: дошёл до предела — следующий ответ с подролью,
+    // перевалил за него — персонаж снят с подроли
+    function subNotice(noSub) {
+        const m = String(noSub || '').match(/(\d+)\s*\/\s*(\d+)/);
+        if (!m) return '';
+        const done = +m[1], max = +m[2];
+        if (!max || done < max) return '';
+        return done === max ? 'следующий ответ должен содержать подроль' : 'персонаж снят с подроли';
+    }
+
+    // open — карточка сразу раскрыта (свои персонажи)
+    function card(row, open) {
         const fac = RCU.facultyAttrs(row.faculty);
         const avatar = safeUrl(row.avatar)
             ? `<img class="dl-avatar${fac.cls}"${fac.attrs} src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
@@ -199,6 +210,7 @@
             extra.push(`
                 <div class="dl-subs">
                     ${active ? `<div class="dl-active"><span class="dl-label">текущая подроль:</span> ${esc(active)} ${counter}</div>` : ''}
+                    ${subNotice(row.noSub) ? `<div class="dl-sub-notice">${subNotice(row.noSub)}</div>` : ''}
                     ${queue.length ? `
                         <div class="dl-label">очередь подролей:</div>
                         <ol class="dl-queue">
@@ -208,20 +220,20 @@
         }
 
         const more = extra.length
-            ? `<button class="dl-more" type="button" aria-expanded="false" aria-label="Подробнее"><span class="dl-chevron" aria-hidden="true"></span></button>`
+            ? `<button class="dl-more" type="button" aria-expanded="${open ? 'true' : 'false'}" aria-label="Подробнее"><span class="dl-chevron" aria-hidden="true"></span></button>`
             : '';
 
         const labels = labelsOf(row);
 
         return `
-            <article class="dl-card" data-name="${esc(row.name)}" data-q="${esc(searchText(row))}">
+            <article class="dl-card${open && extra.length ? ' is-expanded' : ''}" data-name="${esc(row.name)}" data-q="${esc(searchText(row))}">
                 ${avatar}
                 <div class="dl-info">
                     <div class="dl-title">${link(row.topicUrl, row.name, 'dl-name')}${more}</div>
                     <div class="dl-player"><span class="dl-label">отвечает:</span> ${link(row.playerUrl, row.player, 'dl-player-link')}</div>
                     ${row.debts ? `<div class="dl-debt"><span class="dl-label">есть долг в игровой${row.debts.length ? ':' : ''}</span> ${esc(row.debts.join('; '))}</div>` : ''}
                     ${duet}
-                    ${extra.length ? `<div class="dl-extra" hidden>${extra.join('')}</div>` : ''}
+                    ${extra.length ? `<div class="dl-extra"${open ? '' : ' hidden'}>${extra.join('')}</div>` : ''}
                 </div>
                 <div class="dl-deadline">
                     ${isQueued(row.status)
@@ -242,7 +254,7 @@
                     <span class="dl-chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="dl-group-body">
-                    ${rows.map(card).join('')}
+                    ${rows.map(r => card(r)).join('')}
                 </div>
             </details>`;
     }
@@ -390,7 +402,7 @@
                             <span class="dl-chevron" aria-hidden="true"></span>
                         </summary>
                         <div class="dl-group-body">
-                            ${mine.map(card).join('')}
+                            ${mine.map(r => card(r, true)).join('')}
                         </div>
                     </details>`;
             }
@@ -408,7 +420,7 @@
             html += `
                 <div class="dl-by-deadline" hidden>
                     <section class="dl-section">
-                        ${byDeadline(rows).map(card).join('')}
+                        ${byDeadline(rows).map(r => card(r)).join('')}
                     </section>
                 </div>`;
             html += '<p class="dl-status dl-empty" hidden>Никого не нашлось.</p>';

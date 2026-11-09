@@ -224,11 +224,11 @@ window.RCU = (() => {
 
     /* ---------- Кэш таблиц в браузере ----------
        Свежие данные (моложе FRESH_MS) берутся из памяти браузера без запроса к Google.
-       Чуть устаревшие (моложе STALE_MS) показываются сразу, а в фоне скачиваются новые;
-       если они отличаются, страница тихо перерисовывается (событие 'rcu:updated').
-       Совсем старые сразу не показываются — ждём свежие. */
-    const FRESH_MS = 5 * 60 * 1000;
-    const STALE_MS = 30 * 60 * 1000;
+       Постарше — сразу скачиваются новые (скрипт отдаёт их из своего кэша за секунду,
+       а таблицы после записи сами просят его пересобрать ответ). Уже показанная страница
+       никогда не перерисовывается сама — текст не мигает. Если Google не ответил,
+       показываем то, что было сохранено. */
+    const FRESH_MS = 2 * 60 * 1000;
     const CACHE_PREFIX = 'rcu-cache:';
     const inFlight = {};   // один запрос на ключ за сессию, даже если его просят несколько страниц
 
@@ -260,19 +260,6 @@ window.RCU = (() => {
             return data;
         });
 
-        if (age < STALE_MS) {
-            shownAt[key] = saved.t;
-            inFlight[key] = Promise.resolve(saved.data);
-            fresh.then(data => {
-                inFlight[key] = Promise.resolve(data);
-                if (JSON.stringify(data) !== JSON.stringify(saved.data)) {
-                    for (const k in loaded) delete loaded[k];   // страницы пересоберут данные из новых
-                    window.dispatchEvent(new CustomEvent('rcu:updated', { detail: key }));
-                }
-            }).catch(err => console.warn('Не удалось обновить', key, err));
-            return inFlight[key];
-        }
-
         inFlight[key] = fresh.catch(err => {
             delete inFlight[key];
             if (saved) { shownAt[key] = saved.t; return saved.data; }   // Google не ответил — лучше старое, чем ничего
@@ -284,7 +271,7 @@ window.RCU = (() => {
     /* ---------- Один запрос за всеми таблицами ----------
        Apps Script (apps-script/Code.gs) отдаёт дедлайны, расписание и активность одним ответом
        и сам держит его в кэше 5 минут, так что таблицы читаются не чаще раза в 5 минут. */
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyouZZ0u90sUDVKC_ZdB2SO5P8dlDP3BnE1OImeih3xgMoXQLBzwbwceDkbxZAfX09Z/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2SKzXGnOKCjchcWMT7XGT7XES0rh40Y-9qsY9wCmsO8_BH3hOTFc06WIN5ekLZUiu/exec';
 
     let bundleUpdated = 0;   // когда скрипт прочитал таблицы (поле updated в ответе)
 
@@ -295,57 +282,11 @@ window.RCU = (() => {
     }
 
     function bundle() {
-        startVersionWatch();
         return cached('bundle', fetchBundle).then(data => {
             const t = Date.parse(data.updated || '');
             if (t) bundleUpdated = t;
             return data;
         });
-    }
-
-    /* ---------- Свежесть без ожидания ----------
-       Таблицы после записи сами просят скрипт пересобрать ответ (Site.refresh), а скрипт
-       отдаёт по ?part=version, когда данные последний раз менялись. Пока страница открыта
-       и видна, раз в минуту (и при возвращении на вкладку) спрашиваем эту крошечную отметку;
-       если она новее того, что на экране, — сразу перекачиваем ответ и тихо перерисовываем. */
-    const VERSION_EVERY_MS = 60 * 1000;
-    let versionWatch = false, versionUnsupported = false, lastVersionCheck = 0, refreshing = null;
-
-    function startVersionWatch() {
-        if (versionWatch) return;
-        versionWatch = true;
-        setInterval(checkVersion, VERSION_EVERY_MS);
-        document.addEventListener('visibilitychange', () => {
-            if (Date.now() - lastVersionCheck > VERSION_EVERY_MS) checkVersion();
-        });
-        setTimeout(checkVersion, 2000);   // данные могли взяться из памяти браузера — проверим сразу
-    }
-
-    async function checkVersion() {
-        if (document.hidden || refreshing || versionUnsupported) return;
-        const saved = readCache('bundle');
-        if (!saved || !saved.data || Date.now() - saved.t < 30 * 1000) return;   // только что скачано
-        lastVersionCheck = Date.now();
-        let ver;
-        try { ver = await (await fetch(SCRIPT_URL + '?part=version')).json(); } catch (e) { return; }
-        if (!ver || !('version' in ver)) { versionUnsupported = true; return; }   // скрипт ещё старый
-        const server = Date.parse((ver && ver.version) || '');
-        const mine = Date.parse(saved.data.updated || '');
-        if (!server || !mine || server <= mine) {
-            writeCache('bundle', saved.data);   // данные подтверждены — снова «свежие» на 5 минут
-            return;
-        }
-        refreshing = fetchBundle().then(data => {
-            writeCache('bundle', data);
-            shownAt.bundle = Date.now();
-            const t = Date.parse(data.updated || '');
-            if (t) bundleUpdated = t;
-            inFlight.bundle = Promise.resolve(data);
-            for (const k in loaded) delete loaded[k];   // страницы пересоберут данные из новых
-            window.dispatchEvent(new CustomEvent('rcu:fresh', { detail: 'bundle' }));
-            window.dispatchEvent(new CustomEvent('rcu:updated', { detail: 'bundle' }));
-        }).catch(err => console.warn('Не удалось обновить bundle', err))
-          .finally(() => { refreshing = null; });
     }
 
     // Насколько свежи данные на экране: для ответа скрипта — когда он читал таблицы,

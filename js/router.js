@@ -213,32 +213,6 @@
     setTimeout(updateStickyBg, 3700);   // после заставки (во время неё блок сдвинут)
     window.addEventListener('resize', updateStickyBg);
 
-    // В фоне пришли обновлённые таблицы — тихо перерисовываем открытый раздел,
-    // сохраняя прокрутку и раскрытые вкладки
-    window.addEventListener('rcu:updated', async () => {
-        const name = currentPage();
-        if (!name) { renderHome(navToken); return; }
-        const root = view.querySelector('.page-root');
-        if (!root) return;
-        const token = navToken;
-        try {
-            const data = await dataOf(name);
-            if (token !== navToken) return;
-            const label = (s) => (s.querySelector('.dl-group-name') || s).textContent.trim();
-            const openGroups = [...root.querySelectorAll('details[open] > summary')].map(label);
-            const scrollTop = scroller ? scroller.scrollTop : 0;
-            RCU.pages[name].render(root, data);
-            if (RCU.pages[name].updated === true) addUpdated(root);
-            RCU.widenHeadings(root);
-            root.querySelectorAll('details > summary').forEach(s => {
-                if (openGroups.includes(label(s))) s.parentElement.open = true;
-            });
-            if (scroller) scroller.scrollTop = scrollTop;
-        } catch (err) {
-            console.warn('Не удалось обновить раздел:', err);
-        }
-    });
-
     // Герб ведёт на главную
     if (logo) {
         logo.style.cursor = 'pointer';
