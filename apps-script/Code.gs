@@ -28,6 +28,8 @@ const FACULTY_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
 const FACULTY_GID = 0;
 // Лист [бронь] в Техтаблице
 const BRON_GID = 2050639534;
+// Лист игровой (должники) в Техтаблице
+const DEBTS_GID = 1875298653;
 // Таблица факультетов (структура: предметы, преподаватели, декан, нпс, студенты по курсам, факультативы)
 const FACULTY_INFO_SHEET_ID = '1Rs16v2rZ_PwRoVF-gNBU0fW4sdw_r5eZ2JjcbEyJ17s';
 const FACULTY_INFO_GID = 1846439865;
@@ -42,7 +44,9 @@ const WARMUP_MINUTES = 5;
 // Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
-const CACHE_KEY = 'site-v7';
+const CACHE_KEY = 'site-v8';
+// Отметка «данные поменялись» для ?part=version (живёт 6 часов — максимум кэша)
+const VERSION_KEY = 'site-version';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -85,6 +89,12 @@ function doGet(e) {
     const cachedR = cacheGet_(RELATIONS_KEY);
     if (cachedR) return json_(cachedR);
     return json_(buildRelations_());
+  }
+  // ?part=version — когда данные сайта последний раз МЕНЯЛИСЬ (крошечный ответ, без чтения таблиц).
+  // Браузер спрашивает его раз в минуту и перекачивает всё, только если вышло новее.
+  if (e && e.parameter && e.parameter.part === 'version') {
+    const ver = CacheService.getScriptCache().get(VERSION_KEY);
+    return json_(ver || '{"version":null}');
   }
   const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
@@ -208,6 +218,32 @@ function removeWarmup() {
     .forEach(t => ScriptApp.deleteTrigger(t));
 }
 
+/**
+ * Для таблиц: «данные поменялись — пересобери ответ сайта сейчас», не дожидаясь прогрева.
+ *
+ * Вызывается из скрипта таблицы через библиотеку (никаких ссылок и ключей в коде таблицы):
+ *  1. Здесь: «Развертывание» → «Новое развертывание» → тип «Библиотека» → «Развернуть»;
+ *     в «Настройках проекта» скопируйте «Идентификатор скрипта».
+ *  2. В скрипте таблицы: «Библиотеки» → «+» → вставьте идентификатор → «Найти»,
+ *     версия — последняя, идентификатор — Site → «Добавить».
+ *  3. В конце функции таблицы: try { Site.refresh(); } catch (e) { console.warn(e); }
+ *
+ * Кэш у библиотеки и веб-приложения общий (это один проект), поэтому сайт сразу получает
+ * новый ответ. Таблицы читаются от имени того, чей триггер запустил функцию.
+ * Если пересборка уже идёт (подряд пришло несколько ответов), ждём её и собираем ещё раз,
+ * чтобы последние изменения точно попали в кэш.
+ */
+function refresh() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(60000)) return false;
+  try {
+    build_();
+    return true;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /** Собирает ответ для сайта и кладёт его в кэш */
 function build_() {
   const ss = book_();
@@ -222,10 +258,26 @@ function build_() {
   try { out.tech = tech_(); } catch (e) { out.techError = String(e); }
   try { out.facultyInfo = facultyInfo_(); } catch (e) { out.facultyInfoError = String(e); }
   try { out.bron = bron_(); } catch (e) { out.bronError = String(e); }
+  try { out.debts = debts_(); } catch (e) { out.debtsError = String(e); }
 
   const text = JSON.stringify(out);
   cachePut_(CACHE_KEY, text);
+  markVersion_(out);
   return text;
+}
+
+/* Прогрев пересобирает ответ каждые 5 минут, но версия сдвигается, только если данные
+   правда поменялись (сравниваем отпечаток всего, кроме времени сборки). */
+function markVersion_(out) {
+  const copy = Object.assign({}, out);
+  delete copy.updated;
+  const hash = Utilities.base64Encode(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.MD5, JSON.stringify(copy), Utilities.Charset.UTF_8));
+  const cache = CacheService.getScriptCache();
+  let prev = null;
+  try { prev = JSON.parse(cache.get(VERSION_KEY)); } catch (e) { /* нет — начнём заново */ }
+  const version = (prev && prev.hash === hash) ? prev.version : out.updated;
+  cache.put(VERSION_KEY, JSON.stringify({ version: version, hash: hash }), 21600);
 }
 
 /** Таблица с дедлайнами (открывается по ID — скрипт к ней не привязан) */
@@ -435,6 +487,44 @@ function bron_() {
       until: until ? until.toISOString() : '',
     });
   }
+  return out;
+}
+
+/**
+ * Должники игровой (лист игровой в Техтаблице) → { имя: ["блог 14.07.26", …] }.
+ *  • колонка M («старые должники») — блоки: заголовок события с датой («блог 14.07.26»),
+ *    под ним строки должников; имя должника — в колонке O той же строки
+ *    (колонку P не смотрим), долг — ближайший заголовок в M выше;
+ *  • ячейка J6 — текущие должники («@id… (Имя)»), их долг — название игры из A1.
+ * Тот же разбор — parseDebts в js/pages/deadlines.js.
+ */
+function debts_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), DEBTS_GID);
+  const v = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 6), Math.max(sheet.getLastColumn(), 15)).getDisplayValues();
+  const cell = (r, c) => String((v[r] || [])[c] || '').replace(/\s+/g, ' ').trim();
+  const out = {};
+  const add = (name, what) => {
+    name = String(name || '').trim();
+    if (!name) return;
+    out[name] = out[name] || [];
+    if (what && out[name].indexOf(what) < 0) out[name].push(what);
+  };
+  let event = '';
+  for (let r = 2; r < v.length; r++) {
+    const m = cell(r, 12), o = cell(r, 14);
+    if (m && !/^@id/i.test(m)) event = m;
+    if (o) add(o, event);
+  }
+  const title = cell(0, 0);
+  // J6 — ячейка под подписью «текущие должники:»
+  let lab = -1;
+  for (let r = 0; r < v.length && lab < 0; r++) if (/текущие должники/i.test(String(v[r][9] || ''))) lab = r;
+  const j6 = String((v[lab >= 0 ? lab + 1 : 5] || [])[9] || '');
+  const named = [];
+  const re = /\(([^)]+)\)/g;
+  let m;
+  while ((m = re.exec(j6))) named.push(m[1].trim());
+  (named.length ? named : j6.split(/[\n,]/)).forEach(n => add(n, title));
   return out;
 }
 

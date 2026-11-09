@@ -72,13 +72,61 @@
         }
     }
 
+    /* ---------- Долги в игровой (лист игровой в Техтаблице) ----------
+       Колонка M — блоки «заголовок события с датой» + строки должников (имя в колонке O),
+       долг — ближайший заголовок выше; ячейка J6 — текущие должники, их долг — название из A1.
+       Обычно приходит из Apps Script (debts); пока скрипт старый — из листа, если он открыт. */
+    const DEBTS_SHEET_ID = '1SaM0adTpbqMs-fiN8Yub2FaeJfWTo4odAt2ScREUSg0';
+    const DEBTS_GID = '1875298653';
+
+    function parseDebts(grid) {
+        const cell = (r, c) => String((grid[r] || [])[c] || '').replace(/\s+/g, ' ').trim();
+        const out = {};
+        const add = (name, what) => {
+            name = String(name || '').trim();
+            if (!name) return;
+            out[name] = out[name] || [];
+            if (what && !out[name].includes(what)) out[name].push(what);
+        };
+        let event = '';
+        for (let r = 2; r < grid.length; r++) {
+            const m = cell(r, 12), o = cell(r, 14);
+            if (m && !/^@id/i.test(m)) event = m;
+            if (o) add(o, event);
+        }
+        const title = cell(0, 0);
+        // J6 — ячейка под подписью «текущие должники:» (ищем подпись: в выгрузке строки могут сдвигаться)
+        const lab = grid.findIndex(r => /текущие должники/i.test(String((r || [])[9] || '')));
+        const j6 = String((grid[lab >= 0 ? lab + 1 : 5] || [])[9] || '');
+        const named = [...j6.matchAll(/\(([^)]+)\)/g)].map(x => x[1].trim());
+        (named.length ? named : j6.split(/[\n,]/)).forEach(n => add(n, title));
+        return out;
+    }
+
+    async function debtsFromSheet() {
+        const url = `https://docs.google.com/spreadsheets/d/${DEBTS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${DEBTS_GID}&headers=0`;
+        const text = await (await fetch(url)).text();
+        const data = JSON.parse(text.slice(text.indexOf('(') + 1, text.lastIndexOf(')')));
+        if (data.status !== 'ok') throw new Error('Лист игровой недоступен');
+        return parseDebts(data.table.rows.map(row => (row.c || []).map(c => (c ? String(c.f ?? c.v ?? '') : ''))));
+    }
+
     async function loadRows() {
         try {
             const data = await RCU.bundle();
             let rows = data.rows;
             if (rows.length && !('labels' in rows[0])) rows = await addStatus(rows);
             const faculties = data.faculties || {};   // из закрытой техтаблицы (колонка J)
-            return rows.map(r => ({ ...r, faculty: faculties[r.name] || '' }));
+            let debts = data.debts;
+            if (!debts) {
+                try { debts = await RCU.cached('debts', debtsFromSheet); } catch (e) { debts = {}; }
+            }
+            const debtOf = new Map(Object.entries(debts).map(([n, d]) => [n.toLowerCase().replace(/ё/g, 'е'), d]));
+            return rows.map(r => ({
+                ...r,
+                faculty: faculties[r.name] || '',
+                debts: debtOf.get(r.name.toLowerCase().replace(/ё/g, 'е')) || null,
+            }));
         } catch (e) {
             console.warn('Apps Script недоступен, беру публичную выгрузку:', e);
             return RCU.cached('deadlines', gvizRows);
@@ -171,6 +219,7 @@
                 <div class="dl-info">
                     <div class="dl-title">${link(row.topicUrl, row.name, 'dl-name')}${more}</div>
                     <div class="dl-player"><span class="dl-label">отвечает:</span> ${link(row.playerUrl, row.player, 'dl-player-link')}</div>
+                    ${row.debts ? `<div class="dl-debt"><span class="dl-label">есть долг в игровой${row.debts.length ? ':' : ''}</span> ${esc(row.debts.join('; '))}</div>` : ''}
                     ${duet}
                     ${extra.length ? `<div class="dl-extra" hidden>${extra.join('')}</div>` : ''}
                 </div>
@@ -295,7 +344,9 @@
             const group = target.closest('details');
             if (group) group.open = true;
             const sc = scroller();
-            const sticky = group ? group.querySelector('summary').offsetHeight : 0;
+            // над строкой закреплены поиск и заголовок вкладки — строка должна встать под ними целиком
+            const searchH = parseFloat(getComputedStyle(root).getPropertyValue('--search-h')) || 0;
+            const sticky = (group ? group.querySelector('summary').offsetHeight : 0) + searchH;
             if (sc) {
                 const top = target.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
                 sc.scrollTo({ top: top - sticky - 8, behavior: 'smooth' });

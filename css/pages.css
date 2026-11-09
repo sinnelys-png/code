@@ -224,25 +224,31 @@ html.intro .page-ribbon {
 }
 
 /* ==========================================================================
+   КОРОТКОЕ СОДЕРЖИМОЕ — ПО ЦЕНТРУ БЛОКА
+   Область прокрутки — столбец. Свободное место делят пустые «распорки» сверху и снизу,
+   нижней достаётся больше: область прокрутки начинается ниже «галочки» блока, и
+   при поровну страница на глаз сидела бы низко. У длинной страницы свободного места
+   нет — распорки нулевые, она прокручивается как обычно. Свернул раздел — пересчёт сам.
+   ========================================================================== */
+
+.main-scroll-viewport::before,
+.main-scroll-viewport::after {
+    content: "";
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+.main-scroll-viewport::after {
+    flex-grow: 1.6;
+}
+
+/* ==========================================================================
    РАСПИСАНИЕ БУДУЩИХ ПОСТОВ
    ========================================================================== */
 
-.sc-day {
-    margin-bottom: 2.75rem;
-}
-
-/* Дата остаётся наверху, пока её не «собьёт» следующая.
-   Фон того же цвета, что блок на этой высоте, растянут на всю ширину блока. */
-.sc-day-title {
-    position: sticky;
-    top: 0;
-    z-index: 4;
-    margin: 0 calc(-1 * var(--pad-x, 0px)) 0.25rem;
-    padding: 0.55rem calc(var(--pad-x, 0px) + 0.25rem) 0.5rem;
-}
-
-.sc-day-title.is-stuck {
-    background-color: var(--sticky-bg, #002c45);
+/* день — сворачиваемая вкладка, как «студенты» в дедлайнах (закрепляется наверху) */
+.sc-day.dl-group {
+    margin-bottom: 1.5rem;
 }
 
 .sc-when {
@@ -257,7 +263,7 @@ html.intro .page-ribbon {
 
 .sc-when.is-today {
     color: var(--urgent);
-    border-color: rgba(240, 179, 107, 0.5);
+    border-color: var(--gold-55);
 }
 
 .sc-when.is-soon {
@@ -281,6 +287,16 @@ html.intro .page-ribbon {
 
 .sc-post:last-child {
     border-bottom: none;
+}
+
+/* в «ваших постах» у поста своя дата */
+.sc-post--dated {
+    grid-template-columns: 11.5rem minmax(0, 1fr);
+}
+
+.sc-post-day {
+    font-weight: normal;
+    color: var(--text-80);
 }
 
 .sc-post:hover {
@@ -323,16 +339,8 @@ html.intro .page-ribbon {
 }
 
 /* «Ваши посты» наверху расписания */
-.sc-mine {
-    margin-bottom: 0;
-}
-
-.sc-mine .sc-day {
-    margin-bottom: 1rem;
-}
-
-.sc-mine .sc-day:last-child {
-    margin-bottom: 0;
+.sc-mine.dl-group {
+    margin-bottom: 1.5rem;
 }
 
 /* Все теги, кроме тегов персонажей (#Др_RCU, #Mafia_RCU…), — приглушённые */
@@ -438,17 +446,34 @@ a.ac-name-link:hover {
 
 .ac-sum,
 .ac-stat {
-    text-align: right;
+    text-align: center;
 }
 
 .ac-sum {
     color: var(--text);
     font-weight: 600;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+/* наведение на строку — сумма баллов загорается */
+.ac-row:not(.ac-head):hover .ac-sum {
+    color: #fff;
+    text-shadow: 0 0 0.45rem rgba(255, 255, 255, 0.55);
+}
+
+.ac-head .ac-place,
+.ac-head .ac-sum,
+.ac-head .ac-stat {
+    text-align: center;
+}
+
+.ac-head .ac-name {
+    justify-content: center;
 }
 
 .ac-stat {
     color: var(--text-80);
-    font-size: 0.9rem;
+    font-size: 0.9em;                 /* от размера строки — у призёров крупнее */
 }
 
 .ac-stat.is-zero {
@@ -462,29 +487,69 @@ a.ac-name-link:hover {
     font-size: inherit;
 }
 
-/* Первые три места */
+/* Первые три места: обводка по краю круга (золото / серебро / бронза);
+   цифры крупнее — третье место чуть больше остальных, второе ещё больше, первое больше всех */
 .ac-row.is-top .ac-place {
     justify-self: center;
-    width: 1.8rem;
-    height: 1.8rem;
-    line-height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 2px solid currentColor;
     border-radius: 50%;
     font-weight: 600;
+    line-height: 1;
 }
 
 .ac-row.is-top-1 .ac-place {
-    color: #001929;
-    background: radial-gradient(circle at 35% 30%, #fff6e0, #E3CFAC 55%, #b89c6c);
+    color: #E3CFAC;
+    width: 2.3rem;
+    height: 2.3rem;
 }
 
 .ac-row.is-top-2 .ac-place {
-    color: #001929;
-    background: radial-gradient(circle at 35% 30%, #ffffff, #c9cfd6 55%, #8d98a5);
+    color: #c9cfd6;
+    width: 2.15rem;
+    height: 2.15rem;
 }
 
 .ac-row.is-top-3 .ac-place {
-    color: #001929;
-    background: radial-gradient(circle at 35% 30%, #f6d7bd, #c9926a 55%, #8f5f3f);
+    color: #d29a70;
+    width: 2rem;
+    height: 2rem;
+}
+
+/* крупнее вся строка призёра: третье место чуть больше остальных, второе ещё, первое больше всех */
+.ac-row.is-top-3 { font-size: 1.06rem; }
+.ac-row.is-top-2 { font-size: 1.13rem; }
+.ac-row.is-top-1 { font-size: 1.22rem; }
+
+.ac-row.is-top .ac-place {
+    font-size: 1.05em;
+}
+
+/* крупное имя призёра не обрезаем — переносим */
+.ac-row.is-top .ac-name-link {
+    white-space: normal;
+    line-height: 1.2;
+}
+
+/* на главной — только обводка вместо фона, размер обычный */
+.home-row.ac-row.is-top {
+    font-size: inherit;
+}
+
+.home-row.ac-row.is-top .ac-place {
+    font-size: inherit;
+    width: 1.9rem;
+    height: 1.9rem;
+}
+
+/* на главной строку подсвечивает своя полоса во всю ширину — вторая, узкая, не нужна */
+.home-row.ac-row:hover {
+    background-color: transparent;
 }
 
 /* Строка того, кто смотрит */
@@ -537,8 +602,8 @@ a.ac-name-link:hover {
 /* ==========================================================================
    ЗАГРУЗКА: ПЕСОЧНЫЕ ЧАСЫ
    Цикл 3 с: песок пересыпается (0–70%), затем часы переворачиваются (70–100%).
-   Перевёрнутые часы с полным низом выглядят так же, как исходные с полным верхом,
-   поэтому цикл повторяется без скачка.
+   Пока часы поворачиваются, песок плавно сползает к горлышку — после поворота он
+   лежит ровно там, откуда начинается следующий круг, поэтому цикл повторяется без скачка.
    ========================================================================== */
 
 .hg-loader {
@@ -623,9 +688,13 @@ a.ac-name-link:hover {
     66%, 100% { transform: scaleY(0); }
 }
 
+/* нижний песок (y 62–89) к концу поворота встаёт на место верхнего (y 20–50 → после
+   поворота на 180° это y 50–80): чуть вверх к горлышку и чуть выше слоем */
 @keyframes hg-fill {
-    0% { transform: scaleY(0); }
-    66%, 100% { transform: scaleY(1); }
+    0% { transform: translateY(0) scaleY(0); }
+    66% { transform: translateY(0) scaleY(1); }
+    76% { transform: translateY(0) scaleY(1); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+    100% { transform: translateY(-9px) scaleY(1.111); }
 }
 
 @keyframes hg-stream {
@@ -677,7 +746,6 @@ a.ac-name-link:hover {
 
 .home-dash {
     text-align: left;
-    margin-top: 1.5rem;
 }
 
 .home-section {

@@ -94,7 +94,6 @@
     RCU.pages.city = {
         title: 'Город',
         ribbon: false,        // без закладки «город»
-        updated: false,       // без «обновлено N минут назад»
         fullBleed: true,      // карта на весь основной блок
         load: async () => null,
         render(root) {

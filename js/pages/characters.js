@@ -90,7 +90,7 @@
         return c.name.charAt(0);
     }
 
-    function smallCard(c, sortBy = 'name') {
+    function smallCard(c, sortBy = 'name', tabLabel = null) {
         const course = c.course ? `${c.course}` : '—';
         const row = (k, v, cls = '') => `<span class="pc-row"><span class="pc-k">${k}</span><span class="pc-v ${cls}">${esc(v || '—')}</span></span>`;
         let rows;
@@ -99,7 +99,8 @@
         else rows = row('курс', course) + row('фак.', shortFaculty(c.faculty), 'pc-fac');
         return `
             <button class="pc-card" type="button" data-name="${esc(c.name)}"${facStyle(c)}>
-                <span class="pc-card-tab">${esc(tabText(c, sortBy))}</span>
+                <span class="pc-card-tab">${esc(tabLabel ?? tabText(c, sortBy))}</span>
+                ${tabLabel != null ? `<span class="pc-card-face"${safeUrl(c.avatar) ? ` style="background-image:url('${esc(c.avatar)}')"` : ''}></span>` : ''}
                 ${avatar(c, 'pc-card-avatar')}
                 <span class="pc-card-info">
                     <span class="pc-row"><span class="pc-k">имя</span><span class="pc-v pc-name">${esc(c.name)}</span></span>
@@ -482,12 +483,8 @@
         const next = list[list.findIndex(c => c.name === name) + dir];
         if (!next) return;
         openCharacter(next.name, dir);
-        // картотека за окном тоже переходит к этой карточке
-        const g = file.groups[file.gi];
-        if (file.root && file.open && g && g.view) {
-            const idx = g.view.findIndex(c => c.name === next.name);
-            if (idx >= 0) { file.target = idx; kick(); }
-        }
+        // картотека за окном выдвигает ту же карточку
+        if (file.root && document.body.contains(file.root)) liftCard(next.name, true);
     }
 
     // анкеты заранее — чтобы карточка не перерисовывалась посреди анимации открытия
@@ -607,115 +604,138 @@
         if (card && !e.target.closest('.pc-modal') && !e.target.closest('.pc-file')) openCharacter(card.dataset.name);
     });
 
-    /* ---------- Картотека: одна группа на экране ----------
+    /* ---------- Картотека с ярлычками: одна группа на экране ----------
        Группы (студенты / преподаватели / персонал) — отдельные «экраны», между ними
-       стрелки слева и справа. Посередине — стопка карточек. По нажатию стопка
-       разлетается вверх и вниз в один столбец, как картотека: у центра карточки видны
-       целиком, к краям постепенно прижимаются друг к другу, пока не останется
-       видно только ярлычок с буквой. Колесо мыши, перетаскивание и стрелки ↑↓
-       листают картотеку; нажатие на карточку в центре открывает большую карточку. */
+       стрелки слева и справа. Внутри группы карточки разбиты на пачки до CHUNK штук:
+       по имени — соседние буквы вместе (буква, где больше CHUNK, делится), по факультету
+       или курсу — свой факультет / курс. Под карточками — ярлычки пачек; нажатие на
+       ярлычок показывает его пачку. Карточки пачки стоят друг за другом, как в картотеке;
+       наведение поднимает карточку целиком, нажатие открывает анкету (на сенсорном
+       экране первое касание поднимает, второе открывает). */
 
-    const GAP = 10;          // зазор между карточками у центра, px
-    const PILE = 15;         // шаг в «прижатой» части (видно только ярлычок), px
-    const TAU = 1.0;         // как быстро карточки прижимаются (в карточках от центра)
-    const SPREAD_MS = 650;   // длительность раскрытия / сборки
+    const CHUNK = 15;        // сколько карточек в пачке, не больше
+    const MIN_STEP = 24;     // самый маленький шаг между карточками, px
+    const MAX_STEP = 0.62;   // самый большой — доля высоты карточки
 
     const file = {
-        groups: [],          // [{ title, list }]
+        groups: [],          // [{ title, list, sorts, view }]
         gi: 0,               // текущая группа
         root: null,
-        open: false,
-        spread: 0,           // 0 — стопка, 1 — раскрыта
-        spreadFrom: 0, spreadTo: 0, spreadStart: 0,
-        s: 0, target: 0,     // какая карточка в центре (дробное число — во время прокрутки)
-        H: 100,              // шаг между карточками у центра
-        raf: 0,
-        busy: false,         // идёт сборка/перелистывание
+        busy: false,         // идёт перелистывание групп
+        chunks: [],          // пачки текущей группы: [{ label, list }]
+        ci: 0,               // открытая пачка
     };
 
-    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
-    // где стоит карточка, отстоящая от центра на d карточек (d может быть дробным)
-    function placeOpen(d) {
-        const x = Math.abs(d);
-        const H = file.H;
-        let y;
-        if (x <= 1) y = x * H;
-        else y = H + PILE * (x - 1) + (H - PILE) * TAU * (1 - Math.exp(-(x - 1) / TAU));
-        return Math.sign(d) * y;
-    }
-
+    const group = () => file.groups[file.gi];
     function cardsEl() { return file.root && file.root.querySelector('.pc-file'); }
+
+    // разбить отсортированный список на пачки до CHUNK карточек
+    function makeChunks(list, by) {
+        const keyOf = (c) => (by === 'faculty' ? facShort(c.faculty)
+            : by === 'course' ? (c.course ? `${c.course} курс` : 'без курса')
+            : c.name.charAt(0).toUpperCase());
+        // подряд идущие одинаковые ключи
+        const runs = [];
+        list.forEach(c => {
+            const k = keyOf(c);
+            const last = runs[runs.length - 1];
+            if (last && last.key === k) last.list.push(c); else runs.push({ key: k, list: [c] });
+        });
+        // ключ, где больше CHUNK, — на равные части
+        const parts = [];
+        runs.forEach(r => {
+            const n = Math.ceil(r.list.length / CHUNK);
+            const size = Math.ceil(r.list.length / n);
+            for (let i = 0; i < n; i++) parts.push({ keys: [r.key], list: r.list.slice(i * size, (i + 1) * size), part: n > 1 ? i + 1 : 0 });
+        });
+        // по имени соседние буквы складываем вместе, пока влезает; факультеты и курсы — каждый отдельно
+        const chunks = [];
+        parts.forEach(pt => {
+            const last = chunks[chunks.length - 1];
+            if (by === 'name' && last && !last.part && !pt.part && last.list.length + pt.list.length <= CHUNK) {
+                last.keys.push(...pt.keys);
+                last.list.push(...pt.list);
+            } else chunks.push({ keys: [...pt.keys], list: [...pt.list], part: pt.part });
+        });
+        return chunks.map(ch => {
+            let label = ch.keys.length > 1 ? `${ch.keys[0]}–${ch.keys[ch.keys.length - 1]}` : ch.keys[0];
+            if (ch.part) {
+                // часть большой буквы — по первым двум буквам первого и последнего имени
+                label = by === 'name'
+                    ? `${ch.list[0].name.slice(0, 2)}–${ch.list[ch.list.length - 1].name.slice(0, 2)}`
+                    : `${label} · ${ch.part}`;
+            }
+            return { label, list: ch.list };
+        });
+    }
 
     function layout() {
         const box = cardsEl();
         if (!box) return;
-        const e = ease(file.spread);
-        const items = box.children;
-        for (let i = 0; i < items.length; i++) {
-            const d = i - file.s;
-            // стопка: верхние три карточки чуть сдвинуты, остальные спрятаны под ними
-            const k = Math.min(i - Math.round(file.stackTop), 3);
-            const inStack = k >= 0 && k < 3;
-            const cx = inStack ? k * 7 : 14, cy = inStack ? k * 7 : 14;
-            const oy = placeOpen(d);
-            const x = cx * (1 - e);
-            const y = cy * (1 - e) + oy * e;
-            const op = e + (1 - e) * (inStack ? 1 - k * 0.25 : 0);
-            const el = items[i];
-            el.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px))`;
-            el.style.opacity = op.toFixed(3);
-            // в стопке сверху — верхняя карточка; в раскрытой — порядок картотеки
-            el.style.zIndex = e < 0.5 ? (inStack ? 100 - k : 0) : i;
-            el.classList.toggle('is-center', file.open && Math.abs(d) < 0.5);
-        }
+        const cards = [...box.querySelectorAll('.pc-file-card')];
+        const n = cards.length;
+        if (!n) return;
+        let H = 0;
+        cards.forEach(el => { H = Math.max(H, el.offsetHeight); });
+        if (!H) return;
+        const avail = box.clientHeight;
+        // помещается целиком — пачка от самого верха, а поднятая задняя карточка может зайти
+        // на заголовок над картотекой; не помещается — прокрутка и место сверху под подъём
+        const fitAll = n > 1 ? (avail - 8 - H - 8) / (n - 1) : H;
+        const fits = fitAll >= MIN_STEP;
+        const top0 = fits ? 8 : Math.round(H * 0.55);
+        const fit = n > 1 ? (avail - top0 - H - 8) / (n - 1) : H;
+        const step = Math.round(Math.max(MIN_STEP, Math.min(H * MAX_STEP, fit)));
+        box.classList.toggle('is-fit', fits);
+        cards.forEach((el, i) => {
+            el.style.top = `${top0 + i * step}px`;
+            el.style.zIndex = String(i + 1);
+            el.style.setProperty('--lift', `${i < n - 1 ? Math.max(0, H - step + 4) : 0}px`);
+            el.style.setProperty('--i', String(i));
+        });
+        const end = box.querySelector('.pc-file-end');
+        if (end) end.style.top = `${top0 + (n - 1) * step + H + 8}px`;
+        file.geom = { top0, step, n };
     }
 
-    function tick(now) {
-        file.raf = 0;
-        let moving = false;
-        if (file.spread !== file.spreadTo) {
-            const t = Math.min(1, (now - file.spreadStart) / SPREAD_MS);
-            file.spread = file.spreadFrom + (file.spreadTo - file.spreadFrom) * t;
-            if (t < 1) moving = true; else file.spread = file.spreadTo;
-        }
-        const diff = file.target - file.s;
-        if (Math.abs(diff) > 0.001) { file.s += diff * 0.2; moving = true; } else file.s = file.target;
+    // показать пачку (dir — откуда въезжает: 1 справа, -1 слева, 0 — без анимации)
+    function showChunk(ci, dir = 0) {
+        const box = cardsEl();
+        if (!box || !file.chunks[ci]) return;
+        file.ci = ci;
+        const by = sortState[group().title] || 'name';
+        box.innerHTML = file.chunks[ci].list.map(c => `<div class="pc-file-card">${smallCard(c, by)}</div>`).join('')
+            + '<div class="pc-file-end" aria-hidden="true"></div>';
+        box.scrollTop = 0;
         layout();
-        if (moving) file.raf = requestAnimationFrame(tick);
-    }
-
-    function kick() { if (!file.raf) file.raf = requestAnimationFrame(tick); }
-
-    function animateSpread(to) {
-        return new Promise(resolve => {
-            file.spreadFrom = file.spread;
-            file.spreadTo = to;
-            file.spreadStart = performance.now();
-            kick();
-            setTimeout(resolve, SPREAD_MS);
+        if (dir) {
+            box.classList.remove('is-entering-next', 'is-entering-prev');
+            void box.offsetWidth;
+            box.classList.add(dir > 0 ? 'is-entering-next' : 'is-entering-prev');
+        }
+        file.root.querySelectorAll('.pc-chunk-tab').forEach((t, i) => {
+            t.classList.toggle('is-current', i === ci);
+            t.setAttribute('aria-selected', String(i === ci));
         });
     }
 
-    const group = () => file.groups[file.gi];
-    const clampS = (v) => Math.max(0, Math.min(group().list.length - 1, v));
-
-    async function openFile(center) {
-        if (file.open || file.busy) return;
-        file.open = true;
-        file.root.querySelector('.pc-screen').classList.add('is-open');
-        // центр — середина группы (карточки разлетаются и вверх, и вниз) или нужная карточка
-        file.s = file.target = Number.isInteger(center) ? center : Math.floor((group().list.length - 1) / 2);
-        file.stackTop = file.s;
-        await animateSpread(1);
-    }
-
-    async function closeFile() {
-        if (!file.open) return;
-        file.open = false;
-        file.root.querySelector('.pc-screen').classList.remove('is-open');
-        file.stackTop = Math.round(file.s);
-        await animateSpread(0);
+    // поднять карточку (наведение, поиск, листание стрелками в анкете, касание на телефоне)
+    function liftCard(name, scroll) {
+        const box = cardsEl();
+        if (!box) return;
+        box.querySelectorAll('.pc-file-card.is-lifted').forEach(el => el.classList.remove('is-lifted'));
+        if (!name) return;
+        // карточка из другой пачки — сначала открыть её пачку
+        const ci = file.chunks.findIndex(ch => ch.list.some(c => c.name === name));
+        if (ci >= 0 && ci !== file.ci) showChunk(ci, ci > file.ci ? 1 : -1);
+        const card = box.querySelector(`.pc-card[data-name="${CSS.escape(name)}"]`);
+        const item = card && card.closest('.pc-file-card');
+        if (!item) return;
+        item.classList.add('is-lifted');
+        if (scroll && box.scrollHeight > box.clientHeight) {
+            const top = parseFloat(item.style.top) || 0;
+            box.scrollTo({ top: Math.max(0, top - box.clientHeight / 2), behavior: 'smooth' });
+        }
     }
 
     /* ---------- Сортировка: студенты — имя / факультет / курс, преподаватели — имя / факультет ---------- */
@@ -749,10 +769,11 @@
         stage.querySelector('.pc-deck-name').textContent = g.title;
         stage.querySelector('.pc-deck-count').textContent = `${g.list.length} ${RCU.plural(g.list.length, 'персонаж', 'персонажа', 'персонажей')}`;
         renderSortBar();
-        stage.querySelector('.pc-file').innerHTML = list.map(c => `<div class="pc-file-card">${smallCard(c, by)}</div>`).join('');
+        file.chunks = makeChunks(list, by);
+        stage.querySelector('.pc-chunk-tabs').innerHTML = file.chunks.map((ch, i) => `
+            <button class="pc-chunk-tab" type="button" role="tab" data-ci="${i}" title="${ch.list.length} ${RCU.plural(ch.list.length, 'персонаж', 'персонажа', 'персонажей')}">${esc(ch.label)}</button>`).join('');
+        showChunk(0);
         file.root.querySelectorAll('.pc-dot').forEach((d, i) => d.classList.toggle('is-current', i === file.gi));
-        file.s = file.target = 0;
-        file.stackTop = 0;
         RCU.widenHeadings(stage);
         measure();
         layout();
@@ -761,8 +782,6 @@
     async function switchGroup(dir) {
         if (file.busy || file.groups.length < 2) return;
         file.busy = true;
-        const wasOpen = file.open;
-        if (wasOpen) await closeFile();
         const stage = file.root.querySelector('.pc-stage');
         stage.classList.add(dir > 0 ? 'is-leaving-left' : 'is-leaving-right');
         await new Promise(r => setTimeout(r, 220));
@@ -774,10 +793,9 @@
         stage.classList.remove('is-entering-right', 'is-entering-left');
         await new Promise(r => setTimeout(r, 260));
         file.busy = false;
-        if (wasOpen) openFile();
     }
 
-    // высота экрана = видимая часть основного блока; шаг между карточками = высота карточки
+    // высота экрана — видимая часть основного блока (без строки поиска)
     function measure() {
         if (!file.root) return;
         const scroller = document.querySelector('.main-scroll-viewport');
@@ -785,29 +803,21 @@
         if (scroller && screen) {
             const cs = getComputedStyle(scroller);
             const search = file.root.querySelector('.pc-search');
-            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 40
+            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 24
                 - (search ? search.offsetHeight + 8 : 0);
             screen.style.height = `${Math.max(320, h)}px`;
         }
-        // шаг — по самой высокой карточке, чтобы длинные имена в две строки не наезжали на соседей
-        const cards = file.root.querySelectorAll('.pc-file-card');
-        let max = 0;
-        cards.forEach(el => { max = Math.max(max, el.offsetHeight); });
-        if (max) file.H = max + GAP;
     }
 
-    // перейти к персонажу: нужная группа, картотека раскрыта, он в центре; при open — открыть карточку
+    // перейти к персонажу: нужная группа, его карточка выдвинута и видна; при open — открыть анкету
     async function goTo(name, open) {
         const gi = file.groups.findIndex(g => g.list.some(c => c.name === name));
         if (gi < 0 || file.busy) return false;
         if (gi !== file.gi) {
-            if (file.open) await closeFile();
             file.gi = gi;
             renderGroup();
         }
-        const idx = group().view.findIndex(c => c.name === name);
-        if (file.open) { file.target = idx; kick(); }
-        else await openFile(idx);
+        liftCard(name, true);
         if (open) openCharacter(name);
         return true;
     }
@@ -851,13 +861,8 @@
     async function setSort(by) {
         const g = group();
         if (file.busy || (sortState[g.title] || 'name') === by) return;
-        file.busy = true;
-        const wasOpen = file.open;
-        if (wasOpen) await closeFile();
         sortState[g.title] = by;
         renderGroup();
-        file.busy = false;
-        if (wasOpen) openFile();
     }
 
     function bindFile(root) {
@@ -870,62 +875,54 @@
         root.querySelector('.pc-arrow-prev').addEventListener('click', () => switchGroup(-1));
         root.querySelector('.pc-arrow-next').addEventListener('click', () => switchGroup(1));
 
+        // ярлычки пачек
+        root.querySelector('.pc-chunk-tabs').addEventListener('click', (e) => {
+            const t = e.target.closest('.pc-chunk-tab');
+            if (!t) return;
+            const ci = Number(t.dataset.ci);
+            if (ci !== file.ci) showChunk(ci, ci > file.ci ? 1 : -1);
+        });
+
+        // нажатие открывает анкету (на сенсорном экране первое касание поднимает карточку)
+        let touch = false;
+        box.addEventListener('pointerdown', (e) => { touch = e.pointerType === 'touch'; });
         box.addEventListener('click', (e) => {
             const item = e.target.closest('.pc-file-card');
-            if (!item || file.busy) return;
-            if (!file.open) { openFile(); return; }
-            const i = [...box.children].indexOf(item);
-            if (Math.abs(i - file.s) < 0.5) openCharacter(item.querySelector('.pc-card').dataset.name);
-            else { file.target = i; kick(); }
+            if (!item) { liftCard(null); return; }
+            const name = item.querySelector('.pc-card').dataset.name;
+            if (touch && !item.classList.contains('is-lifted')) { liftCard(name); return; }
+            openCharacter(name);
         });
-
-        // колесо мыши
-        let snapTimer = 0;
-        box.addEventListener('wheel', (e) => {
-            if (!file.open) return;
-            e.preventDefault();
-            file.target = clampS(file.target + e.deltaY / file.H);
-            kick();
-            clearTimeout(snapTimer);
-            snapTimer = setTimeout(() => { file.target = Math.round(file.target); kick(); }, 140);
-        }, { passive: false });
-
-        // перетаскивание пальцем / мышью
-        let drag = null;
-        box.addEventListener('pointerdown', (e) => {
-            if (!file.open) return;
-            drag = { y: e.clientY, s: file.target, moved: false };
-        });
-        window.addEventListener('pointermove', (e) => {
-            if (!drag) return;
-            const dy = e.clientY - drag.y;
-            if (Math.abs(dy) > 4) drag.moved = true;
-            file.target = clampS(drag.s - dy / file.H);
-            kick();
-        });
-        window.addEventListener('pointerup', () => {
-            if (!drag) return;
-            if (drag.moved) {
-                file.target = Math.round(file.target);
-                kick();
-                // не считать перетаскивание нажатием на карточку
-                box.addEventListener('click', (ev) => ev.stopPropagation(), { capture: true, once: true });
+        // Наведение мышью. Карточку выбираем по неподвижной разметке, а не по :hover:
+        // поднятая карточка уходит из-под мыши, и иначе соседние начинали бы дёргаться.
+        // Пока мышь над уже поднятой карточкой — она остаётся, до неё можно дотянуться.
+        const pick = (e) => {
+            if (e.pointerType !== 'mouse' || !file.geom) return;
+            const cur = box.querySelector('.pc-file-card.is-lifted');
+            if (cur) {
+                const r = cur.getBoundingClientRect();
+                if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
             }
-            drag = null;
-        });
+            const cards = box.querySelectorAll('.pc-file-card');
+            const ref = [...cards].find(x => !x.classList.contains('is-lifted')) || cards[0];
+            const rest = ref && ref.getBoundingClientRect();
+            if (!rest || e.clientX < rest.left || e.clientX > rest.right) { liftCard(null); return; }
+            const { top0, step, n } = file.geom;
+            const y = e.clientY - box.getBoundingClientRect().top + box.scrollTop;
+            if (y < top0) { liftCard(null); return; }
+            const item = cards[Math.max(0, Math.min(n - 1, Math.floor((y - top0) / step)))];
+            if (!item.classList.contains('is-lifted')) liftCard(item.querySelector('.pc-card').dataset.name);
+        };
+        box.addEventListener('pointermove', pick);
+        box.addEventListener('mouseleave', () => liftCard(null));
     }
 
-    // стрелки клавиатуры: ←→ — группы, ↑↓ — карточки, Esc — собрать
+    // стрелки клавиатуры ←→ — группы
     document.addEventListener('keydown', (e) => {
         if (!file.root || !document.body.contains(file.root) || (modal && !modal.hidden)) return;
         if (e.target.closest && e.target.closest('input, textarea')) return;
         if (e.key === 'ArrowLeft') switchGroup(-1);
         else if (e.key === 'ArrowRight') switchGroup(1);
-        else if (file.open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-            e.preventDefault();
-            file.target = clampS(Math.round(file.target) + (e.key === 'ArrowDown' ? 1 : -1));
-            kick();
-        } else if (file.open && e.key === 'Escape') closeFile();
     });
     window.addEventListener('resize', () => { measure(); layout(); });
 
@@ -944,8 +941,6 @@
             if (other.length) groups.push({ title: 'остальные', list: other });
             file.groups = groups.filter(g => g.list.length);
             file.gi = Math.min(file.gi, Math.max(0, file.groups.length - 1));
-            file.open = false;
-            file.spread = file.spreadTo = 0;
             file.busy = false;
             file.root = root;
             loadAnketas();
@@ -964,15 +959,11 @@
                         <div class="pc-deck-count"></div>
                         <div class="pc-sort" role="group" aria-label="Сортировка"></div>
                         <div class="pc-file"></div>
-                        <div class="pc-hint">
-                            <span class="pc-hint-closed">нажмите на стопку, чтобы раскрыть</span>
-                            <button class="pc-hint-open pc-fold" type="button">собрать</button>
-                        </div>
+                        <div class="pc-chunk-tabs" role="tablist" aria-label="Пачки карточек"></div>
                         <div class="pc-dots">${file.groups.map(g => `<span class="pc-dot" title="${esc(g.title)}"></span>`).join('')}</div>
                     </div>
                     <button class="pc-arrow pc-arrow-next" type="button" aria-label="Следующая группа"><span></span></button>
                 </div>`;
-            root.querySelector('.pc-fold').addEventListener('click', () => closeFile());
             bindFile(root);
             bindSearch(root);
             renderGroup();
@@ -982,6 +973,13 @@
             // после загрузки шрифтов и картинок и после того, как блок раздела
             // принял форму прямоугольника (≈0,7 с), высота экрана и карточек меняется
             requestAnimationFrame(() => { measure(); layout(); });
+            // высота карточек меняется после загрузки шрифта (длинные факультеты переносятся)
+            if (document.fonts) document.fonts.ready.then(() => { measure(); layout(); });
+            if (window.ResizeObserver) {
+                if (file.observer) file.observer.disconnect();
+                file.observer = new ResizeObserver(() => layout());
+                file.observer.observe(root.querySelector('.pc-file'));
+            }
             setTimeout(() => { measure(); layout(); }, 800);
             setTimeout(() => { measure(); layout(); }, 3800);   // после заставки при первом открытии
         },

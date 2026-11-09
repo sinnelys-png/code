@@ -152,7 +152,7 @@ window.RCU = (() => {
        (transform: scaleX, стили — css/pages.css, .wide). Растянутый текст занимает больше места,
        чем «видит» вёрстка, поэтому справа добавляем отступ на ту же величину. */
     const WIDE = 1.15;
-    const WIDE_SELECTOR = '.user-title, .sc-mine-title, .pc-deck-name, .home-title, .dl-group-name, .sc-day-title > span:first-child, .home-section > .dl-section-title';
+    const WIDE_SELECTOR = '.user-title, .pc-deck-name, .home-title, .dl-group-name';
 
     function widenHeadings(scope) {
         if (!scope) return;
@@ -287,16 +287,65 @@ window.RCU = (() => {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyouZZ0u90sUDVKC_ZdB2SO5P8dlDP3BnE1OImeih3xgMoXQLBzwbwceDkbxZAfX09Z/exec';
 
     let bundleUpdated = 0;   // когда скрипт прочитал таблицы (поле updated в ответе)
+
+    async function fetchBundle() {
+        const data = await (await fetch(SCRIPT_URL)).json();
+        if (data.error) throw new Error(data.error);
+        return data;
+    }
+
     function bundle() {
-        return cached('bundle', async () => {
-            const data = await (await fetch(SCRIPT_URL)).json();
-            if (data.error) throw new Error(data.error);
-            return data;
-        }).then(data => {
+        startVersionWatch();
+        return cached('bundle', fetchBundle).then(data => {
             const t = Date.parse(data.updated || '');
             if (t) bundleUpdated = t;
             return data;
         });
+    }
+
+    /* ---------- Свежесть без ожидания ----------
+       Таблицы после записи сами просят скрипт пересобрать ответ (Site.refresh), а скрипт
+       отдаёт по ?part=version, когда данные последний раз менялись. Пока страница открыта
+       и видна, раз в минуту (и при возвращении на вкладку) спрашиваем эту крошечную отметку;
+       если она новее того, что на экране, — сразу перекачиваем ответ и тихо перерисовываем. */
+    const VERSION_EVERY_MS = 60 * 1000;
+    let versionWatch = false, versionUnsupported = false, lastVersionCheck = 0, refreshing = null;
+
+    function startVersionWatch() {
+        if (versionWatch) return;
+        versionWatch = true;
+        setInterval(checkVersion, VERSION_EVERY_MS);
+        document.addEventListener('visibilitychange', () => {
+            if (Date.now() - lastVersionCheck > VERSION_EVERY_MS) checkVersion();
+        });
+        setTimeout(checkVersion, 2000);   // данные могли взяться из памяти браузера — проверим сразу
+    }
+
+    async function checkVersion() {
+        if (document.hidden || refreshing || versionUnsupported) return;
+        const saved = readCache('bundle');
+        if (!saved || !saved.data || Date.now() - saved.t < 30 * 1000) return;   // только что скачано
+        lastVersionCheck = Date.now();
+        let ver;
+        try { ver = await (await fetch(SCRIPT_URL + '?part=version')).json(); } catch (e) { return; }
+        if (!ver || !('version' in ver)) { versionUnsupported = true; return; }   // скрипт ещё старый
+        const server = Date.parse((ver && ver.version) || '');
+        const mine = Date.parse(saved.data.updated || '');
+        if (!server || !mine || server <= mine) {
+            writeCache('bundle', saved.data);   // данные подтверждены — снова «свежие» на 5 минут
+            return;
+        }
+        refreshing = fetchBundle().then(data => {
+            writeCache('bundle', data);
+            shownAt.bundle = Date.now();
+            const t = Date.parse(data.updated || '');
+            if (t) bundleUpdated = t;
+            inFlight.bundle = Promise.resolve(data);
+            for (const k in loaded) delete loaded[k];   // страницы пересоберут данные из новых
+            window.dispatchEvent(new CustomEvent('rcu:fresh', { detail: 'bundle' }));
+            window.dispatchEvent(new CustomEvent('rcu:updated', { detail: 'bundle' }));
+        }).catch(err => console.warn('Не удалось обновить bundle', err))
+          .finally(() => { refreshing = null; });
     }
 
     // Насколько свежи данные на экране: для ответа скрипта — когда он читал таблицы,

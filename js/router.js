@@ -138,7 +138,8 @@
         });
 
         // настройки страницы: ribbon: false — без закладки с названием,
-        // updated: false — без «обновлено N минут назад», fullBleed: true — содержимое на весь блок
+        // updated: true — внизу «обновлено N минут назад» (по умолчанию нет; есть только
+        // на главной мини-приложения и у активности), fullBleed: true — содержимое на весь блок
         const opts = name ? RCU.pages[name] : {};
         setRibbon(name && opts.ribbon !== false ? opts.title : '');
         setSectionMode(!!name);
@@ -165,7 +166,7 @@
                 const data = await dataOf(name);
                 if (token !== navToken) return;
                 page.render(root, data);
-                if (page.updated !== false) addUpdated(root);
+                if (page.updated === true) addUpdated(root);
                 RCU.widenHeadings(root);
                 enter(root);
             } catch (err) {
@@ -227,7 +228,7 @@
             const openGroups = [...root.querySelectorAll('details[open] > summary')].map(label);
             const scrollTop = scroller ? scroller.scrollTop : 0;
             RCU.pages[name].render(root, data);
-            if (RCU.pages[name].updated !== false) addUpdated(root);
+            if (RCU.pages[name].updated === true) addUpdated(root);
             RCU.widenHeadings(root);
             root.querySelectorAll('details > summary').forEach(s => {
                 if (openGroups.includes(label(s))) s.parentElement.open = true;

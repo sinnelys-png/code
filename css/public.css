@@ -484,84 +484,116 @@ button.pc-card:focus-visible {
     box-shadow: inset 0 0 0 1px var(--gold-55);
 }
 
-/* сама картотека: карточки стоят абсолютно и двигаются из JS */
+/* картотека: пачка до 15 карточек друг за другом (расставляет js) */
 .pc-file {
     position: relative;
     flex: 1;
     width: 100%;
     min-height: 0;
-    overflow: hidden;
-    touch-action: none;
-    cursor: pointer;
-    /* края мягко растворяются */
-    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
-    mask-image: linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
+}
+
+.pc-file-end {
+    position: absolute;
+    left: 0;
+    width: 1px;
+    height: 1px;
+}
+
+/* пачка помещается целиком — поднятая карточка может выйти за верх картотеки */
+.pc-file.is-fit {
+    overflow: visible;
+    z-index: 2;
 }
 
 .pc-file-card {
     position: absolute;
     left: 50%;
-    top: 50%;
     width: min(22rem, calc(100% - 1rem));
-    will-change: transform, opacity;
+    transform: translateX(-50%);
+    transition: transform 0.28s cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 
 .pc-file-card .pc-card {
     margin-top: 0.85rem;
-    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.35);
+    box-shadow: 0 -0.15rem 0.6rem rgba(0, 0, 0, 0.25);
+    transition: box-shadow 0.28s ease, border-color 0.25s ease, background 0.25s ease;
 }
 
-/* карточка в центре раскрытой картотеки — подсвечена, по нажатию открывается */
-.pc-file-card.is-center .pc-card {
+/* поднятая карточка — целиком над следующей */
+.pc-file-card.is-lifted,
+.pc-file-card:focus-within {
+    transform: translate(-50%, calc(-1 * var(--lift, 0px)));
+}
+
+.pc-file-card.is-lifted .pc-card,
+.pc-file-card:focus-within .pc-card {
     border-color: var(--hover-line);
     border-top-color: var(--fac-accent, var(--gold-55));
     background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
+    box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
 }
 
-.pc-screen:not(.is-open) .pc-file-card .pc-card {
-    pointer-events: none;
+/* смена пачки: карточки въезжают по очереди */
+.pc-file.is-entering-next .pc-file-card { animation: pc-chunk-next 0.4s cubic-bezier(0.25, 0.8, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
+.pc-file.is-entering-prev .pc-file-card { animation: pc-chunk-prev 0.4s cubic-bezier(0.25, 0.8, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
+
+@keyframes pc-chunk-next {
+    from { opacity: 0; margin-left: 2.5rem; }
+    to { opacity: 1; margin-left: 0; }
 }
 
-.pc-hint {
-    min-height: 1.9rem;
-    margin-top: 0.4rem;
-    font-size: 0.75rem;
-    color: var(--text-55);
+@keyframes pc-chunk-prev {
+    from { opacity: 0; margin-left: -2.5rem; }
+    to { opacity: 1; margin-left: 0; }
 }
 
-.pc-hint-open {
-    display: none;
+/* ярлычки пачек под карточками — как закладки картотеки, свисают вниз */
+.pc-chunk-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 0.2rem;
+    width: min(24rem, calc(100% - 0.5rem));
+    margin-top: 0.3rem;
+    padding-top: 0.15rem;
+    border-top: 2px solid var(--gold-55);
 }
 
-.pc-screen.is-open .pc-hint-closed {
-    display: none;
-}
-
-.pc-screen.is-open .pc-hint-open {
-    display: inline-flex;
-}
-
-.pc-fold {
-    padding: 0.3rem 0.9rem;
+.pc-chunk-tab {
+    min-width: 2.6rem;
+    padding: 0.2rem 0.65rem 0.3rem;
     font: inherit;
-    font-size: 0.8rem;
-    color: var(--text-80);
-    background: transparent;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    color: var(--text-55);
+    background: linear-gradient(to bottom, var(--surface-bot), var(--surface-top));
     border: 1px solid var(--gold-15);
-    border-radius: 2rem;
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.3rem) 100%, 0.3rem 100%);
     cursor: pointer;
-    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-.pc-fold:hover,
-.pc-fold:focus-visible {
+.pc-chunk-tab:hover,
+.pc-chunk-tab:focus-visible {
     color: var(--hi);
-    border-color: var(--hover-line);
-    background-color: var(--hover);
+    transform: translateY(2px);
     outline: none;
 }
 
-/* точки — какая группа на экране */
+.pc-chunk-tab.is-current {
+    color: var(--text);
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
+    border-color: var(--gold-55);
+    transform: translateY(3px);
+}
+
 .pc-dots {
     display: flex;
     gap: 0.45rem;

@@ -62,10 +62,11 @@
         return `<span class="sc-when">через ${n} ${plural(n, 'день', 'дня', 'дней')}</span>`;
     }
 
-    function postHTML(p) {
+    // withDay — в «ваших постах» у поста своя дата (они не разбиты по дням)
+    function postHTML(p, withDay) {
         return `
-            <div class="sc-post">
-                <div class="sc-time">${esc(p.time) || '—'}</div>
+            <div class="sc-post${withDay ? ' sc-post--dated' : ''}">
+                <div class="sc-time">${withDay ? `<span class="sc-post-day">${esc(p.day)}</span> ` : ''}${esc(p.time) || '—'}</div>
                 <ul class="sc-tags">
                     ${p.tags.map(t => `<li><a class="sc-tag${t.character ? '' : ' is-service'}" href="${esc(TAG_SEARCH + encodeURIComponent(t.text))}" target="_blank" rel="noopener">${esc(t.text)}</a></li>`).join('')}
                 </ul>
@@ -80,14 +81,16 @@
             if (!d) days.push(d = { iso: p.iso, day: p.day, posts: [] });
             d.posts.push(p);
         });
+        // день — как вкладки «студенты» в дедлайнах: подсвечивается, закрепляется, сворачивается
         return days.map(d => `
-            <section class="sc-day">
-                <h2 class="dl-section-title sc-day-title">
-                    <span>${esc(d.day)}</span>
+            <details class="dl-section dl-group sc-day" open>
+                <summary class="dl-section-title">
+                    <span class="dl-group-name">${esc(d.day)}</span>
                     ${dayBadge(d.iso)}
-                </h2>
-                ${d.posts.map(postHTML).join('')}
-            </section>`).join('');
+                    <span class="dl-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="dl-group-body">${d.posts.map(p => postHTML(p)).join('')}</div>
+            </details>`).join('');
     }
 
     RCU.pages.schedule = {
@@ -102,10 +105,13 @@
             const mine = posts.filter(p => p.mine);
             root.innerHTML =
                 (mine.length ? `
-                    <section class="dl-section dl-section--mine sc-mine">
-                        <h2 class="dl-section-title sc-mine-title">ваши посты</h2>
-                        ${daysHTML(mine)}
-                    </section>` : '') +
+                    <details class="dl-section dl-group dl-section--mine sc-mine" open>
+                        <summary class="dl-section-title">
+                            <span class="dl-group-name">ваши посты</span>
+                            <span class="dl-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="dl-group-body">${mine.map(p => postHTML(p, true)).join('')}</div>
+                    </details>` : '') +
                 daysHTML(posts);
         },
     };

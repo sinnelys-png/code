@@ -16,13 +16,20 @@
         return { text: `через ${n} ${plural(n, 'день', 'дня', 'дней')}`, cls: n <= 3 ? 'is-urgent' : n <= 7 ? 'is-soon' : '' };
     }
 
+    // раздел сводки — как вкладки «студенты» в дедлайнах: подсвечивается, закрепляется
+    // наверху и сворачивается (без счётчика)
     function section(title, body, more) {
         return `
-            <section class="home-section">
-                <h2 class="dl-section-title">${esc(title)}</h2>
-                ${body}
-                ${more ? `<a class="home-more" href="${more.href}">${esc(more.text)} →</a>` : ''}
-            </section>`;
+            <details class="dl-section dl-group home-section" open>
+                <summary class="dl-section-title">
+                    <span class="dl-group-name">${esc(title)}</span>
+                    <span class="dl-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="dl-group-body">
+                    ${body}
+                    ${more ? `<a class="home-more" href="${more.href}">${esc(more.text)} →</a>` : ''}
+                </div>
+            </details>`;
     }
 
     /* ---------- Дедлайны ---------- */
@@ -50,7 +57,7 @@
                     <div class="home-row-side">${right}</div>
                 </div>`;
         }).join('');
-        return section('Ваши дедлайны', rows, { href: '#deadlines', text: 'все дедлайны' });
+        return section('ваши дедлайны', rows, { href: '#deadlines', text: 'все дедлайны' });
     }
 
     /* ---------- Посты ---------- */
@@ -75,7 +82,7 @@
         const text = me.winner
             ? 'Вы победили в прошлом месяце, поэтому не попадаете в рейтинг этого'
             : `Вы на ${me.place} месте — ${me.sum} ${plural(me.sumNum, 'балл', 'балла', 'баллов')}`;
-        return section('Ваша активность', `<p class="home-activity">${esc(text)}</p>`, { href: '#activity', text: 'весь рейтинг' });
+        return section('ваша активность', `<p class="home-activity">${esc(text)}</p>`, { href: '#activity', text: 'весь рейтинг' });
     }
 
     function leadersBlock(people) {
@@ -87,7 +94,7 @@
                 <div class="home-row-main">${link(p.url, p.name, 'ac-name-link')}</div>
                 <div class="home-row-side ac-sum">${esc(p.sum)}</div>
             </div>`).join('');
-        return section('Лидеры активности', rows, { href: '#activity', text: 'весь рейтинг' });
+        return section('лидеры активности', rows, { href: '#activity', text: 'весь рейтинг' });
     }
 
     /* ---------- Сборка ---------- */
@@ -105,19 +112,15 @@
         const mine = dl && viewerId ? dl[0].filter(r => r.playerId === viewerId) : [];
         const me = act && viewerId ? act.people.find(p => p.id === viewerId) : null;
 
-        // Приветствие по имени отвечающего, если он есть в таблице
-        if (greetingEl && mine.length && !isEmpty(mine[0].player)) {
-            greetingEl.textContent = `Добро пожаловать, ${mine[0].player}`;
-        }
-
+        // сначала активность (лидеры или своё место), потом дедлайны и посты
         const blocks = [];
+        if (act) blocks.push(me ? myActivityBlock(me) : leadersBlock(act.people));
         if (mine.length) blocks.push(deadlinesBlock(mine));
         if (posts) {
             blocks.push(mine.length
-                ? postsBlock('Ваши посты', posts.filter(p => p.mine), 'Запланированных постов пока нет.')
-                : postsBlock('Ближайшие посты', posts, 'Запланированных постов пока нет.'));
+                ? postsBlock('ваши посты', posts.filter(p => p.mine), 'Запланированных постов пока нет.')
+                : postsBlock('ближайшие посты', posts, 'Запланированных постов пока нет.'));
         }
-        if (act) blocks.push(me ? myActivityBlock(me) : leadersBlock(act.people));
 
         root.innerHTML = blocks.length
             ? blocks.filter(Boolean).join('')

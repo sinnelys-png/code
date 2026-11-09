@@ -73,6 +73,7 @@
     }
 
     RCU.pages.activity = {
+        updated: true,        // внизу «обновлено N минут назад»
         title: 'Активность',
         load,
         render(root, { people, viewerId }) {
