@@ -279,38 +279,50 @@
   });
 
 // ===== Фоновые вертикальные полосы =====
+// Чередуются светлая / тёмная. Раскладка считается от краёв основного блока: на каждом
+// крае стоит тёмная полоса — половина под блоком, половина снаружи. Ширина полос слегка
+// подгоняется (около BASE), чтобы между краями блока уложилось целое число пар.
 (() => {
         const container = document.querySelector('.bg-stripes-container');
-        const stripeWidth = 50;
-        // Досоздаёт полосы, если окно стало шире (при сужении лишние просто уходят за край)
-        function fillStripes() {
-            const needed = Math.ceil(window.innerWidth / stripeWidth) + 1;
-            for (let i = container.children.length; i < needed; i++) {
-                const stripe = document.createElement('div');
-                stripe.classList.add('single-stripe');
-                if (i % 2 !== 0) {
-                    stripe.classList.add('dark-static');
-                }
-                container.appendChild(stripe);
-            }
-        }
-        fillStripes();
-        window.addEventListener('resize', fillStripes);
+        const block = document.querySelector('.main-inner-content');
+        const BASE = 50;
+        let width = BASE, shift = 0;   // shift — где начинается первая (тёмная) полоса
 
-        // живая коллекция — автоматически видит новые полосы
+        function layout() {
+            const vw = document.documentElement.clientWidth;
+            width = BASE;
+            let left = vw / 2;
+            if (block && block.offsetWidth) {
+                const w = block.offsetWidth;
+                const pairs = Math.max(1, Math.round(w / (2 * BASE)));
+                width = w / (2 * pairs);
+                left = (vw - w) / 2;          // блок стоит по центру; так не мешают анимации заставки
+            }
+            // тёмная полоса начинается за полширины до края блока; сдвигаемся влево на целые пары
+            const start = left - width / 2;
+            shift = start - Math.ceil(start / (2 * width)) * 2 * width;   // от −2·width до 0
+
+            const needed = Math.ceil((vw - shift) / width) + 1;
+            container.style.left = shift + 'px';
+            container.style.width = (vw - shift) + 'px';
+            container.replaceChildren(...Array.from({ length: needed }, (_, i) => {
+                const stripe = document.createElement('div');
+                stripe.className = 'single-stripe' + (i % 2 === 0 ? ' dark-static' : '');
+                stripe.style.width = width + 'px';
+                return stripe;
+            }));
+        }
+        layout();
+        window.addEventListener('resize', layout);
+
+        // живая коллекция — автоматически видит пересозданные полосы
         const allStripes = container.children;
 
         window.addEventListener('mousemove', (e) => {
-            const stripeIndex = Math.floor(e.clientX / stripeWidth);
-            if (allStripes[stripeIndex]) {
-                const activeStripe = allStripes[stripeIndex];
-                if (!activeStripe.classList.contains('dark-static')) {
-                    activeStripe.classList.add('is-lit');
-                    setTimeout(() => {
-                        activeStripe.classList.remove('is-lit');
-                    }, 50);
-                }
+            const activeStripe = allStripes[Math.floor((e.clientX - shift) / width)];
+            if (activeStripe && !activeStripe.classList.contains('dark-static')) {
+                activeStripe.classList.add('is-lit');
+                setTimeout(() => activeStripe.classList.remove('is-lit'), 50);
             }
         });
-    
 })();

@@ -115,7 +115,6 @@
         if (!p) {
             p = document.createElement('p');
             p.className = 'page-updated';
-            p.title = 'Сайт берёт данные из таблиц с небольшой задержкой';
             root.appendChild(p);
         }
         p.textContent = RCU.updatedText();
