@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- картинки ВК (аватары) не отдаются, если браузер сообщает адрес сайта; в графе отношений
+         они внутри SVG, где referrerpolicy у картинки не задать, поэтому — для всей страницы -->
+    <meta name="referrer" content="no-referrer">
     <title>ROYAL CROSSBREED UNIVERSITY</title>
     <!-- Публичная версия сайта (мини-приложение ВК — index.html) -->
     <meta name="description" content="ROYAL CROSSBREED UNIVERSITY — персонажи, факультеты, общежитие и город ролевой.">
@@ -126,6 +129,7 @@
             ['#faculties', 'факультеты'],
             ['#characters', 'персонажи'],
             ['#student-activity', 'студенческая активность'],
+            ['#relations', 'отношения'],
             ['#city', 'город'],
             ['#dorm', 'общежитие'],
         ];
@@ -142,6 +146,7 @@
     <script src="js/pages/city.js"></script>
     <script src="js/pages/student-activity.js"></script>
     <script src="js/pages/dorm.js"></script>
+    <script src="js/pages/relations.js"></script>
     <script src="js/router.js"></script>
 </body>
 

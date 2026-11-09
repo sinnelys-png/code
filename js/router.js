@@ -137,8 +137,12 @@
             if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
         });
 
-        setRibbon(name ? RCU.pages[name].title : '');
+        // настройки страницы: ribbon: false — без закладки с названием,
+        // updated: false — без «обновлено N минут назад», fullBleed: true — содержимое на весь блок
+        const opts = name ? RCU.pages[name] : {};
+        setRibbon(name && opts.ribbon !== false ? opts.title : '');
         setSectionMode(!!name);
+        html.classList.toggle('is-full-bleed', !!opts.fullBleed);
         view.classList.add('is-leaving');
         await new Promise(r => setTimeout(r, 150));
         if (token !== navToken) return;
@@ -161,7 +165,7 @@
                 const data = await dataOf(name);
                 if (token !== navToken) return;
                 page.render(root, data);
-                addUpdated(root);
+                if (page.updated !== false) addUpdated(root);
                 RCU.widenHeadings(root);
                 enter(root);
             } catch (err) {
@@ -223,7 +227,7 @@
             const openGroups = [...root.querySelectorAll('details[open] > summary')].map(label);
             const scrollTop = scroller ? scroller.scrollTop : 0;
             RCU.pages[name].render(root, data);
-            addUpdated(root);
+            if (RCU.pages[name].updated !== false) addUpdated(root);
             RCU.widenHeadings(root);
             root.querySelectorAll('details > summary').forEach(s => {
                 if (openGroups.includes(label(s))) s.parentElement.open = true;

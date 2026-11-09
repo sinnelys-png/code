@@ -80,9 +80,89 @@ function doGet(e) {
     if (cachedA) return json_(cachedA);
     return json_(buildAnketas_());
   }
+  // ?part=relations — граф отношений (таблица взаимоотношений), тоже только для публичного сайта
+  if (e && e.parameter && e.parameter.part === 'relations') {
+    const cachedR = cacheGet_(RELATIONS_KEY);
+    if (cachedR) return json_(cachedR);
+    return json_(buildRelations_());
+  }
   const cached = cacheGet_(CACHE_KEY);
   if (cached) return json_(cached);
   return json_(build_());
+}
+
+/* ---------- Граф отношений ----------
+   Лист «Взаимоотношения»: в строке 3 — имена (по колонкам), в строке 1 — факультеты
+   (название стоит над первым персонажем факультета), в строке 5 — курсы, в строке 6 — должности.
+   Строки персонажей повторяют порядок колонок со сдвигом: строка = колонка + RELATIONS_SHIFT.
+   Ячейка «строка А × колонка Б» — отношение А к Б: тип — цвет фона (легенда в B1:B10),
+   текст — комментарий; «*» в начале — отношения ещё не обсуждались. */
+const RELATIONS_SHEET_ID = '1iBnU0plvZVQOH9TEp85uMrnbaDMdsC5JJ5THJqlCy7k';
+const RELATIONS_GID = 0;
+const RELATIONS_KEY = 'relations-v1';
+const RELATIONS_SHIFT = 11;
+
+function buildRelations_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(RELATIONS_SHEET_ID), RELATIONS_GID);
+  const range = sheet.getDataRange();
+  const vals = range.getDisplayValues();
+  const bgs = range.getBackgrounds();
+  const cell = (r, c) => String((vals[r] || [])[c] || '').trim();
+
+  // легенда: B1:B10 — название и цвет фона
+  const legend = [];
+  for (let r = 0; r < 10; r++) {
+    if (cell(r, 1)) legend.push({ name: cell(r, 1), color: String(bgs[r][1]).toLowerCase() });
+  }
+  const rgb = (hex) => { const n = parseInt(String(hex).replace('#', ''), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const legendRgb = legend.map(l => rgb(l.color));
+  // ближайший цвет легенды (в таблице бывают почти такие же оттенки); белый и цвета факультетов — мимо
+  const typeOf = (hex) => {
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) return -1;
+    const [r, g, b] = rgb(hex);
+    let best = -1, dist = 28;
+    legendRgb.forEach(([lr, lg, lb], i) => {
+      const d = Math.sqrt((r - lr) ** 2 + (g - lg) ** 2 + (b - lb) ** 2);
+      if (d < dist) { dist = d; best = i; }
+    });
+    return best;
+  };
+
+  // люди — по колонкам строки 3
+  const people = [];
+  const colOf = {};
+  let group = '';
+  for (let c = 2; c < (vals[2] || []).length; c++) {
+    if (cell(0, c)) group = cell(0, c);
+    const name = cell(2, c);
+    if (!name) continue;
+    colOf[c] = people.length;
+    people.push({ name: name, group: group, course: cell(4, c).replace(/\D+/g, ''), post: cell(5, c) });
+  }
+
+  // связи
+  const links = [];
+  Object.keys(colOf).forEach(cs => {
+    const c = Number(cs);
+    const r = c + RELATIONS_SHIFT - 1;          // индекс строки (с нуля)
+    if (!vals[r]) return;
+    Object.keys(colOf).forEach(ds => {
+      const d = Number(ds);
+      if (d === c) return;
+      const type = typeOf(String(bgs[r][d]).toLowerCase());
+      if (type < 0) return;
+      const text = cell(r, d);
+      const pending = text.startsWith('*') ? 1 : 0;
+      const note = text.replace(/^\*\s*/, '');
+      const link = [colOf[c], colOf[d], type, pending];
+      if (note) link.push(note);
+      links.push(link);
+    });
+  });
+
+  const out = JSON.stringify({ updated: new Date().toISOString(), legend: legend, people: people, links: links });
+  cachePut_(RELATIONS_KEY, out);
+  return out;
 }
 
 const ANKETAS_KEY = 'anketas-v1';
@@ -111,6 +191,7 @@ function warmCache() {
   if (hour >= WARMUP_NIGHT_FROM && hour < WARMUP_NIGHT_TO) return;
   build_();
   try { buildAnketas_(); } catch (e) { /* анкет может не быть */ }
+  try { buildRelations_(); } catch (e) { /* таблица отношений недоступна */ }
 }
 
 /** Один раз вручную: завести триггер прогрева (старые триггеры warmCache удаляются) */
