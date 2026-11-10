@@ -141,7 +141,7 @@ html.intro .page-ribbon {
    ========================================================================== */
 
 .dl-section--mine {
-    margin-bottom: 1.25rem;   /* отступ до вкладок вместо прежнего разделителя */
+    margin-bottom: 0.4rem;    /* как между остальными вкладками */
 }
 
 .user-title {
@@ -261,6 +261,21 @@ html:not(.is-section) .main-scroll-viewport::after {
     html:not(.is-section) .main-scroll-viewport::after {
         flex-basis: calc(var(--tri) + 1.25rem);
     }
+}
+
+/* Служебные строки в середину не считаются: на главной — «обновлено N минут назад»
+   внизу (отступ 2rem + строка 1.125rem + 0.5rem), в дедлайнах — поиск наверху
+   (2.75rem + отступ 0.75rem). Противоположная распорка больше ровно на их высоту. */
+.home-dash > details:last-of-type {
+    margin-bottom: 0;
+}
+
+html:not(.is-section) .main-scroll-viewport:has(.home-dash .page-updated)::before {
+    flex-basis: 3.625rem;
+}
+
+html.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
+    flex-basis: calc(4.25rem + var(--tip-overlap, 0px));
 }
 
 /* ==========================================================================
@@ -558,6 +573,16 @@ a.ac-name-link:hover {
     line-height: 1.2;
 }
 
+/* наведение на строку призёра — цифра с обводкой светлеет (без свечения вокруг),
+   как заголовок вкладки при наведении; и в рейтинге, и на главной */
+.ac-row.is-top .ac-place {
+    transition: color 0.25s ease;
+}
+
+.ac-row.is-top-1:hover .ac-place { color: #fbf3e4; }
+.ac-row.is-top-2:hover .ac-place { color: #f4f6f8; }
+.ac-row.is-top-3:hover .ac-place { color: #f3cfb2; }
+
 /* на главной — только обводка вместо фона, размер обычный */
 .home-row.ac-row.is-top {
     font-size: inherit;
@@ -821,11 +846,27 @@ a.ac-name-link:hover {
     min-width: 0;
 }
 
-/* золотые строки из дедлайнов под именем: долг в игровой, напоминание о подроли */
+/* золотые строки из дедлайнов под именем: долг в игровой, напоминание о подроли —
+   пункты со звёздочкой, пункт подсвечивается при наведении */
 .home-row-main .dl-debt,
 .home-row-main .dl-sub-notice {
     margin-top: 0.15rem;
     font-size: 0.85rem;
+}
+
+.home-row-main .dl-debt::before,
+.home-row-main .dl-sub-notice::before {
+    content: "✦";
+    display: inline-block;
+    margin-right: 0.45em;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+/* наведение на пункт — загорается только звёздочка */
+.home-row-main .dl-debt:hover::before,
+.home-row-main .dl-sub-notice:hover::before {
+    color: #fff;
+    text-shadow: 0 0 0.4rem rgba(227, 207, 172, 0.8);
 }
 
 .home-row-side {
@@ -883,47 +924,6 @@ a.ac-name-link:hover {
 .home-empty {
     margin: 0.6rem 0.25rem;
     color: var(--text-55);
-}
-
-/* «добавить в избранное» / «на главный экран» — внизу главной, только внутри ВК */
-.home-vk {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.home-vk[hidden] {
-    display: none;
-}
-
-.home-vk-btn {
-    height: 1.75rem;
-    box-sizing: border-box;
-    padding: 0 0.9rem;
-    font: inherit;
-    font-size: 0.8rem;
-    color: var(--text-80);
-    background: transparent;
-    border: 1px solid var(--gold-15);
-    border-radius: 2rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.25s ease, border-color 0.25s ease;
-}
-
-.home-vk-btn:hover,
-.home-vk-btn:focus-visible {
-    color: #fff;
-    border-color: rgba(204, 204, 204, 0.55);
-    outline: none;
-}
-
-.home-vk-btn.is-done {
-    color: var(--gold);
-    border-color: var(--gold-55);
-    cursor: default;
 }
 
 .home-more {
@@ -988,8 +988,8 @@ a.ac-name-link:hover {
     margin: 2rem 0 0.5rem;
     text-align: center;
     font-size: 0.75rem;
+    line-height: 1.125rem;
     color: rgba(204, 204, 204, 0.4);
-    cursor: help;
 }
 
 /* Заголовки шрифтом Greengoth, растянутые по ширине на 15% (см. widenHeadings в js/core.js) */

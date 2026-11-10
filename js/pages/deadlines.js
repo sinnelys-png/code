@@ -214,15 +214,17 @@
         const queue = (row.queue || []).filter(q => !isEmpty(q));
         if (active || queue.length) {
             const counter = isEmpty(row.noSub) ? '' : `<span class="dl-counter" title="Ответы без подроли">${esc(row.noSub)}</span>`;
+            const list = `<ol class="dl-queue">${queue.map(q =>
+                `<li class="dl-chip${q === current ? ' is-active' : ''}">${esc(q)}</li>`).join('')}</ol>`;
+            // больше одной подроли — очередь прячется в список у ✦ (наведение или касание)
+            const pick = active && queue.length > 1
+                ? `<span class="dl-sub-pick"><button class="dl-sub-star" type="button" aria-label="Очередь подролей" aria-expanded="false">✦</button><span class="dl-sub-pop">${list}</span></span>`
+                : '';
             extra.push(`
                 <div class="dl-subs">
-                    ${active ? `<div class="dl-active"><span class="dl-label">текущая подроль:</span> ${esc(active)} ${counter}</div>` : ''}
+                    ${active ? `<div class="dl-active"><span class="dl-label">текущая подроль:</span> ${esc(active)} ${pick}${counter}</div>` : ''}
                     ${subNoticeHTML(row)}
-                    ${queue.length ? `
-                        <div class="dl-label">очередь подролей:</div>
-                        <ol class="dl-queue">
-                            ${queue.map(q => `<li class="dl-chip${q === current ? ' is-active' : ''}">${esc(q)}</li>`).join('')}
-                        </ol>` : ''}
+                    ${!active && queue.length ? `<div class="dl-label">очередь подролей:</div>${list}` : ''}
                 </div>`);
         }
 
@@ -334,6 +336,20 @@
     function scroller() { return document.querySelector('.main-scroll-viewport'); }
 
     document.addEventListener('click', (e) => {
+        // ✦ у текущей подроли: на телефоне наведения нет — очередь открывается касанием
+        const star = e.target.closest('.dl-sub-star');
+        document.querySelectorAll('.dl-sub-pick.is-open').forEach(p => {
+            if (!star || p !== star.parentElement) {
+                p.classList.remove('is-open');
+                p.querySelector('.dl-sub-star').setAttribute('aria-expanded', 'false');
+            }
+        });
+        if (star) {
+            const open = star.parentElement.classList.toggle('is-open');
+            star.setAttribute('aria-expanded', String(open));
+            return;
+        }
+
         // Стрелка рядом с именем: показать / скрыть дуэт и подроли
         const more = e.target.closest('.dl-more');
         if (more) {

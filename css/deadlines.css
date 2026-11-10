@@ -402,6 +402,81 @@ a.dl-name:hover {
     background: var(--gold-08);
 }
 
+/* ✦ у текущей подроли: очередь появляется списком при наведении или касании */
+.dl-sub-pick {
+    position: relative;
+    display: inline-block;
+}
+
+.dl-sub-star {
+    padding: 0 0.15rem;
+    font: inherit;
+    line-height: 1;
+    color: inherit;                   /* в тон тексту строки */
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.dl-sub-pick:hover .dl-sub-star,
+.dl-sub-pick.is-open .dl-sub-star,
+.dl-sub-star:focus-visible {
+    color: #fff;
+    text-shadow: 0 0 0.45rem rgba(227, 207, 172, 0.8);
+    outline: none;
+}
+
+.dl-sub-pop {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    z-index: 6;
+    padding-top: 0.4rem;              /* мостик: мышь доходит до списка, не теряя наведения */
+    transform: translate(-50%, -0.25rem);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+
+/* карточка с открытым списком — поверх соседних, иначе их текст ложится на список */
+.dl-card:has(.dl-sub-pick:hover),
+.dl-card:has(.dl-sub-pick.is-open),
+.dl-card:has(.dl-sub-pick:focus-within) {
+    position: relative;
+    z-index: 6;
+}
+
+.dl-sub-pop .dl-queue {
+    margin: 0;
+    padding: 0.5rem 0.6rem;
+    white-space: nowrap;
+    background: #001929;
+    border: 1px solid var(--gold-55);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* в списке у ✦ строки без своих рамок: рамка есть у самого списка,
+   текущая подроль просто светлее */
+.dl-sub-pop .dl-chip {
+    border: none;
+    padding: 0.1rem 0;
+}
+
+.dl-sub-pop .dl-chip.is-active {
+    background: none;
+    color: #fff;
+}
+
+.dl-sub-pick:hover .dl-sub-pop,
+.dl-sub-pick.is-open .dl-sub-pop,
+.dl-sub-pick:focus-within .dl-sub-pop {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+
 /* ---------- Дедлайн ---------- */
 
 .dl-deadline {
