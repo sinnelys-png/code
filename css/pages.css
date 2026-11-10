@@ -250,9 +250,15 @@ html.is-section .main-scroll-viewport::after {
     flex-basis: calc(0.75rem + var(--tip-overlap, 0px));
 }
 
-/* На главной сводка не центруется, а начинается сразу под «галочкой» блока */
+/* На главной сводка не центруется, а начинается сразу под «галочкой» блока:
+   кончик «галочки» с полоской — на глубине --tri + 7px, от него до текста заголовка 10px
+   (у заголовка свой внутренний отступ сверху ~9px, поэтому область начинается на --tri + 8px) */
 html:not(.is-section) .main-scroll-viewport::before {
     display: none;
+}
+
+html:not(.is-section) .main-scroll-text {
+    padding-top: calc(var(--tri) + 8px);
 }
 
 /* Поиск в дедлайнах (2.75rem + отступ 0.75rem) в середину не считается:
