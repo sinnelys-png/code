@@ -106,6 +106,32 @@
     color: #00223a;
 }
 
+/* в разделе лента нажимается (показывает / прячет шапку, js/router.js);
+   раньше она пропускала касания насквозь, и нажатие доставалось блоку под ней */
+html.is-section .page-ribbon {
+    pointer-events: auto;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* «Потянуть вниз — обновить» (js/router.js): ✦ над содержимым, которое тянут пальцем;
+   дотянули до готовности — звезда загорается */
+.pull-indicator {
+    position: absolute;
+    left: 50%;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--text-55, rgba(204, 204, 204, 0.55));
+}
+
+.pull-indicator.is-ready {
+    color: #E3CFAC;
+    text-shadow: 0 0 0.6rem rgba(227, 207, 172, 0.7);
+}
+
 /* спрятана под шапкой: на главной, при смене раздела и во время заставки */
 .page-ribbon.is-hidden,
 html.intro .page-ribbon {
@@ -250,15 +276,28 @@ html.is-section .main-scroll-viewport::after {
     flex-basis: calc(0.75rem + var(--tip-overlap, 0px));
 }
 
-/* На главной сводка не центруется, а начинается сразу под «галочкой» блока:
-   кончик «галочки» с полоской — на глубине --tri + 7px, от него до текста заголовка 10px
-   (у заголовка свой внутренний отступ сверху ~9px, поэтому область начинается на --tri + 8px) */
-html:not(.is-section) .main-scroll-viewport::before {
-    display: none;
-}
-
+/* Главная. Область прокрутки начинается почти у кончика «галочки» (он с полоской
+   на глубине --tri + 7px; у заголовка свой отступ ~9px, итого до текста 10px) —
+   в окне ВК мало высоты, длинная сводка должна начинаться сразу под ним.
+   Короткая сводка стоит посередине блока, считая от его верхней точки: нижняя распорка
+   больше верхней на разницу полей (сверху --tri + 8px, снизу 2rem, на телефоне 1.5rem),
+   а «обновлено N минут назад» внизу в середину не считается (2rem + 1.125rem + 0.5rem). */
 html:not(.is-section) .main-scroll-text {
     padding-top: calc(var(--tri) + 8px);
+}
+
+html:not(.is-section) .main-scroll-viewport::after {
+    flex-basis: calc(var(--tri) + 8px - 2rem);
+}
+
+html:not(.is-section) .main-scroll-viewport:has(.home-dash .page-updated)::before {
+    flex-basis: 3.625rem;
+}
+
+@media (max-width: 768px) {
+    html:not(.is-section) .main-scroll-viewport::after {
+        flex-basis: calc(var(--tri) + 8px - 1.5rem);
+    }
 }
 
 /* Поиск в дедлайнах (2.75rem + отступ 0.75rem) в середину не считается:

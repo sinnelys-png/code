@@ -81,8 +81,10 @@
 
     if (tip && header) {
         tip.addEventListener('click', () => setPeek(!html.classList.contains('header-peek')));
-        // мышь: навели на кончик — шапка выезжает; увели с шапки — прячется
-        tip.addEventListener('mouseenter', (e) => { if (e.pointerType !== 'touch') setPeek(true); });
+        // мышь: навели на кончик — шапка выезжает; увели с шапки — прячется.
+        // pointerenter, а не mouseenter: у mouseenter нет pointerType, и на телефоне касание
+        // сначала «наводило» (шапка выезжала), а следом click тут же её прятал — нужно было два касания
+        tip.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') setPeek(true); });
         header.addEventListener('mouseleave', () => {
             if (!html.classList.contains('header-peek')) return;
             peekTimer = setTimeout(() => setPeek(false), 350);
@@ -181,6 +183,81 @@
     }
 
     window.addEventListener('hashchange', show);
+
+    /* ---------- Потянуть вниз — обновить (палец) ----------
+       Встроенный жест браузера здесь не срабатывает: страница неподвижна, листается
+       только область внутри блока (а в ВК он и вовсе выключен). Поэтому свой:
+       в самом верху области тянем содержимое вниз — появляется ✦, дотянули до
+       готовности — отпускаем, и раздел заново скачивает данные (без кэша браузера).
+       Не мешает тем, кто сам ловит палец (стопка карточек, граф, карта — touch-action). */
+    (() => {
+        if (!scroller) return;
+        const READY = 64, MAX = 96;
+        const holder = scroller.parentElement;
+        const ind = document.createElement('div');
+        ind.className = 'pull-indicator';
+        ind.setAttribute('aria-hidden', 'true');
+        ind.innerHTML = '<span class="pull-star">✦</span>';
+        holder.appendChild(ind);
+
+        let state = '', startX = 0, startY = 0, pull = 0;
+
+        // палец на элементе, который сам листается или сам ловит касания
+        function busy(el) {
+            for (; el && el !== scroller; el = el.parentElement) {
+                const cs = getComputedStyle(el);
+                if (cs.touchAction === 'none' || cs.touchAction === 'pan-x') return true;
+                if (el.scrollTop > 0 && /auto|scroll/.test(cs.overflowY)) return true;
+            }
+            return false;
+        }
+
+        function set(p, animate) {
+            pull = p;
+            const t = animate ? 'transform 0.3s ease, opacity 0.3s ease' : 'none';
+            view.style.transition = t;
+            ind.style.transition = t;
+            view.style.transform = p ? `translateY(${p}px)` : '';
+            ind.style.top = `${scroller.offsetTop}px`;
+            ind.style.opacity = String(Math.min(1, p / READY));
+            ind.style.transform = `translate(-50%, ${p / 2 - 12}px) rotate(${p * 3}deg)`;
+            ind.classList.toggle('is-ready', p >= READY);
+        }
+
+        scroller.addEventListener('touchstart', (e) => {
+            state = '';
+            if (e.touches.length !== 1 || scroller.scrollTop > 0 || html.classList.contains('intro') || busy(e.target)) return;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            state = 'maybe';
+        }, { passive: true });
+
+        scroller.addEventListener('touchmove', (e) => {
+            if (!state) return;
+            const dx = e.touches[0].clientX - startX, dy = e.touches[0].clientY - startY;
+            if (state === 'maybe') {
+                if (dy < -6 || Math.abs(dx) > Math.max(8, dy)) { state = ''; return; }   // листают вверх или вбок
+                if (dy < 8) return;
+                if (scroller.scrollTop > 0) { state = ''; return; }
+                state = 'pull';
+            }
+            e.preventDefault();
+            set(Math.max(0, Math.min(MAX, (dy - 8) * 0.5)));
+        }, { passive: false });
+
+        function release() {
+            if (state !== 'pull') { state = ''; return; }
+            state = '';
+            const go = pull >= READY;
+            set(0, true);
+            if (go) {
+                RCU.resetData();
+                show();
+            }
+        }
+        scroller.addEventListener('touchend', release);
+        scroller.addEventListener('touchcancel', () => { if (state === 'pull') { state = ''; set(0, true); } });
+    })();
 
     // Закреплённые заголовки (вкладки, даты) закрашиваются цветом блока на высоте
     // верхнего края области прокрутки: блок — градиент от #002F4A сверху к #001929 снизу.

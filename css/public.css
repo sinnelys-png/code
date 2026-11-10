@@ -508,6 +508,7 @@ button.pc-card:focus-visible {
 .pc-file.is-fit {
     overflow: visible;
     z-index: 2;
+    touch-action: none;   /* палец ведут по стопке — перебираются карточки, страница не листается */
 }
 
 .pc-file-card {

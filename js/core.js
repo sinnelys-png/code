@@ -307,6 +307,18 @@ window.RCU = (() => {
         return `обновлено ${h} ${plural(h, 'час', 'часа', 'часов')} назад`;
     }
 
+    // «Потянуть вниз — обновить»: забыть всё скачанное (в памяти и в браузере),
+    // чтобы страницы заново взяли данные у скрипта
+    function resetData() {
+        for (const k in inFlight) delete inFlight[k];
+        for (const k in loaded) delete loaded[k];
+        for (const k in shownAt) delete shownAt[k];
+        try {
+            Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+        } catch (e) { /* без хранилища */ }
+        window.dispatchEvent(new CustomEvent('rcu:reset'));
+    }
+
     function dataOf(name) {
         if (!loaded[name]) {
             loaded[name] = pages[name].load().catch(err => {
@@ -318,5 +330,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
+    return { resetData, esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
 })();

@@ -883,21 +883,31 @@
             if (ci !== file.ci) showChunk(ci, ci > file.ci ? 1 : -1);
         });
 
-        // нажатие открывает анкету (на сенсорном экране первое касание поднимает карточку)
-        let touch = false;
-        box.addEventListener('pointerdown', (e) => { touch = e.pointerType === 'touch'; });
+        // Нажатие открывает анкету — с одного касания.
+        // Палец, который ведут по стопке, перебирает карточки, как мышь (см. pick);
+        // после такого проведения отпускание ничего не открывает — поднятая карточка
+        // остаётся, по ней можно нажать.
+        let swiped = false, startX = 0, startY = 0;
+        box.addEventListener('pointerdown', (e) => {
+            if (e.pointerType !== 'touch') return;
+            swiped = false; startX = e.clientX; startY = e.clientY;
+        });
         box.addEventListener('click', (e) => {
+            if (swiped) { swiped = false; return; }
             const item = e.target.closest('.pc-file-card');
             if (!item) { liftCard(null); return; }
-            const name = item.querySelector('.pc-card').dataset.name;
-            if (touch && !item.classList.contains('is-lifted')) { liftCard(name); return; }
-            openCharacter(name);
+            openCharacter(item.querySelector('.pc-card').dataset.name);
         });
-        // Наведение мышью. Карточку выбираем по неподвижной разметке, а не по :hover:
-        // поднятая карточка уходит из-под мыши, и иначе соседние начинали бы дёргаться.
-        // Пока мышь над уже поднятой карточкой — она остаётся, до неё можно дотянуться.
+        // Наведение (мышь или палец). Карточку выбираем по неподвижной разметке, а не по :hover:
+        // поднятая карточка уходит из-под указателя, и иначе соседние начинали бы дёргаться.
+        // Пока указатель над уже поднятой карточкой — она остаётся, до неё можно дотянуться.
         const pick = (e) => {
-            if (e.pointerType !== 'mouse' || !file.geom) return;
+            if (!file.geom) return;
+            if (e.pointerType === 'touch') {
+                if (!e.buttons && e.type === 'pointermove') return;
+                if (Math.hypot(e.clientX - startX, e.clientY - startY) > 8) swiped = true;
+                if (!swiped) return;   // просто касание — его обработает click
+            } else if (e.pointerType !== 'mouse') return;
             const cur = box.querySelector('.pc-file-card.is-lifted');
             if (cur) {
                 const r = cur.getBoundingClientRect();
