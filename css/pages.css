@@ -250,29 +250,18 @@ html.is-section .main-scroll-viewport::after {
     flex-basis: calc(0.75rem + var(--tip-overlap, 0px));
 }
 
-/* На главной блок — пятиугольник, область прокрутки начинается под «галочкой»
-   (сверху 8rem, снизу 2rem). Середину считаем от верхней точки блока. */
-html:not(.is-section) .main-scroll-viewport::after {
-    flex-basis: 6rem;
+/* На главной сводка не центруется, а начинается сразу под «галочкой» блока */
+html:not(.is-section) .main-scroll-viewport::before {
+    display: none;
 }
 
-@media (max-width: 768px) {
-    /* на телефоне сверху --tri + 2.75rem, снизу 1.5rem */
-    html:not(.is-section) .main-scroll-viewport::after {
-        flex-basis: calc(var(--tri) + 1.25rem);
-    }
-}
-
-/* Служебные строки в середину не считаются: на главной — «обновлено N минут назад»
-   внизу (отступ 2rem + строка 1.125rem + 0.5rem), в дедлайнах — поиск наверху
-   (2.75rem + отступ 0.75rem). Противоположная распорка больше ровно на их высоту. */
+/* Поиск в дедлайнах (2.75rem + отступ 0.75rem) в середину не считается:
+   нижняя распорка больше ровно на его высоту. На главной под последним разделом
+   отступа нет — дальше только «обновлено N минут назад». */
 .home-dash > details:last-of-type {
     margin-bottom: 0;
 }
 
-html:not(.is-section) .main-scroll-viewport:has(.home-dash .page-updated)::before {
-    flex-basis: 3.625rem;
-}
 
 html.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
     flex-basis: calc(4.25rem + var(--tip-overlap, 0px));
