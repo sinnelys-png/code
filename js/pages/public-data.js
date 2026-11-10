@@ -110,6 +110,71 @@
         return data.table.rows.map(row => (row.c || []).map(c => (c ? String(c.f ?? c.v ?? '') : '')));
     }
 
+    /* ---------- Отвечающие ----------
+       Отвечающий определяется по VK ID (лист дедлайнов, колонка AC) или по ссылке на страницу ВК
+       (Техтаблица / дедлайны). Ключ страницы — «id123456», а если ID неизвестен — короткое имя
+       из ссылки («vk.ru/durov» → «durov»). Одна ссылка с ID и коротким именем у разных персонажей
+       сводится к одному отвечающему.
+       На будущее (когда появятся в таблицах — скрипт отдаст их в bundle):
+         data.players — [{ id или url, name, avatar, about, birthday, blogs: [{ title, url }] }];
+         data.archive — имена ушедших персонажей (или флаг archived у персонажа). */
+    function vkHandle(url) {
+        const m = String(url || '').match(/vk\.(?:com|ru)\/([\w.]+)/i);
+        if (!m) return null;
+        const h = m[1].toLowerCase();
+        const id = h.match(/^id(\d+)$/);
+        return id ? { id: id[1] } : { screen: h };
+    }
+
+    function buildPlayers(characters, data) {
+        const extra = Array.isArray(data.players) ? data.players : [];
+        const archive = new Set(Array.isArray(data.archive) ? data.archive : []);
+
+        // короткое имя → ID, если хоть у одного персонажа известны оба
+        const idOfScreen = {};
+        characters.forEach(c => {
+            const h = vkHandle(c.playerUrl);
+            if (h && h.screen && c.playerId) idOfScreen[h.screen] = c.playerId;
+        });
+        const keyOf = (id, url) => {
+            if (id) return 'id' + id;
+            const h = vkHandle(url);
+            if (!h) return '';
+            if (h.id) return 'id' + h.id;
+            return idOfScreen[h.screen] ? 'id' + idOfScreen[h.screen] : h.screen;
+        };
+
+        const byKey = new Map();
+        characters.forEach(c => {
+            const key = keyOf(c.playerId, c.playerUrl);
+            c.playerKey = key;
+            if (!key) return;
+            if (!byKey.has(key)) byKey.set(key, { key, name: '', url: '', id: '', characters: [] });
+            const p = byKey.get(key);
+            p.name = p.name || (isEmpty(c.player) ? '' : c.player);
+            p.url = p.url || c.playerUrl || '';
+            p.id = p.id || (key.startsWith('id') ? key.slice(2) : '');
+            c.archived = c.archived || archive.has(c.name);
+            p.characters.push(c);
+        });
+        byKey.forEach(p => {
+            if (!p.url && p.id) p.url = `https://vk.ru/id${p.id}`;
+            const h = vkHandle(p.url);
+            p.name = p.name || (h && h.screen) || (p.id ? `id${p.id}` : p.key);
+        });
+        // описание, аватар, день рождения, блоги — из будущей таблицы отвечающих
+        extra.forEach(x => {
+            const p = byKey.get(keyOf(String(x.id || '').replace(/\D/g, ''), x.url));
+            if (p) Object.assign(p, Object.fromEntries(Object.entries(x).filter(([k, v]) => v && k !== 'characters')));
+        });
+        byKey.forEach(p => {
+            p.current = p.characters.filter(c => !c.archived);
+            p.archive = p.characters.filter(c => c.archived);
+            p.active = p.current.length > 0;
+        });
+        return byKey;
+    }
+
     async function load() {
         let data = {};
         try { data = await RCU.bundle(); } catch (e) { console.warn('Скрипт недоступен:', e); }
@@ -178,6 +243,7 @@
             c.topicUrl = c.topicUrl || r.topicUrl;
             c.playerUrl = c.playerUrl || r.playerUrl;
             c.player = r.player || c.player;
+            c.playerId = r.playerId || c.playerId;
             c.role = c.role || r.role;
             c.duet = c.duet || (isEmpty(r.duet) ? '' : r.duet);
             c.faculty = c.faculty || facultyOf[r.name] || r.faculty || '';
@@ -208,7 +274,9 @@
             .map(x => ({ ...x, role: roleOf(x), course: String(x.course || '').replace(/\D+/g, '') }))
             .filter(x => x.role && !byName.has(x.name));
 
-        return { characters, byName, facultyInfo, bron, hasTech: tech.length > 0 };
+        const players = buildPlayers(characters, data);
+
+        return { characters, byName, facultyInfo, bron, players, hasTech: tech.length > 0 };
     }
 
     // Один раз на сессию; страницы публичного сайта берут данные отсюда

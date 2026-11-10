@@ -1646,6 +1646,107 @@ html.pc-open .main-scroll-viewport {
     display: none;
 }
 
+/* ---------- Страница отвечающего (js/pages/player.js) ---------- */
+.pl-head {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0 0 1rem;
+}
+
+.pl-ava {
+    flex: none;
+    width: 6rem;
+    height: 6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 2px var(--gold-55);
+}
+
+.pl-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 2.6rem;
+    color: var(--gold);
+    background: var(--hover);
+}
+
+.pl-info {
+    min-width: 0;
+}
+
+.pl-name {
+    display: inline;
+    margin: 0 0.6rem 0 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pl-status {
+    display: inline-block;
+    padding: 0.05rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    vertical-align: 0.2em;
+}
+
+.pl-status--on { color: #8fd4a7; }
+.pl-status--off { color: var(--text-55); }
+
+.pl-row {
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.pl-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-top: 0.5rem;
+}
+
+.pl-link {
+    font-size: 0.9rem;
+    color: var(--gold-80);
+    border-bottom: 1px dashed var(--gold-55);
+    text-decoration: none;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.pl-link:hover,
+.pl-link:focus-visible {
+    color: var(--hi);
+    border-color: var(--hi);
+    outline: none;
+}
+
+.pl-about {
+    margin: 0 0 1rem;
+    white-space: pre-line;
+}
+
+.pl-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 0 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .pl-head {
+        gap: 0.9rem;
+    }
+
+    .pl-ava {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+}
+
 .dm-people {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));

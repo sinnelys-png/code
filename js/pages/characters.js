@@ -158,9 +158,12 @@
         const tabs = [
             ['альбом', c.albumUrl],
             ['тема', c.topicUrl],
-            ['отвечающий', c.playerUrl],
         ].filter(([, u]) => safeUrl(u))
-            .map(([t, u]) => `<a class="pc-tab" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('');
+            .map(([t, u]) => `<a class="pc-tab" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('')
+            // «отвечающий» ведёт на его страницу на сайте (js/pages/player.js), а не сразу во ВК
+            + (c.playerKey && RCU.playerHref
+                ? `<a class="pc-tab" href="${RCU.playerHref(c.playerKey)}">отвечающий</a>`
+                : safeUrl(c.playerUrl) ? `<a class="pc-tab" href="${esc(c.playerUrl)}" target="_blank" rel="noopener">отвечающий</a>` : '');
 
         // дуэт — ✦ справа от имени, имя партнёра во всплывающей подсказке (как сосед по комнате)
         const duetName = c.duet
@@ -604,7 +607,12 @@
     document.addEventListener('click', (e) => {
         const card = e.target.closest('.pc-card[data-name], .pc-open-char[data-name]');
         // в картотеке нажатия обрабатывает она сама (центрирование / открытие)
-        if (card && !e.target.closest('.pc-modal') && !e.target.closest('.pc-file')) openCharacter(card.dataset.name);
+        if (!card || e.target.closest('.pc-modal') || e.target.closest('.pc-file')) return;
+        // карточки в списке с data-names (например, на странице отвечающего) — листаем по этому списку
+        const list = card.closest('[data-names]');
+        let context = null;
+        try { context = list ? JSON.parse(list.dataset.names) : null; } catch (err) { context = null; }
+        openCharacter(card.dataset.name, 0, context);
     });
 
     /* ---------- Картотека с ярлычками: одна группа на экране ----------
@@ -842,31 +850,42 @@
     function bindSearch(root) {
         const input = root.querySelector('.pc-search-input');
         const list = root.querySelector('.pc-search-list');
-        let found = [];
+        let found = [], foundPlayers = [];
         const close = () => { list.hidden = true; list.innerHTML = ''; };
+        // отвечающий находится по имени, ссылке на ВК или VK ID
+        const playerMatches = (p, q) => norm(p.name).includes(q) || norm(p.url).includes(q)
+            || (!!p.id && /\d/.test(q) && p.id.includes(q.replace(/^id/, '')));
         const show = () => {
             const q = norm(input.value).trim();
             if (!q) { close(); return; }
+            foundPlayers = data.players ? [...data.players.values()].filter(p => playerMatches(p, q)).slice(0, 3) : [];
+            const ofPlayer = new Set(foundPlayers.flatMap(p => p.characters.map(c => c.name)));
             found = data.characters.filter(c => norm(c.name).includes(q) || norm(c.faculty).includes(q)
-                || norm(c.subject).includes(q) || norm(c.post).includes(q)).slice(0, 8);
-            list.innerHTML = found.length
-                ? found.map((c, i) => `
+                || norm(c.subject).includes(q) || norm(c.post).includes(q) || ofPlayer.has(c.name)).slice(0, 8);
+            const players = foundPlayers.map((p, i) => `
+                    <li><button class="pc-search-item pc-search-item--player" type="button" data-p="${i}">
+                        <span class="pc-search-name">${esc(p.name)}</span>
+                        <span class="pc-search-meta">отвечающий</span>
+                    </button></li>`).join('');
+            const chars = found.map((c, i) => `
                     <li><button class="pc-search-item" type="button" data-i="${i}">
                         <span class="pc-search-name">${esc(c.name)}</span>
                         <span class="pc-search-meta">${esc(c.role === 'персонал' ? c.post : shortFaculty(c.faculty))}</span>
-                    </button></li>`).join('')
-                : '<li class="pc-search-none">никого не нашлось</li>';
+                    </button></li>`).join('');
+            list.innerHTML = (players + chars) || '<li class="pc-search-none">никого не нашлось</li>';
             list.hidden = false;
         };
         input.addEventListener('input', show);
         input.addEventListener('focus', show);
         input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && foundPlayers[0]) { e.preventDefault(); close(); location.hash = RCU.playerHref(foundPlayers[0].key); return; }
             if (e.key === 'Enter' && found[0]) { e.preventDefault(); goTo(found[0].name, true); close(); input.blur(); }
             if (e.key === 'Escape') { close(); input.blur(); }
         });
         list.addEventListener('click', (e) => {
             const b = e.target.closest('.pc-search-item');
             if (!b) return;
+            if (b.dataset.p != null) { const p = foundPlayers[Number(b.dataset.p)]; close(); location.hash = RCU.playerHref(p.key); return; }
             goTo(found[Number(b.dataset.i)].name, true);
             close();
         });
