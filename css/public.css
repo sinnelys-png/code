@@ -651,6 +651,24 @@ button.pc-card:focus-visible {
     border-color: var(--hi);
 }
 
+/* два уровня стрелок: ‹ › — подкатегории (имена / факультеты / курсы),
+   « » — группы (студенты / преподаватели / персонал); двойная — снаружи */
+.pc-arrows {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.pc-arrow[hidden] {
+    display: inline-flex;
+    visibility: hidden;   /* место остаётся — стопка не прыгает при смене группы */
+}
+
+/* двойная стрелка: два уголка рядом */
+.pc-arrow-group span + span {
+    margin-left: -0.3rem;
+}
+
 @media (max-width: 768px) {
     .pc-screen {
         gap: 0 0.3rem;
@@ -659,6 +677,16 @@ button.pc-card:focus-visible {
     .pc-arrow {
         width: 2rem;
         height: 2rem;
+    }
+
+    /* на телефоне пара стрелок — столбиком: двойная сверху, одинарная под ней */
+    .pc-arrows {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .pc-arrows--next {
+        flex-direction: column-reverse;
     }
 
     /* на телефоне стрелки внизу экрана, поверх края карточки */
@@ -1027,6 +1055,21 @@ html.pc-open .main-scroll-viewport {
     color: var(--hi);
     text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
     outline: none;
+}
+
+/* ✦ дуэта у имени — цвета текста; при наведении светлеет, как звёздочки фактов (без свечения) */
+.pc-room-star--duet {
+    color: inherit;
+    font-weight: normal;
+    transition: color 0.5s ease;
+}
+
+.pc-room-star--duet:hover,
+.pc-room-star--duet:focus-visible,
+.pc-room-star--duet[aria-expanded="true"] {
+    color: var(--hi);
+    text-shadow: none;
+    transition: color 0.12s ease;
 }
 
 .pc-room-pop {

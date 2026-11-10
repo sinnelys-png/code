@@ -162,15 +162,18 @@
         ].filter(([, u]) => safeUrl(u))
             .map(([t, u]) => `<a class="pc-tab" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('');
 
-        const duet = c.duet
+        // дуэт — ✦ справа от имени, имя партнёра во всплывающей подсказке (как сосед по комнате)
+        const duetName = c.duet
             ? (data.byName.has(c.duet)
                 ? `<button class="pc-link" type="button" data-name="${esc(c.duet)}">${esc(c.duet)}</button>`
                 : esc(c.duet))
             : '';
+        const duetStar = duetName
+            ? `<span class="pc-room"><button class="pc-room-star pc-room-star--duet" type="button" aria-expanded="false" aria-label="Дуэт">✦</button><span class="pc-room-info">дуэт: ${duetName}</span></span>`
+            : '';
         const extras = [
             c.posts.length ? `<div class="pc-k">должности</div><div class="pc-v">${c.posts.map(esc).join('; ')}</div>` : '',
             c.extra ? `<div class="pc-k">доп. предметы</div><div class="pc-v">${esc(c.extra)}</div>` : '',
-            duet ? `<div class="pc-k">дуэт</div><div class="pc-v">${duet}</div>` : '',
         ].join('');
 
         return `
@@ -185,7 +188,7 @@
                             <span class="pc-ava-frame">${avatar(c, 'pc-big-avatar')}</span>
                             <div class="pc-head-info">
                                 <div class="pc-k">имя</div>
-                                <h2 class="pc-big-name">${esc(c.name)}</h2>
+                                <h2 class="pc-big-name">${esc(c.name)}${duetStar}</h2>
                                 ${c.role === 'студент'
                                     ? `<div class="pc-k">курс</div><div class="pc-v">${esc(c.course || '—')}</div>`
                                     : c.role === 'преподаватель'
@@ -203,7 +206,7 @@
                     <section class="pc-seg pc-stats">
                         ${stat('возраст', a && a.age)}
                         ${homeStat(c)}
-                        ${stat('вид', a && a.species)}
+                        ${stat('вид', a && a.species && String(a.species).toLowerCase())}
                         ${stat('рост', (a && a.height) || (c.height ? `${c.height}${/^\d+$/.test(c.height) ? ' см' : ''}` : ''))}
                         ${stat('вес', a && a.weight)}
                     </section>
@@ -247,7 +250,7 @@
                 </section>`;
         }
         const paras = (list) => list.map(p => `<p>${esc(p)}</p>`).join('');
-        const info = a.interaction ? `<span><span class="pc-k">взаимодействия</span> ${esc(a.interaction)}</span>` : '';
+        const info = a.interaction ? `<span><span class="pc-k">взаимодействия</span> ${esc(String(a.interaction).trim().replace(/[A-Za-zА-Яа-яЁё]/, ch => ch.toLowerCase()))}</span>` : '';
         return `
             ${info ? `<section class="pc-seg pc-interaction">${info}</section>` : ''}
             <section class="pc-seg pc-text">
@@ -758,9 +761,21 @@
         const current = sortState[g.title] || 'name';
         bar.innerHTML = options.map(k => `
             <button class="pc-sort-btn${k === current ? ' is-current' : ''}" type="button" data-sort="${k}" aria-pressed="${k === current}">${SORTS[k]}</button>`).join('');
+        // одинарные стрелки листают эти подкатегории — у группы без выбора их не видно
+        file.root.querySelectorAll('.pc-arrow-sort').forEach(b => { b.hidden = options.length < 2; });
     }
 
-    function renderGroup() {
+    // одинарная стрелка: следующая / предыдущая подкатегория (имена → факультеты → курсы)
+    function switchSort(dir) {
+        const g = group();
+        const options = g.sorts || [];
+        if (file.busy || options.length < 2) return;
+        const i = Math.max(0, options.indexOf(sortState[g.title] || 'name'));
+        sortState[g.title] = options[(i + dir + options.length) % options.length];
+        renderGroup(dir);
+    }
+
+    function renderGroup(dir = 0) {
         const g = group();
         const by = sortState[g.title] || 'name';
         const list = sorted(g.list, by);
@@ -772,7 +787,7 @@
         file.chunks = makeChunks(list, by);
         stage.querySelector('.pc-chunk-tabs').innerHTML = file.chunks.map((ch, i) => `
             <button class="pc-chunk-tab" type="button" role="tab" data-ci="${i}" title="${ch.list.length} ${RCU.plural(ch.list.length, 'персонаж', 'персонажа', 'персонажей')}">${esc(ch.label)}</button>`).join('');
-        showChunk(0);
+        showChunk(0, dir);
         file.root.querySelectorAll('.pc-dot').forEach((d, i) => d.classList.toggle('is-current', i === file.gi));
         RCU.widenHeadings(stage);
         measure();
@@ -872,8 +887,11 @@
             if (b) setSort(b.dataset.sort);
         });
 
-        root.querySelector('.pc-arrow-prev').addEventListener('click', () => switchGroup(-1));
-        root.querySelector('.pc-arrow-next').addEventListener('click', () => switchGroup(1));
+        // двойные стрелки — группы (студенты / преподаватели / персонал), одинарные — подкатегории
+        root.querySelector('.pc-arrow-group.pc-arrow-prev').addEventListener('click', () => switchGroup(-1));
+        root.querySelector('.pc-arrow-group.pc-arrow-next').addEventListener('click', () => switchGroup(1));
+        root.querySelector('.pc-arrow-sort.pc-arrow-prev').addEventListener('click', () => switchSort(-1));
+        root.querySelector('.pc-arrow-sort.pc-arrow-next').addEventListener('click', () => switchSort(1));
 
         // ярлычки пачек
         root.querySelector('.pc-chunk-tabs').addEventListener('click', (e) => {
@@ -963,7 +981,10 @@
                     <ul class="pc-search-list" hidden></ul>
                 </div>
                 <div class="pc-screen">
-                    <button class="pc-arrow pc-arrow-prev" type="button" aria-label="Предыдущая группа"><span></span></button>
+                    <div class="pc-arrows pc-arrows--prev">
+                        <button class="pc-arrow pc-arrow-group pc-arrow-prev" type="button" aria-label="Предыдущая группа"><span></span><span></span></button>
+                        <button class="pc-arrow pc-arrow-sort pc-arrow-prev" type="button" aria-label="Предыдущая подкатегория"><span></span></button>
+                    </div>
                     <div class="pc-stage">
                         <h2 class="pc-deck-title"><span class="pc-deck-name"></span></h2>
                         <div class="pc-deck-count"></div>
@@ -972,7 +993,10 @@
                         <div class="pc-chunk-tabs" role="tablist" aria-label="Пачки карточек"></div>
                         <div class="pc-dots">${file.groups.map(g => `<span class="pc-dot" title="${esc(g.title)}"></span>`).join('')}</div>
                     </div>
-                    <button class="pc-arrow pc-arrow-next" type="button" aria-label="Следующая группа"><span></span></button>
+                    <div class="pc-arrows pc-arrows--next">
+                        <button class="pc-arrow pc-arrow-sort pc-arrow-next" type="button" aria-label="Следующая подкатегория"><span></span></button>
+                        <button class="pc-arrow pc-arrow-group pc-arrow-next" type="button" aria-label="Следующая группа"><span></span><span></span></button>
+                    </div>
                 </div>`;
             bindFile(root);
             bindSearch(root);
