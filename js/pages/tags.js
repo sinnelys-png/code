@@ -43,6 +43,10 @@
         const { main, coauthors, marks, linkText, withLink, byName } = state;
         const people = [main, ...coauthors.filter(n => n !== main)].filter(Boolean);
         const tags = people.map(tagOf);
+        // роль любого из персонажей: преподаватель — #Преподаватель_RCU, персонал — #Персонал_RCU
+        const roles = people.map(n => String((byName.get(n) || {}).role || '').toLowerCase());
+        if (roles.some(r => r.includes('преподав'))) tags.push(tagOf('Преподаватель'));
+        if (roles.some(r => r.includes('персонал'))) tags.push(tagOf('Персонал'));
         MARKS.forEach(([m]) => {
             if (!marks.has(m)) return;
             if (m === 'Сюжет') people.forEach(n => tags.push(tagOf(`Сюжет ${n}`)));      // #Сюжет_Имя_Фамилия_RCU
