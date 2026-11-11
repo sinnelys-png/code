@@ -732,6 +732,61 @@ a.ac-name-link:hover {
     gap: 0.4rem;
 }
 
+/* свои персонажи и выбранные персонажи соавторов — сразу под полем */
+.tg-mine,
+.tg-coauthors {
+    margin-top: 0.1rem;
+}
+
+/* подсказки имён — прямо под полем, по его ширине */
+.tg-suggest {
+    position: relative;
+}
+
+.tg-suggest .tg-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tg-list {
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem;
+    background: #022a42;
+    border: 1px solid var(--gold-15);
+    border-radius: 0.8rem;
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
+}
+
+.tg-list[hidden] {
+    display: none;
+}
+
+.tg-list-item {
+    display: block;
+    width: 100%;
+    padding: 0.4rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.tg-list-item:hover,
+.tg-list-item:focus-visible {
+    background: var(--hover);
+    outline: none;
+}
+
 .tg-coauthors:empty {
     display: none;
 }
@@ -794,13 +849,112 @@ a.ac-name-link:hover {
     font-size: 0.9rem;
     color: var(--text);
     background: rgba(0, 0, 0, 0.18);
-    border: 1px solid var(--gold-15);
+    border: 0;
+    outline: none;
     border-radius: 0.5rem;
     resize: vertical;
 }
 
-.tg-copy {
-    align-self: flex-start;
+.tg-link-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tg-link-row .tg-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.tg-link-row .tg-input:disabled {
+    opacity: 0.4;
+}
+
+/* галочка «добавлять ссылку» — в стиле кнопок генератора */
+.tg-check {
+    position: relative;
+    flex: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    cursor: pointer;
+}
+
+.tg-check input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.tg-check-box {
+    display: block;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--gold-55);
+    border-radius: 0.3rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.tg-check input:checked + .tg-check-box {
+    background: var(--gold-08);
+}
+
+.tg-check input:checked + .tg-check-box::after {
+    content: "";
+    display: block;
+    width: 0.32rem;
+    height: 0.62rem;
+    margin: 0.2rem auto 0;
+    border-right: 2px solid var(--gold);
+    border-bottom: 2px solid var(--gold);
+    transform: rotate(45deg);
+}
+
+.tg-check input:focus-visible + .tg-check-box {
+    border-color: rgba(204, 204, 204, 0.55);
+}
+
+.tg-copy-row {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+/* «скопировано» — справа от кнопки, появляется и гаснет */
+.tg-copied {
+    position: absolute;
+    left: calc(50% + 4.2rem);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: #8fd4a7;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.tg-copied.is-shown {
+    opacity: 1;
+}
+
+/* описания выбранных дополнительных тегов */
+.tg-notes {
+    list-style: none;
+    margin: 0.2rem 0 0;
+    padding: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-55);
+}
+
+.tg-notes:empty {
+    display: none;
+}
+
+.tg-note-name {
+    color: var(--text-80);
 }
 
 /* ==========================================================================
