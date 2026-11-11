@@ -459,6 +459,44 @@ header a.is-glaring {
 }
 
 
+/* 3. ТОНКИЕ ВТОРЫЕ ПОЛОСКИ внутри блока: параллельно верхней (повторяет «галочку»,
+   вместе с ней становится прямой в разделах) и нижней, на 4px внутрь от них */
+.block-lines {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    --line-gap: 4px;
+    --line-w: 1.5px;
+}
+
+.block-lines::before,
+.block-lines::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, #888f85, #b6af98 50%, #888f85);
+    opacity: 0.8;
+}
+
+.block-lines::before {
+    top: 0;
+    bottom: 0;
+    clip-path: polygon(
+        0% calc(7px + var(--line-gap)),
+        50% calc(var(--tri) * var(--shape, 1) + 7px + var(--line-gap)),
+        100% calc(7px + var(--line-gap)),
+        100% calc(7px + var(--line-gap) + var(--line-w)),
+        50% calc(var(--tri) * var(--shape, 1) + 7px + var(--line-gap) + var(--line-w)),
+        0% calc(7px + var(--line-gap) + var(--line-w)));
+}
+
+.block-lines::after {
+    bottom: calc(7px + var(--line-gap));
+    height: var(--line-w);
+}
+
 /* ==========================================================================
    ИСПРАВЛЕНО: ИДЕАЛЬНАЯ МОБИЛЬНАЯ ВЕРСИЯ (ДЛЯ ТЕЛЕФОНОВ И IFRAME)
    ========================================================================== */
@@ -493,19 +531,25 @@ header a.is-glaring {
         font-size: 1.5rem;
     }
 
+    /* меню по высоте — от верха шапки до её боковой обводки (она на --hdr-h − --gap),
+       текст посередине этой полосы, как на компьютере */
     .nav-left,
     .nav-right {
         flex-wrap: wrap;
         justify-content: center;
+        align-items: center;
+        align-content: center;
         gap: 0 0.5rem;
-        padding-top: 0.9rem;
+        box-sizing: border-box;
+        height: calc(var(--hdr-h) - var(--gap) - 0.5rem);
+        padding-top: 0.25rem;
         min-width: 0;
     }
 
     header a {
         white-space: normal;
         text-align: center;
-        padding: 0.5rem 0.3rem;
+        padding: 0.15rem 0.3rem;
     }
 
     .star-separator {

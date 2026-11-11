@@ -240,7 +240,8 @@ button.pc-card:focus-visible {
 /* «вкладка папки» в цвете факультета */
 .pc-card-tab {
     position: absolute;
-    left: -1px;
+    /* --tab-i — номер буквы в пачке (js): первая у левого края, следующие — дальше вправо */
+    left: calc(-1px + var(--tab-i, 0) * 1.55rem);
     bottom: 100%;
     min-width: 2.6rem;
     height: 0.85rem;
@@ -338,23 +339,72 @@ button.pc-card:focus-visible {
 /* ---------- Картотека на странице «Персонажи» ---------- */
 
 /* поиск персонажа над картотекой */
+/* сортировка и поиск в одной строке; раскрытая строка поиска сдвигает кнопки влево */
+.pc-tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0 0 0.4rem;
+}
+
+.pc-tools .pc-sort {
+    margin: 0;
+}
+
 .pc-search {
     position: relative;
-    max-width: 26rem;
-    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
 }
 
 .pc-search .pc-search-input {
-    padding-top: 0.32rem;
-    padding-bottom: 0.32rem;
-    font-size: 0.85rem;
+    width: 0;
+    height: 1.75rem;
+    padding: 0;
+    font-size: 0.8rem;
+    border-width: 0;
+    opacity: 0;
+    background-image: none;
+    transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+.pc-search.is-open .pc-search-input {
+    width: min(12rem, 40vw);
+    padding: 0 0.8rem;
+    border-width: 1px;
+    opacity: 1;
+}
+
+.pc-search-btn {
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: 0.3rem;
+    padding: 0;
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+    background:
+        no-repeat 50% 50% / 0.8rem
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3CFAC' stroke-opacity='.75' stroke-width='1.6'%3E%3Ccircle cx='6.5' cy='6.5' r='5'/%3E%3Cpath d='M10.3 10.3 15 15'/%3E%3C/svg%3E"),
+        transparent;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-search-btn:hover,
+.pc-search-btn:focus-visible,
+.pc-search.is-open .pc-search-btn {
+    border-color: var(--gold-55);
+    background-color: var(--hover);
+    outline: none;
 }
 
 .pc-search-list {
     position: absolute;
     z-index: 30;
-    left: 0;
     right: 0;
+    width: min(20rem, 80vw);
     top: calc(100% + 0.3rem);
     list-style: none;
     margin: 0;
@@ -410,7 +460,7 @@ button.pc-card:focus-visible {
 /* экран: стрелка — картотека — стрелка; высоту ставит js/pages/characters.js */
 .pc-screen {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 0 0.75rem;
     min-height: 20rem;
@@ -430,6 +480,69 @@ button.pc-card:focus-visible {
 .pc-stage.is-entering-left { transform: translateX(-3rem); opacity: 0; transition: none; }
 .pc-stage.is-entering-right { transform: translateX(3rem); opacity: 0; transition: none; }
 
+/* название группы, по бокам — соседние группы со стрелками, тают в фон */
+.pc-deck-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0 1rem;
+    width: 100%;
+}
+
+.pc-deck-side {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.3rem 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 1.05rem;
+    color: var(--gold);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.25s ease;
+}
+
+.pc-deck-side[hidden] {
+    visibility: hidden;
+}
+
+.pc-deck-side--prev {
+    justify-content: flex-end;
+    -webkit-mask-image: linear-gradient(to left, #000 35%, transparent);
+    mask-image: linear-gradient(to left, #000 35%, transparent);
+}
+
+.pc-deck-side--next {
+    justify-content: flex-start;
+    -webkit-mask-image: linear-gradient(to right, #000 35%, transparent);
+    mask-image: linear-gradient(to right, #000 35%, transparent);
+}
+
+.pc-deck-side:hover,
+.pc-deck-side:focus-visible {
+    opacity: 1;
+    outline: none;
+}
+
+.pc-deck-side-name {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.pc-deck-arrow {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+}
+
+.pc-deck-side--prev .pc-deck-arrow { transform: rotate(135deg); }
+.pc-deck-side--next .pc-deck-arrow { transform: rotate(-45deg); }
+
 .pc-deck-title {
     margin: 0;
     font-family: 'Greengoth', 'FallbackSerif', serif;
@@ -439,8 +552,8 @@ button.pc-card:focus-visible {
 }
 
 .pc-deck-count {
-    margin: 0.2rem 0 0.4rem;
-    font-size: 0.75rem;
+    margin: 0.1rem 0 0.4rem;
+    font-size: 0.6rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-55);
@@ -557,7 +670,7 @@ button.pc-card:focus-visible {
 .pc-chunk-tabs {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.25rem 0.2rem;
     width: min(24rem, calc(100% - 0.5rem));
     margin-top: 0.3rem;
@@ -1482,18 +1595,141 @@ html.pc-open .main-scroll-viewport {
 
 /* ---------- Общежитие ---------- */
 
+/* схема на весь блок (страница fullBleed), легенда — внизу поверх схемы */
 .dm-wrap {
-    display: grid;
-    justify-items: center;
+    position: relative;
+    height: 100%;
+    min-height: 20rem;
 }
 
 .dm-map {
     display: block;
     width: 100%;
-    max-width: 34rem;
-    height: auto;
+    height: 100%;
+    padding: 1.5rem 1rem 3rem;
+    box-sizing: border-box;
     font-family: var(--font-main);
 }
+
+.dm-wrap > .dm-legend {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.9rem;
+}
+
+.dm-note {
+    position: absolute;
+    top: 1rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+/* окошко дома */
+.dm-pop {
+    position: absolute;
+    z-index: 20;
+    width: 15rem;
+    text-align: center;
+    padding: 0.8rem 0.9rem 0.6rem;
+    background: var(--pop-bg, #022a42);
+    border: 1px solid var(--gold-55);
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+
+.dm-pop.is-pinned {
+    pointer-events: auto;
+}
+
+.dm-pop[hidden] {
+    display: none;
+}
+
+.dm-pop-title {
+    margin: 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.6rem;
+    color: var(--gold);
+}
+
+/* как «61 персонаж» под названием группы в картотеке */
+.dm-pop-kind {
+    margin: 0.1rem 0 0.6rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-55);
+}
+
+.dm-room + .dm-room {
+    margin-top: 0.55rem;
+}
+
+.dm-pop .dm-room-title {
+    display: block;
+    margin: 0;
+    font-size: 0.8rem;
+    text-align: center;
+    color: var(--text-80);
+}
+
+.dm-room-people {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+
+.dm-ava {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    overflow: hidden;
+    color: var(--gold);
+    background: var(--hover);
+    border: 1px solid var(--gold-55);
+    cursor: pointer;
+}
+
+.dm-ava img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dm-ava--empty {
+    background: none;
+    border: 1px dashed var(--gold-55);
+    cursor: default;
+}
+
+/* знак на свободном месте: можно подселиться / без соседей / уточняйте у автора */
+.dm-ava--yes,
+.dm-ava--no,
+.dm-ava--ask {
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: help;
+}
+
+.dm-ava--yes { color: #8fd4a7; }
+/* × — две диагонали на всю клетку, от угла до угла */
+.dm-ava--no {
+    font-size: 0;
+    --x: var(--text-55);
+    background:
+        linear-gradient(to top right, transparent calc(50% - 0.75px), var(--x) calc(50% - 0.75px),
+            var(--x) calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+        linear-gradient(to bottom right, transparent calc(50% - 0.75px), var(--x) calc(50% - 0.75px),
+            var(--x) calc(50% + 0.75px), transparent calc(50% + 0.75px));
+}
+.dm-ava--ask { color: var(--gold); }
 
 .dm-road {
     fill: none;
@@ -1881,6 +2117,13 @@ html.is-full-bleed .page-root {
     height: 100%;
 }
 
+/* распорки, которые ставят короткие страницы посередине блока (css/pages.css), здесь не нужны:
+   иначе снизу под картой остаётся пустая полоса */
+html.is-full-bleed .main-scroll-viewport::before,
+html.is-full-bleed .main-scroll-viewport::after {
+    display: none;
+}
+
 .ct-map {
     position: relative;
     height: 100%;
@@ -2079,6 +2322,14 @@ header.has-many-items .nav-right a {
 header.has-many-items .star-separator {
     margin-top: 0;
     font-size: 0.55em;
+}
+
+@media (max-width: 768px) {
+    header.has-many-items .nav-left,
+    header.has-many-items .nav-right {
+        justify-content: center;
+        padding-top: 0.25rem;
+    }
 }
 
 .nav-more {

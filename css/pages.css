@@ -639,13 +639,13 @@ a.ac-name-link:hover {
     box-shadow: inset 2px 0 0 #cccccc;
 }
 
-/* ---------- Телефон: две строки на человека ---------- */
+/* ---------- Телефон: две строки на человека (сводка на главной — как на компьютере) ---------- */
 @media (max-width: 768px) {
     .ac-head {
         display: none;
     }
 
-    .ac-row {
+    .ac-row:not(.home-row) {
         grid-template-columns: 2.4rem repeat(4, minmax(0, 1fr));
         grid-template-areas:
             "place name name name sum"
@@ -654,9 +654,18 @@ a.ac-name-link:hover {
         padding: 0.6rem 0.2rem;
     }
 
-    .ac-place { grid-area: place; }
-    .ac-name { grid-area: name; }
-    .ac-sum { grid-area: sum; }
+    /* место — на уровне имени, а не посередине двух строк */
+    .ac-row:not(.home-row) .ac-place { grid-area: place; align-self: start; }
+    .ac-row:not(.home-row) .ac-name { grid-area: name; }
+    .ac-row:not(.home-row) .ac-sum { grid-area: sum; }
+
+    /* «3360 роялкоинов» — только на телефоне */
+    .ac-row:not(.home-row) .ac-sum::after {
+        content: " " attr(data-unit);
+        font-size: 0.72em;
+        font-weight: normal;
+        color: var(--text-55);
+    }
     .ac-row > .ac-stat:nth-child(4) { grid-area: s1; }
     .ac-row > .ac-stat:nth-child(5) { grid-area: s2; }
     .ac-row > .ac-stat:nth-child(6) { grid-area: s3; }
@@ -678,6 +687,120 @@ a.ac-name-link:hover {
     .ac-stat.is-zero::before {
         color: var(--text-30);
     }
+}
+
+/* ==========================================================================
+   ГЕНЕРАТОР ХЭШТЕГОВ (js/pages/tags.js)
+   ========================================================================== */
+
+.home-tags {
+    display: block;
+    width: fit-content;
+    margin: 1.5rem auto 0;
+}
+
+.tg-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    max-width: 34rem;
+    margin: 0 auto;
+}
+
+.tg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.tg-label {
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+.tg-form .tg-input {
+    height: 2rem;
+    padding: 0 0.9rem;
+    background-image: none;   /* без лупы — это не поиск */
+}
+
+.tg-buttons,
+.tg-mine,
+.tg-coauthors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tg-coauthors:empty {
+    display: none;
+}
+
+.tg-toggle,
+.tg-pick {
+    height: 1.75rem;
+    padding: 0 0.85rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--text-80);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.tg-toggle:hover,
+.tg-pick:hover {
+    color: #fff;
+    border-color: rgba(204, 204, 204, 0.55);
+}
+
+.tg-toggle[aria-pressed="true"] {
+    color: var(--text);
+    background: var(--gold-08);
+    border-color: var(--gold-55);
+}
+
+.tg-form .tg-buttons .tg-custom {
+    width: 8rem;
+    height: 1.75rem;
+}
+
+.tg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.3rem 0.15rem 0.7rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--gold-55);
+    border-radius: 2rem;
+}
+
+.tg-chip-x {
+    padding: 0 0.3rem;
+    font: inherit;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.tg-result {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem 0.9rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--gold-15);
+    border-radius: 0.5rem;
+    resize: vertical;
+}
+
+.tg-copy {
+    align-self: flex-start;
 }
 
 /* ==========================================================================

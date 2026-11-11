@@ -1,13 +1,16 @@
 // Публичный сайт, страница «Общежитие»: интерактивная схема домиков.
-// Домики 1–16 — внешний круг, 17–28 — внутренний. По наведению или нажатию на домик
-// под схемой показываются жильцы (колонки «Дом в общежитии» и «Комната» Техтаблицы).
+// Домики 1–16 — внешний круг, 17–28 — внутренний. Схема на весь блок; наведение на домик
+// показывает окошко с жильцами по комнатам, нажатие его закрепляет
+// (колонки «Дом в общежитии» и «Комната» Техтаблицы).
 (() => {
     const { esc } = RCU;
 
     const CX = 500, CY = 500;
     // группы домиков (цвета со схемы, приглушённые под стиль сайта)
-    const GROUP = (n) => ((n >= 1 && n <= 7) || (n >= 17 && n <= 20)) ? 'blue'
-        : ((n >= 8 && n <= 9) || (n >= 21 && n <= 24)) ? 'violet' : 'red';
+    // синие — мужские, фиолетовые — смешанные, красные — женские
+    const MIXED = [3, 6, 8, 9, 11, 14, 21, 22, 23, 24];
+    const GROUP = (n) => MIXED.includes(n) ? 'violet'
+        : ((n >= 1 && n <= 7) || (n >= 17 && n <= 20)) ? 'blue' : 'red';
 
     function housePositions() {
         const list = [];
@@ -46,7 +49,6 @@
                     <rect x="-24" y="-24" width="48" height="48" rx="4" transform="rotate(${h.rot.toFixed(1)})" />
                     <text class="dm-num" y="7">${h.n}</text>
                     ${count ? `<g class="dm-badge" transform="translate(22 -22)"><circle r="12" /><text y="4.5">${count}</text></g>` : ''}
-                    ${free ? `<g class="dm-free" transform="translate(-22 22)"><circle r="11" /><path d="M -5 0 H 5 M 0 -5 V 5" /></g>` : ''}
                 </g>`;
         }).join('');
 
@@ -80,44 +82,49 @@
             </svg>`;
     }
 
-    function panel(n, residents) {
-        const people = residents[n] || [];
-        if (!n) return '<p class="pc-soon">Наведите на домик или нажмите на него, чтобы увидеть жильцов.</p>';
-        return `
-            <h3 class="dl-section-title dm-panel-title">
-                <span class="dl-group-name">дом ${n}</span>
-                <span class="dl-group-count">${people.length}</span>
-            </h3>
-            ${people.length ? roomsHTML(people) : '<p class="pc-soon">Здесь пока никто не живёт.</p>'}`;
-    }
+    // тип общежития по номеру дома
+    const KIND = (n) => (GROUP(n) === 'blue' ? 'мужское общежитие' : GROUP(n) === 'violet' ? 'смешанное общежитие' : 'женское общежитие');
+    const ROOMS = 3, PLACES = 2;   // в доме три комнаты по два места
+    const SIGN = { yes: '+', no: '×', ask: '?' };
 
-    // жильцы по комнатам; у комнаты — можно ли подселиться (по колонке P жильцов)
-    function roomsHTML(people) {
+    // окошко дома: заголовок, тип, комнаты с квадратными аватарами; пустое место — пунктир
+    function popupHTML(n, residents) {
+        const people = residents[n] || [];
+        const byRoom = {};
+        people.forEach(c => { const r = Number(String(c.room).match(/\d+/)?.[0]) || 0; (byRoom[r] = byRoom[r] || []).push(c); });
+        const last = Math.max(ROOMS, ...Object.keys(byRoom).map(Number));
         const rooms = [];
-        people.forEach(c => {
-            const key = c.room || '';
-            let r = rooms.find(x => x.room === key);
-            if (!r) rooms.push(r = { room: key, people: [] });
-            r.people.push(c);
-        });
-        return rooms.map(r => {
-            const states = r.people.map(c => neighborState(c.neighbor));
-            const state = states.includes('no') ? 'no' : states.includes('yes') ? 'yes' : states.includes('ask') ? 'ask' : '';
-            return `
-                <section class="dm-room-block">
-                    <h4 class="dm-room-title">
-                        ${r.room ? `комната ${esc(r.room)}` : 'комната не указана'}
-                        ${state ? `<span class="dm-tag dm-tag--${state}">${NEIGHBOR_TEXT[state]}</span>` : ''}
-                    </h4>
-                    <div class="dm-people">${r.people.map(c => `<div class="dm-person">${RCU.smallCharacterCard(c)}</div>`).join('')}</div>
-                </section>`;
-        }).join('');
+        for (let r = 1; r <= last; r++) rooms.push(r);
+        if (byRoom[0]) rooms.push(0);                       // комната не указана
+        const ava = (c) => `
+            <button class="dm-ava pc-open-char" type="button" data-name="${esc(c.name)}" title="${esc(c.name)}">
+                ${RCU.safeUrl(c.avatar) ? `<img src="${esc(c.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span>${esc(c.name.charAt(0))}</span>`}
+            </button>`;
+        return `
+            <h3 class="dm-pop-title">дом ${n}</h3>
+            <div class="dm-pop-kind">${KIND(n)}</div>
+            ${rooms.map(r => {
+                const list = byRoom[r] || [];
+                // один жилец — на свободном месте знак его отметки про соседа:
+                // + можно подселиться, × без соседей, ? уточняйте у автора (текст — при наведении)
+                const st = list.length === 1 ? neighborState(list[0].neighbor) : '';
+                const empty = r ? Math.max(0, PLACES - list.length) : 0;
+                const slot = (i) => (i === 0 && st)
+                    ? `<span class="dm-ava dm-ava--empty dm-ava--${st}" title="${NEIGHBOR_TEXT[st]}" aria-label="${NEIGHBOR_TEXT[st]}" tabindex="0">${SIGN[st]}</span>`
+                    : '<span class="dm-ava dm-ava--empty" aria-label="свободное место"></span>';
+                return `
+                    <div class="dm-room">
+                        <div class="dm-room-title">${r ? `комната ${r}` : 'комната не указана'}</div>
+                        <div class="dm-room-people">${list.map(ava).join('')}${Array.from({ length: empty }, (_, i) => slot(i)).join('')}</div>
+                    </div>`;
+            }).join('')}`;
     }
 
     let current = 0;
 
     RCU.pages.dorm = {
         title: 'Общежитие',
+        fullBleed: true,      // схема на весь блок
         load: () => RCU.publicData(),
         render(root, d) {
             RCU.setPublicData(d);
@@ -133,37 +140,57 @@
                 <div class="dm-wrap">
                     ${mapSVG(residents)}
                     <ul class="dm-legend">
-                        <li><svg class="dm-legend-icon dm-legend-free" viewBox="-12 -12 24 24"><circle r="11" /><path d="M -5 0 H 5 M 0 -5 V 5" /></svg> можно подселиться</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40"><text y="7">£</text></svg> терминал</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40">${'<path class="dm-ico" d="M -13 6 h 20 v 5 h -20 z M 9 6 h 4 v 5 h -4 z M -9 -1 q 3 -4 0 -8 M -4 -1 q 3 -4 0 -8" />'}</svg> зона курения</li>
                         <li><svg class="dm-legend-icon" viewBox="-20 -20 40 40">${'<path class="dm-ico" d="M -12 4 q 12 -18 24 0 z M -14 4 h 28 v 3 h -28 z" />'}</svg> охранная будка</li>
                     </ul>
-                    ${d.hasTech ? '' : '<p class="pc-soon">Жильцы появятся, когда обновится скрипт данных (Техтаблица).</p>'}
-                    <div class="dm-panel" aria-live="polite">${panel(current, residents)}</div>
+                    ${d.hasTech ? '' : '<p class="pc-soon dm-note">Жильцы появятся, когда обновится скрипт данных (Техтаблица).</p>'}
+                    <div class="dm-pop" role="dialog" aria-live="polite" hidden></div>
                 </div>`;
 
-            const panelEl = root.querySelector('.dm-panel');
+            // окошко у домика: наведение показывает, нажатие закрепляет (повторное — открепляет)
+            const wrap = root.querySelector('.dm-wrap');
+            const pop = root.querySelector('.dm-pop');
+            const svg = root.querySelector('.dm-map');
+            let pinned = 0;
             const show = (n) => {
                 current = n;
                 root.querySelectorAll('.dm-house').forEach(h => h.classList.toggle('is-active', Number(h.dataset.house) === n));
-                panelEl.innerHTML = panel(n, residents);
-                RCU.widenHeadings(panelEl);
+                if (!n) { pop.hidden = true; return; }
+                pop.innerHTML = popupHTML(n, residents);
+                pop.hidden = false;
+                pop.classList.toggle('is-pinned', pinned === n);
+                // рядом с домиком: справа, если влезает, иначе слева; по высоте — в пределах блока
+                const house = root.querySelector(`.dm-house[data-house="${n}"]`).getBoundingClientRect();
+                const box = wrap.getBoundingClientRect();
+                const w = pop.offsetWidth, h = pop.offsetHeight;
+                let x = house.right - box.left + 10;
+                if (x + w > box.width - 8) x = house.left - box.left - w - 10;
+                x = Math.max(8, Math.min(x, box.width - w - 8));
+                const y = Math.max(8, Math.min(house.top - box.top + house.height / 2 - h / 2, box.height - h - 8));
+                pop.style.left = `${x}px`;
+                pop.style.top = `${y}px`;
             };
-            if (current) show(current);
 
-            const svg = root.querySelector('.dm-map');
             svg.addEventListener('mouseover', (e) => {
                 const h = e.target.closest('.dm-house');
-                if (h && Number(h.dataset.house) !== current) show(Number(h.dataset.house));
+                if (pinned || !h) return;
+                if (Number(h.dataset.house) !== current) show(Number(h.dataset.house));
             });
+            svg.addEventListener('mouseleave', () => { if (!pinned) show(0); });
             svg.addEventListener('click', (e) => {
                 const h = e.target.closest('.dm-house');
-                if (h) show(Number(h.dataset.house));
+                if (!h) { pinned = 0; show(0); return; }
+                const n = Number(h.dataset.house);
+                pinned = pinned === n ? 0 : n;
+                show(pinned || n);
+                if (!pinned) pop.classList.remove('is-pinned');
             });
             svg.addEventListener('keydown', (e) => {
                 const h = e.target.closest('.dm-house');
-                if (h && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); show(Number(h.dataset.house)); }
+                if (h && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pinned = Number(h.dataset.house); show(pinned); }
             });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pinned) { pinned = 0; show(0); } });
         },
     };
 })();

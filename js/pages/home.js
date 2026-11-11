@@ -13,7 +13,7 @@
         if (n < 0) return { text: `просрочен на ${-n} ${plural(-n, 'день', 'дня', 'дней')}`, cls: 'is-overdue' };
         if (n === 0) return { text: 'сегодня', cls: 'is-urgent' };
         if (n === 1) return { text: 'завтра', cls: 'is-urgent' };
-        return { text: `через ${n} ${plural(n, 'день', 'дня', 'дней')}`, cls: n <= 3 ? 'is-urgent' : n <= 7 ? 'is-soon' : '' };
+        return { text: `${n} ${plural(n, 'день', 'дня', 'дней')} до дедлайна`, cls: n <= 3 ? 'is-urgent' : n <= 7 ? 'is-soon' : '' };
     }
 
     // раздел сводки — как вкладки «студенты» в дедлайнах: подсвечивается, закрепляется
@@ -42,7 +42,7 @@
             return (daysUntil(a.deadlineISO) ?? 9999) - (daysUntil(b.deadlineISO) ?? 9999);
         });
         const rows = sorted.map(c => {
-            const fac = RCU.facultyAttrs(c.faculty);
+            const fac = RCU.facultyAttrs(c.faculty, c.role);
             const avatar = safeUrl(c.avatar)
                 ? `<img class="dl-avatar home-avatar${fac.cls}"${fac.attrs} src="${esc(c.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
                 : `<div class="dl-avatar dl-avatar--empty home-avatar${fac.cls}"${fac.attrs}>${esc(c.name.charAt(0))}</div>`;
@@ -125,9 +125,11 @@
                 : postsBlock('ближайшие посты', posts, 'Запланированных постов пока нет.'));
         }
 
-        root.innerHTML = blocks.length
+        root.innerHTML = (blocks.length
             ? blocks.filter(Boolean).join('')
-            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>';
+            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>')
+            // генератор хэштегов — отдельная страница без пункта в меню (js/pages/tags.js)
+            + '<a class="home-more home-tags" href="#tags">✦ генератор хэштегов для поста</a>';
     }
 
     RCU.home = { render };

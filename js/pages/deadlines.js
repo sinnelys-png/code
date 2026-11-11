@@ -151,7 +151,7 @@
         if (n < 0) { text = `просрочен на ${-n} ${plural(-n, 'день', 'дня', 'дней')}`; cls = 'is-overdue'; }
         else if (n === 0) { text = 'сегодня'; cls = 'is-urgent'; }
         else if (n === 1) { text = 'завтра'; cls = 'is-urgent'; }
-        else { text = `через ${n} ${plural(n, 'день', 'дня', 'дней')}`; cls = n <= 3 ? 'is-urgent' : n <= 7 ? 'is-soon' : ''; }
+        else { text = `${n} ${plural(n, 'день', 'дня', 'дней')} до дедлайна`; cls = n <= 3 ? 'is-urgent' : n <= 7 ? 'is-soon' : ''; }
         return `<span class="dl-days ${cls}">${text}</span>`;
     }
 
@@ -192,7 +192,7 @@
 
     // open — карточка сразу раскрыта (свои персонажи)
     function card(row, open) {
-        const fac = RCU.facultyAttrs(row.faculty);
+        const fac = RCU.facultyAttrs(row.faculty, row.role);
         const avatar = safeUrl(row.avatar)
             ? `<img class="dl-avatar${fac.cls}"${fac.attrs} src="${esc(row.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
             : `<div class="dl-avatar dl-avatar--empty${fac.cls}"${fac.attrs}>${esc(row.name.charAt(0))}</div>`;
@@ -452,7 +452,9 @@
 
             // заголовки вкладок липнут прямо под закреплённой строкой поиска
             const search = root.querySelector('.dl-toolbar');
-            const setSearchH = () => root.style.setProperty('--search-h', `${search.offsetHeight}px`);
+            // дробная высота и заход на 1px: иначе на телефонах между поиском и заголовком
+            // вкладки остаётся щель, в которой видно прокручиваемые строки
+            const setSearchH = () => root.style.setProperty('--search-h', `${Math.max(0, search.getBoundingClientRect().height - 1)}px`);
             setSearchH();
             requestAnimationFrame(setSearchH);
 

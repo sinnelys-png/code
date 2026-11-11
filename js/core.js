@@ -117,6 +117,7 @@ window.RCU = (() => {
         ['спортив',     '#9a5e40', '#efd8c8'],   // Спортивный
         ['музыкал',     '#6e2e48', '#e8b8c4'],   // Музыкальный
         ['юридич',      '#151515', '#d8d8d8'],   // Юридический
+        ['персонал',    '#98AFD3', '#2f4a6e'],   // Персонал (без факультета)
     ];
 
     // Контраст двух цветов (#rrggbb) по WCAG — чтобы акценты факультета были видны на фоне темы
@@ -137,8 +138,9 @@ window.RCU = (() => {
 
     // Атрибуты для аватара: класс has-faculty, цвета в CSS-переменных и название в подсказке.
     // --fac-accent-d / --fac-accent-l — цвет акцентов (линии, полосы прокрутки) для тёмной и светлой темы
-    function facultyAttrs(faculty) {
-        const name = String(faculty || '').trim();
+    // role — для персонала без факультета: тогда цвет персонала
+    function facultyAttrs(faculty, role) {
+        const name = String(faculty || '').trim() || (/персонал/i.test(role || '') ? 'Персонал' : '');
         const hit = name && FACULTIES.find(([key]) => name.toLowerCase().includes(key));
         if (!hit) return { cls: '', attrs: '' };
         return {

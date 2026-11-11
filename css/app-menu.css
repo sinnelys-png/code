@@ -1,0 +1,217 @@
+/* ==========================================================================
+   МИНИ-ПРИЛОЖЕНИЕ ВК (только index.html, класс .vk-app на <html>)
+
+   Сверху у ВК своя панель, и на части устройств она закрывает шапку. Поэтому в разделах
+   шапка уезжает целиком (без кончика), а меню выдвигается слева:
+   закладка с › у левого края блока → по наведению или нажатию выезжает панель
+   в оформлении шапки (прямоугольная): сверху герб, под ним пункты меню через ✦.
+   Главная — как была. Размеры блока в разделах — те же, что раньше (css/sections.css).
+   Скрипт — js/app-menu.js.
+   ========================================================================== */
+
+/* ---------- Шапка в разделах уезжает целиком ---------- */
+html.vk-app.is-section:not(.intro) header {
+    transform: translateY(calc(-1 * (var(--hdr-h) + var(--tri) + 1rem)));
+}
+
+html.vk-app.is-section .header-tip {
+    display: none;
+}
+
+/* ---------- Закладка: лежит у левого края блока, вместо названия — › ---------- */
+html.vk-app .page-ribbon {
+    /* на уровне верхней строки блока: поле сверху --app-pad, строка ~2rem */
+    top: calc(var(--app-pad) + 1rem - var(--ribbon-w) * 0.75);
+    left: max(0px, (100% - 50rem) / 2);     /* левый край блока */
+    width: auto;
+    height: calc(var(--ribbon-w) * 1.5);
+    padding: 0 calc(var(--ribbon-notch) * 1.5 + 1.1rem) 0 1.35rem;
+    align-items: center;
+    justify-content: flex-start;
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--ribbon-notch) * 1.5) 50%, 100% 100%, 0 100%);
+    transform-origin: left center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html.vk-app .page-ribbon-text {
+    display: none;
+}
+
+/* знак › */
+html.vk-app .page-ribbon::after {
+    content: "";
+    width: 0.75rem;
+    height: 0.75rem;
+    border-right: 2px solid #00223a;
+    border-bottom: 2px solid #00223a;
+    transform: translateX(-0.1rem) rotate(-45deg);
+    transition: transform 0.35s ease;
+}
+
+/* меню открыто — знак смотрит назад */
+html.vk-app.app-menu-open .page-ribbon::after {
+    transform: translateX(0.15rem) rotate(135deg);
+}
+
+/* спрятана: уезжает влево за край блока */
+html.vk-app .page-ribbon.is-hidden,
+html.vk-app.intro .page-ribbon {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+html.vk-app .page-ribbon {
+    transition: transform 0.55s cubic-bezier(0.3, 0.75, 0.25, 1), opacity 0.35s ease;
+}
+
+@media (max-width: 768px) {
+    html.vk-app .page-ribbon {
+        left: 0;
+    }
+}
+
+/* ---------- Блок в разделах: по центру экрана по высоте, поля сверху и снизу равны ----------
+   Шапки над блоком нет, поэтому блок стоит посередине: --app-h — его высота
+   (как раньше), сверху и снизу поровну. Поле внутри блока сверху и снизу — --app-pad
+   (в 1,3 раза больше прежнего верхнего). */
+html.vk-app {
+    --app-h: min(calc(100vh - 90px), 56rem);
+    --app-pad: 4.5rem;
+}
+
+@media (max-width: 768px) {
+    html.vk-app {
+        --app-h: calc(100vh - 26px);
+        --app-pad: 3.75rem;
+    }
+}
+
+html.vk-app.is-section:not(.intro) .main-content-block {
+    height: var(--app-h);
+    /* до блока в разметке — отступы страницы (1rem) и шапка (её высота --app-hdr, считает js) */
+    margin-top: calc((100vh - var(--app-h)) / 2 - var(--app-hdr, 8rem));
+}
+
+html.vk-app.is-section:not(.intro) .main-inner-content {
+    height: var(--app-h);
+    max-height: var(--app-h);
+    padding-bottom: calc(var(--app-pad) - 0.5rem);
+}
+
+html.vk-app.is-section:not(.intro) .main-scroll-text {
+    padding-top: var(--app-pad);
+}
+
+/* поля равны — середину содержимого больше не сдвигаем (кроме поиска в дедлайнах) */
+html.vk-app.is-section .main-scroll-viewport::after {
+    flex-basis: 0;
+}
+
+html.vk-app.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
+    flex-basis: 3.5rem;
+}
+
+/* ---------- Выдвижное меню ---------- */
+.app-menu {
+    position: fixed;
+    z-index: 60;
+    left: 0;
+    top: var(--am-top, 0px);
+    height: var(--am-h, 100%);
+    width: min(15rem, 78vw);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;     /* пункты — сверху */
+    padding: 1.25rem 1rem 1.5rem;
+    overflow-y: auto;
+
+    /* как тело шапки; справа — золотая полоса той же толщины, что у блока (7px) */
+    background:
+        linear-gradient(180deg, #b6af98, #888f85) right / 7px 100% no-repeat,
+        linear-gradient(180deg, #02304b 0%, #012d47 40%, #012a42 75%, #00263b 100%);
+    padding-right: calc(1rem + 7px);
+    box-shadow: 0.4rem 0 0.9rem rgba(0, 0, 0, 0.5);
+
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform 0.45s cubic-bezier(0.55, 0, 0.2, 1), visibility 0s linear 0.45s;
+}
+
+html.app-menu-open .app-menu {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), visibility 0s;
+}
+
+/* герб — тот же, что в шапке (.logo-container: маска и блик при наведении), только меньше */
+.app-menu .app-menu-logo {
+    display: flex;
+    flex: none;
+    width: 7.5rem;
+    height: 7.6rem;
+    margin-bottom: 0.5rem;
+    transform: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* в разделах герб шапки прячется (css/sections.css) — на гербе меню это не сказывается */
+html.vk-app.is-section:not(.intro) .app-menu .app-menu-logo.logo-container {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* пункты — как в шапке: золотой текст с бликом при наведении (.is-glaring, js/app-menu.js);
+   неактивные приглушены, текущий — в полную силу */
+.app-menu a.app-menu-link {
+    display: block;
+    padding: 0.35rem 0.5rem;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 1.45rem;
+    line-height: 1.15;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+    background: linear-gradient(110deg,
+            rgba(227, 207, 172, 0.8) 0%,
+            rgba(227, 207, 172, 0.8) 40%,
+            rgba(255, 255, 255, 1) 50%,
+            rgba(227, 207, 172, 0.8) 60%,
+            rgba(227, 207, 172, 0.8) 100%);
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: opacity 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-menu a.app-menu-link:not(.is-current) {
+    opacity: 0.55;
+}
+
+.app-menu a.app-menu-link:hover,
+.app-menu a.app-menu-link:focus-visible {
+    opacity: 1;
+    outline: none;
+}
+
+.app-menu a.app-menu-link.is-glaring {
+    animation: text-glare-run 0.8s ease-in-out;
+}
+
+/* звёздочки — как в шапке: при наведении поворачиваются и вспыхивают */
+.app-menu .app-menu-sep {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-menu,
+    html.app-menu-open .app-menu {
+        transition: none;
+    }
+}

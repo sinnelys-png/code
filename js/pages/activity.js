@@ -66,7 +66,7 @@
             <div class="ac-row${medal}${isMe ? ' is-me' : ''}" role="row">
                 <div class="ac-place" role="cell">${esc(p.place)}</div>
                 <div class="ac-name" role="cell">${link(p.url, p.name, 'ac-name-link')}${p.winner ? CROWN : ''}</div>
-                <div class="ac-sum" role="cell">${esc(p.sum)}</div>
+                <div class="ac-sum" role="cell" data-unit="${plural(p.sumNum, 'роялкоин', 'роялкоина', 'роялкоинов')}">${esc(p.sum)}</div>
                 ${p.stats.map((v, i) => `
                     <div class="ac-stat${/^0+$/.test(v) ? ' is-zero' : ''}" role="cell" data-label="${esc(STATS[i][1])}">${esc(v)}</div>`).join('')}
             </div>`;

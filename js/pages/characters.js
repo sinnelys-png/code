@@ -25,7 +25,7 @@
     const shortFaculty = (f) => String(f || '').replace(/^факультет\s+/i, '').replace(/\s+факультет$/i, '').toLowerCase();
 
     const facStyle = (c) => {
-        const fac = RCU.facultyAttrs(c.faculty);
+        const fac = RCU.facultyAttrs(c.faculty, c.role);
         const m = fac.attrs.match(/style="([^"]*)"/);
         return m ? ` style="${m[1]}"` : '';
     };
@@ -84,9 +84,8 @@
         return hit ? hit[1] : (t ? t.slice(0, 8) : '—');
     };
 
-    function tabText(c, sortBy) {
-        if (sortBy === 'faculty') return facShort(c.faculty);
-        if (sortBy === 'course') return c.course ? `${c.course} курс` : '—';
+    // на язычке — первая буква имени (при любой сортировке)
+    function tabText(c) {
         return c.name.charAt(0);
     }
 
@@ -715,7 +714,11 @@
         if (!box || !file.chunks[ci]) return;
         file.ci = ci;
         const by = sortState[group().title] || 'name';
-        box.innerHTML = file.chunks[ci].list.map(c => `<div class="pc-file-card">${smallCard(c, by)}</div>`).join('')
+        // язычок сдвигается по букве: первая (по алфавиту) буква пачки — у левого края,
+        // следующая — чуть дальше и т. д.
+        const list = file.chunks[ci].list;
+        const letters = [...new Set(list.map(c => c.name.charAt(0).toUpperCase()))].sort((a, b) => a.localeCompare(b, 'ru'));
+        box.innerHTML = list.map(c => `<div class="pc-file-card" style="--tab-i:${letters.indexOf(c.name.charAt(0).toUpperCase()) % 9}">${smallCard(c, by)}</div>`).join('')
             + '<div class="pc-file-end" aria-hidden="true"></div>';
         box.scrollTop = 0;
         layout();
@@ -769,18 +772,6 @@
         const current = sortState[g.title] || 'name';
         bar.innerHTML = options.map(k => `
             <button class="pc-sort-btn${k === current ? ' is-current' : ''}" type="button" data-sort="${k}" aria-pressed="${k === current}">${SORTS[k]}</button>`).join('');
-        // одинарные стрелки листают эти подкатегории — у группы без выбора их не видно
-        file.root.querySelectorAll('.pc-arrow-sort').forEach(b => { b.hidden = options.length < 2; });
-    }
-
-    // одинарная стрелка: следующая / предыдущая подкатегория (имена → факультеты → курсы)
-    function switchSort(dir) {
-        const g = group();
-        const options = g.sorts || [];
-        if (file.busy || options.length < 2) return;
-        const i = Math.max(0, options.indexOf(sortState[g.title] || 'name'));
-        sortState[g.title] = options[(i + dir + options.length) % options.length];
-        renderGroup(dir);
     }
 
     function renderGroup(dir = 0) {
@@ -790,6 +781,15 @@
         g.view = list;
         const stage = file.root.querySelector('.pc-stage');
         stage.querySelector('.pc-deck-name').textContent = g.title;
+        // соседние группы по бокам от названия
+        const n = file.groups.length;
+        const side = (sel, dir) => {
+            const b = stage.querySelector(sel);
+            b.hidden = n < 2;
+            b.querySelector('.pc-deck-side-name').textContent = file.groups[(file.gi + dir + n) % n].title;
+        };
+        side('.pc-deck-side--prev', -1);
+        side('.pc-deck-side--next', 1);
         stage.querySelector('.pc-deck-count').textContent = `${g.list.length} ${RCU.plural(g.list.length, 'персонаж', 'персонажа', 'персонажей')}`;
         renderSortBar();
         file.chunks = makeChunks(list, by);
@@ -825,9 +825,8 @@
         const screen = file.root.querySelector('.pc-screen');
         if (scroller && screen) {
             const cs = getComputedStyle(scroller);
-            const search = file.root.querySelector('.pc-search');
-            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 24
-                - (search ? search.offsetHeight + 8 : 0);
+            // поиск теперь в строке с сортировкой — отдельно его высоту не вычитаем
+            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 24;
             screen.style.height = `${Math.max(320, h)}px`;
         }
     }
@@ -875,6 +874,20 @@
             list.innerHTML = (players + chars) || '<li class="pc-search-none">никого не нашлось</li>';
             list.hidden = false;
         };
+        // значок лупы раскрывает строку поиска (она сдвигает кнопки сортировки влево)
+        const box = root.querySelector('.pc-search');
+        const btn = root.querySelector('.pc-search-btn');
+        const setOpen = (on) => {
+            box.classList.toggle('is-open', on);
+            btn.setAttribute('aria-expanded', String(on));
+            input.tabIndex = on ? 0 : -1;
+            if (on) setTimeout(() => input.focus(), 50);
+            else { input.value = ''; close(); }
+        };
+        btn.addEventListener('click', () => setOpen(!box.classList.contains('is-open')));
+        input.addEventListener('blur', () => setTimeout(() => {
+            if (!input.value && !box.contains(document.activeElement)) setOpen(false);
+        }, 150));
         input.addEventListener('input', show);
         input.addEventListener('focus', show);
         input.addEventListener('keydown', (e) => {
@@ -906,11 +919,9 @@
             if (b) setSort(b.dataset.sort);
         });
 
-        // двойные стрелки — группы (студенты / преподаватели / персонал), одинарные — подкатегории
-        root.querySelector('.pc-arrow-group.pc-arrow-prev').addEventListener('click', () => switchGroup(-1));
-        root.querySelector('.pc-arrow-group.pc-arrow-next').addEventListener('click', () => switchGroup(1));
-        root.querySelector('.pc-arrow-sort.pc-arrow-prev').addEventListener('click', () => switchSort(-1));
-        root.querySelector('.pc-arrow-sort.pc-arrow-next').addEventListener('click', () => switchSort(1));
+        // по бокам от названия — соседние группы со стрелками
+        root.querySelector('.pc-deck-side--prev').addEventListener('click', () => switchGroup(-1));
+        root.querySelector('.pc-deck-side--next').addEventListener('click', () => switchGroup(1));
 
         // ярлычки пачек
         root.querySelector('.pc-chunk-tabs').addEventListener('click', (e) => {
@@ -938,15 +949,20 @@
         // Наведение (мышь или палец). Карточку выбираем по неподвижной разметке, а не по :hover:
         // поднятая карточка уходит из-под указателя, и иначе соседние начинали бы дёргаться.
         // Пока указатель над уже поднятой карточкой — она остаётся, до неё можно дотянуться.
+        let lastY = null;
         const pick = (e) => {
             if (!file.geom) return;
+            const goingUp = lastY != null && e.clientY < lastY;
+            lastY = e.clientY;
             if (e.pointerType === 'touch') {
                 if (!e.buttons && e.type === 'pointermove') return;
                 if (Math.hypot(e.clientX - startX, e.clientY - startY) > 8) swiped = true;
                 if (!swiped) return;   // просто касание — его обработает click
             } else if (e.pointerType !== 'mouse') return;
             const cur = box.querySelector('.pc-file-card.is-lifted');
-            if (cur) {
+            // ведут вверх — выбираем по раскладке (иначе поднятая карточка закрывает те, что выше);
+            // вниз или на месте — поднятая остаётся, пока указатель на ней
+            if (cur && !goingUp) {
                 const r = cur.getBoundingClientRect();
                 if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
             }
@@ -994,27 +1010,30 @@
             if (!file.groups.length) { root.innerHTML = '<p class="dl-status">Персонажей пока нет.</p>'; return; }
 
             root.innerHTML = `
-                <div class="pc-search">
-                    <input class="dl-search-input pc-search-input" type="search" autocomplete="off"
-                        placeholder="поиск: имя, факультет, предмет или должность" aria-label="Поиск персонажа">
-                    <ul class="pc-search-list" hidden></ul>
-                </div>
                 <div class="pc-screen">
-                    <div class="pc-arrows pc-arrows--prev">
-                        <button class="pc-arrow pc-arrow-group pc-arrow-prev" type="button" aria-label="Предыдущая группа"><span></span><span></span></button>
-                        <button class="pc-arrow pc-arrow-sort pc-arrow-prev" type="button" aria-label="Предыдущая подкатегория"><span></span></button>
-                    </div>
                     <div class="pc-stage">
-                        <h2 class="pc-deck-title"><span class="pc-deck-name"></span></h2>
+                        <div class="pc-deck-head">
+                            <button class="pc-deck-side pc-deck-side--prev" type="button" aria-label="Предыдущая группа">
+                                <span class="pc-deck-arrow" aria-hidden="true"></span><span class="pc-deck-side-name"></span>
+                            </button>
+                            <h2 class="pc-deck-title"><span class="pc-deck-name"></span></h2>
+                            <button class="pc-deck-side pc-deck-side--next" type="button" aria-label="Следующая группа">
+                                <span class="pc-deck-side-name"></span><span class="pc-deck-arrow" aria-hidden="true"></span>
+                            </button>
+                        </div>
                         <div class="pc-deck-count"></div>
-                        <div class="pc-sort" role="group" aria-label="Сортировка"></div>
+                        <div class="pc-tools">
+                            <div class="pc-sort" role="group" aria-label="Сортировка"></div>
+                            <div class="pc-search">
+                                <input class="dl-search-input pc-search-input" type="search" autocomplete="off"
+                                    placeholder="имя, факультет, отвечающий" aria-label="Поиск персонажа" tabindex="-1">
+                                <button class="pc-search-btn" type="button" aria-label="Поиск" aria-expanded="false"></button>
+                                <ul class="pc-search-list" hidden></ul>
+                            </div>
+                        </div>
                         <div class="pc-file"></div>
                         <div class="pc-chunk-tabs" role="tablist" aria-label="Пачки карточек"></div>
                         <div class="pc-dots">${file.groups.map(g => `<span class="pc-dot" title="${esc(g.title)}"></span>`).join('')}</div>
-                    </div>
-                    <div class="pc-arrows pc-arrows--next">
-                        <button class="pc-arrow pc-arrow-sort pc-arrow-next" type="button" aria-label="Следующая подкатегория"><span></span></button>
-                        <button class="pc-arrow pc-arrow-group pc-arrow-next" type="button" aria-label="Следующая группа"><span></span><span></span></button>
                     </div>
                 </div>`;
             bindFile(root);
