@@ -852,15 +852,19 @@
         let found = [], foundPlayers = [];
         const close = () => { list.hidden = true; list.innerHTML = ''; };
         // отвечающий находится по имени, ссылке на ВК или VK ID
-        const playerMatches = (p, q) => norm(p.name).includes(q) || norm(p.url).includes(q)
+        // запрос как набран и в другой раскладке («fpfkbz» → «азалия»)
+        let qs = [];
+        const has = (s) => qs.some(q => norm(s).includes(q));
+        const playerMatches = (p, q) => has(p.name) || has(p.url)
             || (!!p.id && /\d/.test(q) && p.id.includes(q.replace(/^id/, '')));
         const show = () => {
             const q = norm(input.value).trim();
+            qs = RCU.queryVariants(input.value);
             if (!q) { close(); return; }
             foundPlayers = data.players ? [...data.players.values()].filter(p => playerMatches(p, q)).slice(0, 3) : [];
             const ofPlayer = new Set(foundPlayers.flatMap(p => p.characters.map(c => c.name)));
-            found = data.characters.filter(c => norm(c.name).includes(q) || norm(c.faculty).includes(q)
-                || norm(c.subject).includes(q) || norm(c.post).includes(q) || ofPlayer.has(c.name)).slice(0, 8);
+            found = data.characters.filter(c => has(c.name) || has(c.faculty)
+                || has(c.subject) || has(c.post) || ofPlayer.has(c.name)).slice(0, 8);
             const players = foundPlayers.map((p, i) => `
                     <li><button class="pc-search-item pc-search-item--player" type="button" data-p="${i}">
                         <span class="pc-search-name">${esc(p.name)}</span>

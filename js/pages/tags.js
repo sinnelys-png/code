@@ -173,8 +173,9 @@
                 const list = input.parentElement.querySelector('.tg-list');
                 const hide = () => { list.hidden = true; };
                 const show = () => {
-                    const q = norm(input.value).trim();
-                    const found = q ? names.filter(n => norm(n).includes(q)).slice(0, 8) : [];
+                    // и при неверной раскладке: «fpfkbz» находит «Азалию»
+                    const qs = RCU.queryVariants(input.value);
+                    const found = qs.length ? names.filter(n => qs.some(q => norm(n).includes(q))).slice(0, 8) : [];
                     list.innerHTML = found.map(n => `<li><button class="tg-list-item" type="button" data-name="${esc(n)}">${esc(n)}</button></li>`).join('');
                     list.hidden = !found.length;
                 };

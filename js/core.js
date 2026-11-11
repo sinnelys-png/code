@@ -22,6 +22,19 @@ window.RCU = (() => {
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, ch =>
         ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
+    /* ---------- Поиск при неверной раскладке ----------
+       «fpfkbz» (набрано на английской раскладке) → «азалия», «фяфдшф» → «azalia».
+       queryVariants даёт запрос как набран и в другой раскладке (строчными, ё → е). */
+    const LAT = "qwertyuiop[]asdfghjkl;'zxcvbnm,.`";
+    const CYR = 'йцукенгшщзхъфывапролджэячсмитьбюё';
+    const swapLayout = (s, from, to) => [...s].map(ch => { const i = from.indexOf(ch); return i < 0 ? ch : to[i]; }).join('');
+    const normQuery = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е').trim();
+    function queryVariants(raw) {
+        const q = String(raw || '').toLowerCase().trim();
+        if (!q) return [];
+        return [...new Set([q, swapLayout(q, LAT, CYR), swapLayout(q, CYR, LAT)].map(normQuery))];
+    }
+
     const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : '');
 
     function link(url, text, cls = '') {
@@ -332,5 +345,5 @@ window.RCU = (() => {
     }
 
     const pages = {};
-    return { resetData, esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
+    return { queryVariants, resetData, esc, safeUrl, link, plural, daysUntil, gvizDateToISO, loadGviz, getViewerId, loaderHTML, dividerHTML, facultyAttrs, scriptUrl: SCRIPT_URL, widenHeadings, cached, bundle, updatedText, dataOf, pages };
 })();

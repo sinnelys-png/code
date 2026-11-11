@@ -274,9 +274,10 @@
 
     function applySearch(root) {
         const q = query.trim().toLowerCase().replace(/ё/g, 'е');
+        const qs = RCU.queryVariants(query);          // и при неверной раскладке
         let found = 0;
         root.querySelectorAll('.dl-card').forEach(c => {
-            const hit = !q || c.dataset.q.includes(q);
+            const hit = !q || qs.some(v => c.dataset.q.includes(v));
             c.hidden = !hit;
             const list = c.closest('.dl-by-role, .dl-by-deadline');
             if (hit && list && !list.hidden) found++;
