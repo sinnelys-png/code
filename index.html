@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" class="vk-app">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
@@ -14,8 +14,6 @@
     <link rel="stylesheet" href="css/pages.css">
     <link rel="stylesheet" href="css/intro.css">
     <link rel="stylesheet" href="css/sections.css">
-    <!-- Только мини-приложение: в разделах меню выдвигается слева (шапку закрывает панель ВК) -->
-    <link rel="stylesheet" href="css/app-menu.css">
     <script>
         // Заставка «конверт» при загрузке (css/intro.css). Ставим класс сразу,
         // до отрисовки страницы, чтобы блок не мелькнул на своём месте раньше времени.
@@ -91,8 +89,6 @@
         <!-- Золотая лента с названием раздела (заполняет js/router.js, стили — css/pages.css) -->
         <div class="page-ribbon is-hidden" aria-hidden="true"><span class="page-ribbon-text"></span></div>
         <div class="main-inner-content">
-            <!-- тонкие золотые полоски внутри блока, у верхней и нижней (css/main.css) -->
-            <div class="block-lines" aria-hidden="true"></div>
             <div class="main-scroll-text">
                 <div class="main-scroll-viewport">
                     <div id="view" class="page-view"></div>
@@ -128,7 +124,6 @@
     <script src="js/pages/home.js"></script>
     <script src="js/pages/tags.js"></script>
     <script src="js/router.js"></script>
-    <script src="js/app-menu.js"></script>
 </body>
 
 </html>
