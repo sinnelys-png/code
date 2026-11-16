@@ -199,7 +199,7 @@
         let lastMouse = null;
         let ringFrame = 0;
         // рамки аватаров в больших карточках — с тем же радиусом света, что у полосы шапки
-        const RINGS = [['.dl-avatar.has-faculty', 150], ['.pc-ava-frame', 400]];
+        const RINGS = [['.dl-avatar.has-faculty', 150], ['.pc-ava-frame', 400], ['.pc-ticket', 400]];
         function glowRings() {
             ringFrame = 0;
             if (!lastMouse) return;

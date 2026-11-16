@@ -231,12 +231,15 @@
     function parseFacts(text) {
         if (!text) return [];
         const items = [];
+        // пункт начинается со значка: обычного маркера или любого не-буквенного символа
+        // (эмодзи «🥀», «🌕», «💖» и т. п.)
+        const LEAD = /^[^\p{L}\p{N}«"(]+/u;
         text.split('\n').forEach(l => {
             const raw = l.trim();
             if (!raw) return;
-            const t = raw.replace(BULLET, '').trim();
+            const t = raw.replace(LEAD, '').trim();
             if (!t) return;
-            const isItem = BULLET.test(raw) || !items.length;
+            const isItem = LEAD.test(raw) || !items.length;
             if (isItem) items.push(t);
             else items[items.length - 1] += ' ' + t;
         });

@@ -429,6 +429,12 @@
         ], { duration: PART, delay: start + i * UNIT, easing: 'cubic-bezier(0.25, 0.6, 0.35, 1)', fill: 'backwards' }));
         if (seam) seam.animate([{ opacity: 0 }, { opacity: 1 }],
             { duration: 300, delay: opened - 120, fill: 'backwards' });
+        // рамка анкеты (.pc-ticket::after) проявляется в конце, вместе с лентой —
+        // пока блоки раскладываются, её не видно
+        try {
+            card.animate([{ opacity: 0 }, { opacity: 1 }],
+                { pseudoElement: '::after', duration: 450, delay: opened - 60, easing: 'ease-out', fill: 'backwards' });
+        } catch (e) { /* старый браузер — рамка просто видна сразу */ }
 
         // лента: из-за верхнего края блока поворачивается к нам и ложится на карточку
         // (ось поворота — верхний край ленты), в конце чуть «качнувшись»

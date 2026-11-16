@@ -941,6 +941,94 @@ html.pc-open .main-scroll-viewport {
     display: flex;
     flex-direction: column;
     --seam: var(--fac-accent, var(--gold-55));
+    --frame-in: 0.85rem;        /* рамка анкеты: на том же расстоянии от края, что линия со звёздочкой от низа */
+}
+
+/* рамка вокруг всей анкеты (её низ — линия со звёздочкой); лежит под закладкой.
+   Как обводка аватара: то же скругление, полупрозрачное золото и свет от курсора
+   (--gx/--gy ставит js/site.js; у рамки отступ --frame-in, поэтому центр света сдвинут).
+   Линия толщиной 1px рисуется маской: фон остаётся только по краю. */
+.pc-ticket::after {
+    content: "";
+    position: absolute;
+    inset: var(--frame-in);
+    z-index: 2;
+    padding: 1px;
+    border-radius: 5px;
+    background:
+        radial-gradient(circle 400px at calc(var(--gx, -999px) - var(--frame-in)) calc(var(--gy, -999px) - var(--frame-in)),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+/* блоки анкеты — одно целое: скруглены только внешние углы, между блоками ни скруглений,
+   ни пунктирных линий (их заменяет рамка) */
+.pc-ticket .pc-seg {
+    border-radius: 0;
+}
+
+.pc-ticket .pc-seg--head {
+    border-top-right-radius: 6px;
+}
+
+.fc-big.pc-ticket .pc-seg--head {
+    border-top-left-radius: 6px;
+}
+
+.pc-ticket .pc-seg--foot {
+    border-radius: 0 0 6px 6px;
+}
+
+.pc-ticket .pc-seg + .pc-seg::after,
+.pc-ticket .pc-top + .pc-seg::after {
+    content: none;
+}
+
+/* разделитель между блоками: линия на половину ширины с маленькой звёздочкой посередине,
+   прозрачность как у прежнего пунктира, без подсветки */
+.pc-ticket .pc-seg:not(.pc-seg--foot) + .pc-seg:not(.pc-seg--foot)::after,
+.pc-ticket .pc-top + .pc-seg:not(.pc-seg--foot)::after {
+    content: "✦";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 0.8rem;
+    transform: translateY(-50%);
+    font-size: 0.55rem;
+    line-height: 0.8rem;
+    text-align: center;
+    color: var(--seam);
+    /* к краям линия тает; у звёздочки — разрыв, и концы линии возле него тоже чуть прозрачнее */
+    background: linear-gradient(to right,
+            transparent 0, var(--seam) 35%, var(--seam) calc(50% - 1.8rem),
+            color-mix(in srgb, var(--seam) 40%, transparent) calc(50% - 0.7rem),
+            transparent calc(50% - 0.7rem) calc(50% + 0.7rem),
+            color-mix(in srgb, var(--seam) 40%, transparent) calc(50% + 0.7rem),
+            var(--seam) calc(50% + 1.8rem), var(--seam) 65%, transparent 100%)
+        center / 100% 1px no-repeat;
+    opacity: 0.17;
+    pointer-events: none;
+}
+
+/* шапка анкеты чуть ниже, чтобы рамка не задевала её содержимое */
+.pc-ticket .pc-seg--head {
+    padding-top: calc(var(--frame-in) + 0.9rem);
+}
+
+/* нижний блок — высотой как отступ рамки: линия со звёздочкой совпадает с её низом */
+.pc-ticket .pc-seg--foot {
+    height: var(--frame-in);
+}
+
+/* крестик — внутри рамки */
+.pc-ticket .pc-close {
+    top: calc(var(--frame-in) + 0.2rem);
+    right: calc(var(--frame-in) + 0.2rem);
 }
 
 .pc-top {
@@ -1078,7 +1166,7 @@ html.pc-open .main-scroll-viewport {
     z-index: 3;
     top: -3px;
     right: 3.4rem;
-    width: 5.4rem;
+    width: 6.2rem;                     /* шире влево (правый край на месте) */
     height: calc(100% - 3.1rem + 3px);
     max-height: 13.5rem;
     pointer-events: none;
@@ -1120,14 +1208,28 @@ html.pc-open .main-scroll-viewport {
 /* рамка 3px полупрозрачного золота; свет от курсора — как у полосы внизу шапки
    (белое ядро → #B6AF98 → #888F85, радиус 400px). Координаты --gx/--gy ставит js/site.js */
 .pc-ava-frame {
+    position: relative;
     display: inline-block;
-    padding: 3px;
+    padding: 5px;              /* 1px — линия по внешнему краю, 4px — зазор до аватара */
     line-height: 0;
     border-radius: 5px;
+}
+
+/* сама обводка — 1px, как рамка анкеты */
+.pc-ava-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
     background:
         radial-gradient(circle 400px at var(--gx, -999px) var(--gy, -999px),
             rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
         rgba(182, 175, 152, 0.45);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
 }
 
 .pc-head-info .pc-k {
@@ -1286,18 +1388,36 @@ html.pc-open .main-scroll-viewport {
     color: var(--text-55);
 }
 
-/* текст с собственной прокруткой, полоса в цвете факультета */
+/* текст с собственной прокруткой, полоса в цвете факультета: тонкая, без стрелок,
+   с зазором до рамки анкеты */
 .pc-scroll {
     overflow-y: auto;
-    padding-right: 0.9rem;
-    margin-right: -0.9rem;
+    padding-right: 0.6rem;
+    margin-right: -0.6rem;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--fac-accent, var(--gold-55)) var(--hover);
+    scrollbar-color: auto;   /* не наследовать от окна анкеты: иначе Chrome рисует полосу со стрелками */
+}
+
+/* Firefox: свои стрелок не рисует, достаточно «тонкой» полосы.
+   В Chrome / Safari эти свойства включили бы стандартную полосу со стрелками — там работают
+   ::-webkit-scrollbar ниже */
+@supports not selector(::-webkit-scrollbar) {
+    .pc-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in srgb, var(--fac-accent, var(--gold-55)) 50%, transparent) var(--hover);
+    }
+
+    .pc-seg:hover .pc-scroll {
+        scrollbar-color: var(--fac-accent, var(--gold-55)) var(--hover);
+    }
 }
 
 .pc-scroll::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
+}
+
+.pc-scroll::-webkit-scrollbar-button {
+    display: none;
 }
 
 .pc-scroll::-webkit-scrollbar-track {
@@ -1306,6 +1426,12 @@ html.pc-open .main-scroll-viewport {
 }
 
 .pc-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--fac-accent, var(--gold-55)) 50%, transparent);   /* бегунок прозрачнее; дорожка как была */
+    border-radius: 2px;
+}
+
+/* наведение на блок — бегунок в полную силу */
+.pc-seg:hover .pc-scroll::-webkit-scrollbar-thumb {
     background: var(--fac-accent, var(--gold-55));
     border-radius: 2px;
 }
@@ -1403,15 +1529,7 @@ html.pc-open .main-scroll-viewport {
 }
 
 .pc-seam-star::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 2.2rem;
-    right: 2.2rem;
-    height: 1px;
-    transform: translateY(-50%);
-    background: linear-gradient(to right, transparent, var(--seam) 30%, var(--seam) 70%, transparent);
-    opacity: 0.8;
+    content: none;   /* низ рамки анкеты (.pc-ticket::after) */
 }
 
 .pc-seam-dot {
@@ -1433,7 +1551,7 @@ html.pc-open .main-scroll-viewport {
 }
 
 .pc-seam-star:has(.pc-seam-dot:hover)::before {
-    background: linear-gradient(to right, transparent, var(--hi) 30%, var(--hi) 70%, transparent);
+    background: var(--hi);
     opacity: 1;
     transition: background 0.12s ease, opacity 0.12s ease;
 }
@@ -1681,6 +1799,22 @@ html.pc-open .main-scroll-viewport {
         font-size: 0.8rem;
     }
 
+}
+
+/* должность персонала: название | таблетка «занято/мест» | имена */
+.fc-list .fc-post {
+    display: grid;
+    grid-template-columns: 9rem 3rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0 0.6rem;
+}
+
+.fc-list .fc-post .pc-k {
+    min-width: 0;
+}
+
+.fc-seats {
+    justify-self: center;
 }
 
 .fc-dean {
@@ -2250,7 +2384,7 @@ html.pc-open .main-scroll-viewport {
 
     .pc-ribbon {
         right: 2.8rem;
-        width: 3.6rem;
+        width: 4.1rem;
         height: 8.5rem;
     }
 

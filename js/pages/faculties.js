@@ -115,16 +115,68 @@
                 <div class="pc-seg pc-seg--foot"></div>
             </article>`;
 
+    /* ---------- Персонал: отделы, должности и сколько на них мест ----------
+       Список должностей — здесь (его меняют руками); кто занимает должность — по Техтаблице
+       (колонка L у персонала) и листу [бронь]. Должности из таблицы, которых нет в списке,
+       выводятся отдельным блоком «другие должности». */
+    const STAFF = [
+        ['оказание первой помощи', [['мед. сотрудник', 4], ['главный врач', 1]]],
+        ['охрана', [['дневной охранник', 3], ['ночной охранник', 3]]],
+        ['уборка', [['уборщик', 5]]],
+        ['столовая', [['повар', 4], ['буфетчик', 2]]],
+        ['сад', [['садовник', 4]]],
+        ['главное управление', [['проректор', 1], ['секретарь', 3]]],
+        ['библиотека', [['библиотекарь', 3]]],
+        ['помощь студентам', [['психолог', 1], ['соц. работник', 2]]],
+        ['бригада', [['ремонтник', 3]]],
+        ['вход в университет', [['гардеробщик', 6]]],
+        ['IT-специалисты', [['программист', 3]]],
+    ];
+    // «Мед. сотрудник» = «медсотрудник» = «мед сотрудник»
+    const postKey = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я]/g, '');
+
+    // люди на должностях: { ключ должности → [участники] }; кто не попал в список — отдельно
+    function staffSeats(f) {
+        const known = new Set(STAFF.flatMap(([, posts]) => posts.map(([p]) => postKey(p))));
+        const byPost = new Map();
+        const other = [];
+        f.teachers.forEach(t => {
+            const k = postKey(t.subject);
+            if (known.has(k)) { if (!byPost.has(k)) byPost.set(k, []); byPost.get(k).push(t); }
+            else other.push(t);
+        });
+        return { byPost, other };
+    }
+
+    // строка должности: название | «занято/мест» таблеткой, как у отдела | кто на ней (никого — прочерк)
+    function postLine(post, seats, people) {
+        return `
+            <li class="fc-post">
+                <span class="pc-k">${esc(post)}</span>
+                <span class="dl-group-count fc-seats">${people.length}/${seats}</span>
+                <span class="fc-post-people">${people.length ? people.map(member).join(', ') : '<span class="pc-none">—</span>'}</span>
+            </li>`;
+    }
+
     function staffCard(f) {
+        const { byPost, other } = staffSeats(f);
         return ticket(f, `
                     <div class="pc-k">университет</div>
-                    <h2 class="pc-big-name">персонал</h2>`, `
+                    <h2 class="pc-big-name">персонал</h2>
+                    <div class="fc-pic" aria-hidden="true"></div>`,
+            STAFF.map(([dept, posts]) => {
+                const busy = posts.reduce((n, [p]) => n + (byPost.get(postKey(p)) || []).length, 0);
+                const all = posts.reduce((n, [, k]) => n + k, 0);
+                return `
                 <section class="pc-seg pc-text fc-block">
-                    <h3 class="pc-section-title">должности <span class="dl-group-count">${f.teachers.length}</span></h3>
-                    ${f.teachers.length
-                        ? `<ul class="fc-list">${f.teachers.map(t => `<li><span class="pc-k">${esc((t.subject || (t.booked ? 'бронь' : '—')).toLowerCase())}</span> ${member(t)}</li>`).join('')}</ul>`
-                        : '<p class="pc-soon">Пока никого.</p>'}
-                </section>`);
+                    <h3 class="pc-section-title">${esc(dept)} <span class="dl-group-count">${busy}/${all}</span></h3>
+                    <ul class="fc-list">${posts.map(([p, k]) => postLine(p, k, byPost.get(postKey(p)) || [])).join('')}</ul>
+                </section>`;
+            }).join('') + (other.length ? `
+                <section class="pc-seg pc-text fc-block">
+                    <h3 class="pc-section-title">другие должности</h3>
+                    <ul class="fc-list">${other.map(t => `<li><span class="pc-k">${esc((t.subject || (t.booked ? 'бронь' : '—')).toLowerCase())}</span> ${member(t)}</li>`).join('')}</ul>
+                </section>` : ''));
     }
 
     function bigCard(f) {
