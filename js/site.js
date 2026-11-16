@@ -219,12 +219,14 @@
                 }
             }));
             // внутренняя полоса ленты в карточках: градиент в координатах её SVG (viewBox 60×140)
-            document.querySelectorAll('.pc-ribbon').forEach(svg => {
+            // и обводка язычка на карточках факультетов
+            document.querySelectorAll('.pc-ribbon, .fc-tab').forEach(svg => {
                 const g = svg.querySelector('.pc-ribbon-glow');
                 const r = svg.getBoundingClientRect();
-                if (!g || !r.width) return;
-                g.setAttribute('cx', (x - r.left) * 60 / r.width);
-                g.setAttribute('cy', (y - r.top) * 140 / r.height);
+                const vb = svg.viewBox && svg.viewBox.baseVal;
+                if (!g || !r.width || !vb) return;
+                g.setAttribute('cx', (x - r.left) * vb.width / r.width);
+                g.setAttribute('cy', (y - r.top) * vb.height / r.height);
             });
         }
         // при прокрутке аватары двигаются под неподвижной мышью — пересчитываем

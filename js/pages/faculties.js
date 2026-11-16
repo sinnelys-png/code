@@ -46,27 +46,65 @@
         return `<li><span class="pc-k">${label}</span> ${parts.join(', ')}</li>`;
     }
 
+    // текст на табличке: тёмный или светлый — что контрастнее на втором цвете факультета
+    function plateInk(hex) {
+        const n = parseInt(String(hex || '#e8dcc8').replace('#', ''), 16);
+        const lum = [n >> 16 & 255, n >> 8 & 255, n & 255]
+            .map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+            .reduce((s, v, k) => s + v * [0.2126, 0.7152, 0.0722][k], 0);
+        return lum > 0.25 ? 'dark' : 'light';
+    }
+
+    // Маленькая карточка — вывеска на всю ширину страницы:
+    // коричневая палка-держатель (у всех одинаковая), на ней табличка второго цвета факультета
+    // с внутренней полоской (название и предметы справа), поверх — язычок основного цвета
+    // с внутренней обводкой (подсвечивается мышью, js/site.js) и местом под эмблему.
     function smallCard(f, i) {
-        const subjects = taughtSubjects(f);
-        const meta = f.staff
-            ? `${f.teachers.length} ${RCU.plural(f.teachers.length, 'человек', 'человека', 'человек')}`
-            : `студенты ${studentsText(f)} · преподаватели ${teachersText(f)}`;
+        // предметы, которые ведут преподаватели; нет преподавателей — список возможных предметов
+        const taught = taughtSubjects(f);
+        const subjects = taught.length ? taught
+            : String(f.subjects || '').split(/[,;]\s*/).map(s => s.trim().toLowerCase()).filter(Boolean);
+        const stripe = (RCU.facultyAttrs(f.title).attrs.match(/--fac-stripe:([^;"]+)/) || [])[1];
         return `
-            <button class="fc-card${f.staff ? ' fc-card--staff' : ''}" type="button" data-index="${i}"${facStyle(f.title)}>
-                <span class="fc-tie" aria-hidden="true"></span>
-                <span class="fc-card-info">
-                    <span class="fc-card-title">${esc(shortTitle(f.title))}</span>
-                    ${subjects.length ? `<span class="fc-card-subjects">${esc(subjects.join(', '))}</span>` : ''}
-                    <span class="fc-card-meta">${meta}</span>
+            <button class="fc-card fc-ink--${plateInk(stripe)}${f.staff ? ' fc-card--staff' : ''}" type="button" data-index="${i}"${facStyle(f.title)}>
+                <span class="fc-rod" aria-hidden="true">
+                    <span class="fc-rod-body"></span>
+                    <svg class="fc-rod-end fc-rod-end--l" viewBox="0 0 40 24"><path d="M0 12 Q15 10.2 20 0 Q25 10.2 40 12 Q25 13.8 20 24 Q15 13.8 0 12 Z" /></svg>
+                    <svg class="fc-rod-end fc-rod-end--r" viewBox="0 0 40 24"><path d="M0 12 Q15 10.2 20 0 Q25 10.2 40 12 Q25 13.8 20 24 Q15 13.8 0 12 Z" /></svg>
                 </span>
+                <span class="fc-plate">
+                    <span class="fc-card-title">${esc(f.title)}</span>
+                    ${subjects.length ? `<span class="fc-card-subjects">${esc(subjects.join(', '))}</span>` : ''}
+                </span>
+                ${tabSVG('fc-tab')}
             </button>`;
     }
 
-    // блоки как у анкеты: шапка с лентой, разделы, низ со звёздочкой
+    // язычок факультета: основной цвет, внутренняя обводка (подсвечивается мышью, js/site.js)
+    let tabId = 0;
+    function tabSVG(cls) {
+        const glow = `fc-glow-${++tabId}`;
+        return `
+                <svg class="${cls}" viewBox="0 0 100 130" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <radialGradient id="${glow}" class="pc-ribbon-glow" gradientUnits="userSpaceOnUse" cx="-999" cy="-999" r="90">
+                            <stop offset="0%" class="pc-ribbon-glow-core" />
+                            <stop offset="50%" class="pc-ribbon-glow-mid" />
+                            <stop offset="100%" class="pc-ribbon-glow-edge" />
+                        </radialGradient>
+                    </defs>
+                    <path class="fc-tab-body" d="M0 0 H100 V100 L50 130 L0 100 Z" />
+                    <path class="fc-tab-line" d="M10 0 V95 L50 118 L90 95 V0" stroke="url(#${glow})" />
+                    <!-- сюда встанет эмблема факультета -->
+                </svg>`;
+    }
+
+    // блоки как у анкеты: шапка с язычком факультета, разделы, низ со звёздочкой
+    // (класс pc-ribbon — чтобы язычок вставал на место ленты и выпадал так же при открытии)
     const ticket = (f, head, sections) => `
             <article class="pc-big pc-ticket fc-big"${facStyle(f.title)}>
                 <div class="pc-top">
-                    ${RCU.ribbonHTML || ''}
+                    ${tabSVG('pc-ribbon fc-big-tab')}
                     <div class="pc-seg pc-seg--head fc-head-seg">
                         <button class="pc-close" type="button" data-close aria-label="Закрыть">×</button>
                         <div class="fc-head">${head}</div>
@@ -98,6 +136,7 @@
         return ticket(f, `
                     <div class="pc-k">факультет</div>
                     <h2 class="pc-big-name">${esc(shortTitle(f.title))}</h2>
+                    <div class="fc-pic" aria-hidden="true"></div>
                     ${f.dean ? `<p class="fc-dean"><span class="pc-k">декан</span> ${person(f.dean)}</p>` : ''}
                     ${f.subjects ? `<p class="fc-subjects"><span class="pc-k">возможные предметы:</span> ${esc(f.subjects)}</p>` : ''}`, `
                 <section class="pc-seg pc-text fc-block">

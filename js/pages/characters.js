@@ -581,6 +581,8 @@
             modal.hidden = true; modalBody.innerHTML = ''; delete modalBody.dataset.name;
         }, 250);
         if (lastFocus) lastFocus.focus({ preventScroll: true });
+        // карточка в стопке, с которой открыли анкету, опускается обратно
+        liftCard(null);
     }
 
     if (modal) {
@@ -700,7 +702,9 @@
         cards.forEach((el, i) => {
             el.style.top = `${top0 + i * step}px`;
             el.style.zIndex = String(i + 1);
-            el.style.setProperty('--lift', `${i < n - 1 ? Math.max(0, H - step + 4) : 0}px`);
+            // подскок небольшой: карточка остаётся под указателем (не выше открытой полоски),
+            // но приоткрывается заметно — не больше половины своей высоты
+            el.style.setProperty('--lift', `${i < n - 1 ? Math.max(0, Math.min(H - step - 6, Math.round(H * 0.45))) : 0}px`);
             el.style.setProperty('--i', String(i));
         });
         const end = box.querySelector('.pc-file-end');
@@ -714,18 +718,21 @@
         if (!box || !file.chunks[ci]) return;
         file.ci = ci;
         const by = sortState[group().title] || 'name';
-        // язычок сдвигается по букве: первая (по алфавиту) буква пачки — у левого края,
-        // следующая — чуть дальше и т. д.
+        // язычок с первой буквой — у всех карточек у правого края
         const list = file.chunks[ci].list;
-        const letters = [...new Set(list.map(c => c.name.charAt(0).toUpperCase()))].sort((a, b) => a.localeCompare(b, 'ru'));
-        box.innerHTML = list.map(c => `<div class="pc-file-card" style="--tab-i:${letters.indexOf(c.name.charAt(0).toUpperCase()) % 9}">${smallCard(c, by)}</div>`).join('')
+        box.innerHTML = list.map(c => `<div class="pc-file-card">${smallCard(c, by)}</div>`).join('')
             + '<div class="pc-file-end" aria-hidden="true"></div>';
         box.scrollTop = 0;
         layout();
         if (dir) {
             box.classList.remove('is-entering-next', 'is-entering-prev');
             void box.offsetWidth;
-            box.classList.add(dir > 0 ? 'is-entering-next' : 'is-entering-prev');
+            box.classList.add('is-entering-next');   // карточки всегда въезжают справа
+            // когда карточки въехали — снимаем анимацию: пока она висит на карточках (с прозрачностью),
+            // браузер не размывает то, что под ними, и «стекло» становится сплошным
+            clearTimeout(file.enterTimer);
+            const n = box.querySelectorAll('.pc-file-card').length;
+            file.enterTimer = setTimeout(() => box.classList.remove('is-entering-next', 'is-entering-prev'), 750 + n * 35);
         }
         file.root.querySelectorAll('.pc-chunk-tab').forEach((t, i) => {
             t.classList.toggle('is-current', i === ci);
@@ -796,29 +803,54 @@
         stage.querySelector('.pc-chunk-tabs').innerHTML = file.chunks.map((ch, i) => `
             <button class="pc-chunk-tab" type="button" role="tab" data-ci="${i}" title="${ch.list.length} ${RCU.plural(ch.list.length, 'персонаж', 'персонажа', 'персонажей')}">${esc(ch.label)}</button>`).join('');
         showChunk(0, dir);
-        file.root.querySelectorAll('.pc-dot').forEach((d, i) => d.classList.toggle('is-current', i === file.gi));
         RCU.widenHeadings(stage);
         measure();
         layout();
+        hideDuringIntro();
     }
 
     async function switchGroup(dir) {
         if (file.busy || file.groups.length < 2) return;
         file.busy = true;
         const stage = file.root.querySelector('.pc-stage');
-        stage.classList.add(dir > 0 ? 'is-leaving-left' : 'is-leaving-right');
-        await new Promise(r => setTimeout(r, 220));
+        // старая группа уезжает влево, новая въезжает справа — в какую сторону ни листали
+        stage.classList.add('is-leaving-left');
+        await new Promise(r => setTimeout(r, 380));
         file.gi = (file.gi + dir + file.groups.length) % file.groups.length;
         renderGroup();
         stage.classList.remove('is-leaving-left', 'is-leaving-right');
-        stage.classList.add(dir > 0 ? 'is-entering-right' : 'is-entering-left');
+        stage.classList.add('is-entering-right');
         void stage.offsetWidth;
         stage.classList.remove('is-entering-right', 'is-entering-left');
-        await new Promise(r => setTimeout(r, 260));
+        await new Promise(r => setTimeout(r, 420));
         file.busy = false;
     }
 
     // высота экрана — видимая часть основного блока (без строки поиска)
+    // Конечная высота области прокрутки. Сразу после перехода с главной (и после заставки)
+    // блок ещё меняет форму и пока ниже, чем будет, — стопка сначала сжималась, а потом
+    // расправлялась. Поэтому меряем пустую копию рамки блока: новый элемент сразу получает
+    // конечные размеры, без анимации. Копия невидима и тут же убирается.
+    function finalScrollerHeight(scroller) {
+        const block = document.querySelector('.main-content-block');
+        if (!block) return scroller.clientHeight;
+        const probe = block.cloneNode(false);
+        let inner = probe;
+        ['.main-inner-content', '.main-scroll-text', '.main-scroll-viewport'].forEach(sel => {
+            const src = block.querySelector(sel);
+            if (!src) return;
+            const copy = src.cloneNode(false);
+            inner.appendChild(copy);
+            inner = copy;
+        });
+        probe.style.visibility = 'hidden';
+        probe.setAttribute('aria-hidden', 'true');
+        block.after(probe);
+        const h = inner.classList.contains('main-scroll-viewport') ? inner.clientHeight : scroller.clientHeight;
+        probe.remove();
+        return h;
+    }
+
     function measure() {
         if (!file.root) return;
         const scroller = document.querySelector('.main-scroll-viewport');
@@ -826,7 +858,7 @@
         if (scroller && screen) {
             const cs = getComputedStyle(scroller);
             // поиск теперь в строке с сортировкой — отдельно его высоту не вычитаем
-            const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 24;
+            const h = finalScrollerHeight(scroller) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 24;
             screen.style.height = `${Math.max(320, h)}px`;
         }
     }
@@ -992,6 +1024,25 @@
         else if (e.key === 'ArrowRight') switchGroup(1);
     });
     window.addEventListener('resize', () => { measure(); layout(); });
+    // кончилась заставка или сменилась форма блока (классы на <html>) — сразу конечный размер стопки
+    // Во время заставки блок другой формы, и конечный размер стопки не узнать — стопку прячем,
+    // а когда заставка кончилась, раскладываем в конечном размере и карточки въезжают.
+    const html = document.documentElement;
+    let hiddenForIntro = false;
+    function hideDuringIntro() {
+        const box = cardsEl();
+        if (box && html.classList.contains('intro')) { box.style.visibility = 'hidden'; hiddenForIntro = true; }
+    }
+    new MutationObserver(() => {
+        if (!file.root || !document.body.contains(file.root)) return;
+        measure();
+        layout();
+        if (hiddenForIntro && !html.classList.contains('intro')) {
+            hiddenForIntro = false;
+            const box = cardsEl();
+            if (box) { box.style.visibility = ''; showChunk(file.ci, 1); }
+        }
+    }).observe(html, { attributes: true, attributeFilter: ['class'] });
 
     RCU.openCharacter = (name) => openCharacter(name);
     RCU.smallCharacterCard = (c) => smallCard(c);
@@ -1035,9 +1086,10 @@
                                 <ul class="pc-search-list" hidden></ul>
                             </div>
                         </div>
-                        <div class="pc-file"></div>
-                        <div class="pc-chunk-tabs" role="tablist" aria-label="Пачки карточек"></div>
-                        <div class="pc-dots">${file.groups.map(g => `<span class="pc-dot" title="${esc(g.title)}"></span>`).join('')}</div>
+                        <div class="pc-file-row">
+                            <div class="pc-chunk-tabs" role="tablist" aria-orientation="vertical" aria-label="Пачки карточек"></div>
+                            <div class="pc-file"></div>
+                        </div>
                     </div>
                 </div>`;
             bindFile(root);

@@ -36,7 +36,7 @@ html[data-theme="light"] .pc-modal {
     --text: #14344c;
     --text-80: rgba(20, 52, 76, 0.85);
     --text-70: rgba(20, 52, 76, 0.75);
-    --text-55: rgba(20, 52, 76, 0.6);
+    --text-55: rgba(20, 52, 76, 0.7);
     --text-30: rgba(20, 52, 76, 0.32);
     --gold: #8a6a3a;
     --gold-80: rgba(138, 106, 58, 0.9);
@@ -64,8 +64,8 @@ html[data-theme="light"] .ct-map {
     --text: #cccccc;
     --text-80: rgba(204, 204, 204, 0.8);
     --text-70: rgba(204, 204, 204, 0.7);
-    --text-55: rgba(204, 204, 204, 0.55);
-    --text-30: rgba(204, 204, 204, 0.3);
+    --text-55: rgba(204, 204, 204, 0.68);
+    --text-30: rgba(204, 204, 204, 0.38);
     --gold: #E3CFAC;
     --gold-80: rgba(227, 207, 172, 0.8);
     --gold-55: rgba(227, 207, 172, 0.55);
@@ -240,8 +240,8 @@ button.pc-card:focus-visible {
 /* «вкладка папки» в цвете факультета */
 .pc-card-tab {
     position: absolute;
-    /* --tab-i — номер буквы в пачке (js): первая у левого края, следующие — дальше вправо */
-    left: calc(-1px + var(--tab-i, 0) * 1.55rem);
+    right: -1px;   /* у правого края */
+    text-align: right;
     bottom: 100%;
     min-width: 2.6rem;
     height: 0.85rem;
@@ -252,7 +252,7 @@ button.pc-card:focus-visible {
     background: var(--fac-main, #0a3e5d);
     border: 1px solid var(--gold-15);
     border-bottom: 0;
-    clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 100%, 0 100%);
+    clip-path: polygon(0.5rem 0, 100% 0, 100% 100%, 0 100%);   /* скос — с левой стороны */
 }
 
 /* квадратный аватар без рамки факультета */
@@ -290,7 +290,7 @@ button.pc-card:focus-visible {
 }
 
 .pc-k {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-55);
 }
 
@@ -378,8 +378,8 @@ button.pc-card:focus-visible {
 
 .pc-search-btn {
     flex: none;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: var(--pill-h);
+    height: var(--pill-h);
     margin-left: 0.3rem;
     padding: 0;
     border: 1px solid var(--gold-15);
@@ -410,9 +410,9 @@ button.pc-card:focus-visible {
     margin: 0;
     padding: 0.3rem;
     background: var(--pop-bg);
-    border: 1px solid var(--gold-15);
-    border-radius: 0.8rem;
-    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
 }
 
 .pc-search-list[hidden] {
@@ -472,13 +472,27 @@ button.pc-card:focus-visible {
     align-items: center;
     height: 100%;
     min-height: 0;
-    transition: transform 0.22s ease, opacity 0.22s ease;
+    transition: transform 0.4s cubic-bezier(0.33, 0, 0.2, 1), opacity 0.4s ease;
 }
 
-.pc-stage.is-leaving-left { transform: translateX(-3rem); opacity: 0; }
-.pc-stage.is-leaving-right { transform: translateX(3rem); opacity: 0; }
-.pc-stage.is-entering-left { transform: translateX(-3rem); opacity: 0; transition: none; }
-.pc-stage.is-entering-right { transform: translateX(3rem); opacity: 0; transition: none; }
+/* смена группы: всё съезжает вбок; гаснет всё, кроме стопки карточек — прозрачность на карточках
+   отключает их «матовое стекло» (размытие появлялось бы рывком в конце), поэтому они только едут */
+.pc-stage.is-leaving-left { transform: translateX(-9rem); }
+.pc-stage.is-leaving-right { transform: translateX(9rem); }
+.pc-stage.is-entering-left { transform: translateX(-9rem); transition: none; }
+.pc-stage.is-entering-right { transform: translateX(9rem); transition: none; }
+
+.pc-stage > :not(.pc-file) {
+    transition: opacity 0.35s ease;
+}
+
+.pc-stage:is(.is-leaving-left, .is-leaving-right, .is-entering-left, .is-entering-right) > :not(.pc-file) {
+    opacity: 0;
+}
+
+.pc-stage:is(.is-entering-left, .is-entering-right) > :not(.pc-file) {
+    transition: none;
+}
 
 /* название группы, по бокам — соседние группы со стрелками, тают в фон */
 .pc-deck-head {
@@ -509,16 +523,19 @@ button.pc-card:focus-visible {
     visibility: hidden;
 }
 
+/* соседние группы — у краёв блока; к названию текущей тают в фон */
 .pc-deck-side--prev {
-    justify-content: flex-end;
-    -webkit-mask-image: linear-gradient(to left, #000 35%, transparent);
-    mask-image: linear-gradient(to left, #000 35%, transparent);
+    justify-self: stretch;          /* на всю колонку: градиент считается от края блока, а не от слова */
+    justify-content: center;        /* посередине между краем блока и названием */
+    -webkit-mask-image: linear-gradient(to right, #000 68%, transparent);
+    mask-image: linear-gradient(to right, #000 68%, transparent);
 }
 
 .pc-deck-side--next {
-    justify-content: flex-start;
-    -webkit-mask-image: linear-gradient(to right, #000 35%, transparent);
-    mask-image: linear-gradient(to right, #000 35%, transparent);
+    justify-self: stretch;
+    justify-content: center;
+    -webkit-mask-image: linear-gradient(to left, #000 68%, transparent);
+    mask-image: linear-gradient(to left, #000 68%, transparent);
 }
 
 .pc-deck-side:hover,
@@ -553,7 +570,7 @@ button.pc-card:focus-visible {
 
 .pc-deck-count {
     margin: 0.1rem 0 0.4rem;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-55);
@@ -598,9 +615,19 @@ button.pc-card:focus-visible {
 }
 
 /* картотека: пачка до 15 карточек друг за другом (расставляет js) */
-.pc-file {
+/* ряд: ленточки пачек слева, стопка карточек по центру блока; под стопкой ничего нет */
+.pc-file-row {
     position: relative;
     flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.pc-file {
+    position: relative;
+    flex: 0 1 23rem;
     width: 100%;
     min-height: 0;
     overflow-x: hidden;
@@ -640,91 +667,107 @@ button.pc-card:focus-visible {
 
 /* поднятая карточка — целиком над следующей */
 .pc-file-card.is-lifted,
-.pc-file-card:focus-within {
+.pc-file-card:has(.pc-card:focus-visible) {
     transform: translate(-50%, calc(-1 * var(--lift, 0px)));
 }
 
 .pc-file-card.is-lifted .pc-card,
-.pc-file-card:focus-within .pc-card {
+.pc-file-card:has(.pc-card:focus-visible) .pc-card {
     border-color: var(--hover-line);
     border-top-color: var(--fac-accent, var(--gold-55));
     background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
     box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
 }
 
-/* смена пачки: карточки въезжают по очереди */
-.pc-file.is-entering-next .pc-file-card { animation: pc-chunk-next 0.4s cubic-bezier(0.25, 0.8, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
-.pc-file.is-entering-prev .pc-file-card { animation: pc-chunk-prev 0.4s cubic-bezier(0.25, 0.8, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
+/* маленькие карточки в картотеке — матовое стекло, как окошки в общежитии:
+   полупрозрачный фон, карточки позади размыты */
+.pc-file .pc-card {
+    background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--surface-top) 72%, transparent),
+        color-mix(in srgb, var(--surface-bot) 72%, transparent));
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
+}
 
+.pc-file .pc-file-card.is-lifted .pc-card,
+.pc-file .pc-file-card:has(.pc-card:focus-visible) .pc-card {
+    background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--surface-hover-top) 72%, transparent),
+        color-mix(in srgb, var(--surface-hover-bot) 72%, transparent));
+}
+
+/* смена пачки: карточки въезжают по очереди */
+.pc-file.is-entering-next .pc-file-card { animation: pc-chunk-next 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.pc-file.is-entering-prev .pc-file-card { animation: pc-chunk-prev 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+
+/* без прозрачности — чтобы «матовое стекло» карточек работало и во время въезда */
 @keyframes pc-chunk-next {
-    from { opacity: 0; margin-left: 2.5rem; }
-    to { opacity: 1; margin-left: 0; }
+    from { margin-left: 10rem; }
+    to { margin-left: 0; }
 }
 
 @keyframes pc-chunk-prev {
-    from { opacity: 0; margin-left: -2.5rem; }
-    to { opacity: 1; margin-left: 0; }
+    from { margin-left: -10rem; }
+    to { margin-left: 0; }
 }
 
 /* ярлычки пачек под карточками — как закладки картотеки, свисают вниз */
+/* ленточки пачек — столбиком слева от стопки, прижаты к ней; текст не повёрнут */
 .pc-chunk-tabs {
+    position: absolute;
+    top: 0.6rem;
+    right: calc(50% + 11.5rem - 2px);   /* левый край стопки (карточка 22rem + запас) */
     display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 0.25rem 0.2rem;
-    width: min(24rem, calc(100% - 0.5rem));
-    margin-top: 0.3rem;
-    padding-top: 0.15rem;
-    border-top: 2px solid var(--gold-55);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    z-index: 1;
 }
 
 .pc-chunk-tab {
-    min-width: 2.6rem;
-    padding: 0.2rem 0.65rem 0.3rem;
+    min-width: 3.4rem;
+    padding: 0.3rem 0.7rem 0.3rem 1.1rem;
     font: inherit;
     font-size: 0.75rem;
     letter-spacing: 0.02em;
+    text-align: right;
     color: var(--text-55);
-    background: linear-gradient(to bottom, var(--surface-bot), var(--surface-top));
-    border: 1px solid var(--gold-15);
-    border-top: 0;
-    border-radius: 0 0 8px 8px;
-    clip-path: polygon(0 0, 100% 0, calc(100% - 0.3rem) 100%, 0.3rem 100%);
+    background: linear-gradient(to right, var(--surface-bot), var(--surface-top));
+    border: 0;
+    /* ленточка-язычок: «ласточкин хвост» слева, правый край уходит под стопку */
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0.55rem 50%);
     cursor: pointer;
     transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+/* телефон: стопка во всю ширину — ленточки отдельным столбиком слева, стопка рядом */
+@media (max-width: 768px) {
+    .pc-chunk-tabs {
+        position: static;
+        flex: none;
+        padding-top: 0.6rem;
+    }
+
+    .pc-file {
+        flex: 1 1 auto;
+    }
 }
 
 .pc-chunk-tab:hover,
 .pc-chunk-tab:focus-visible {
     color: var(--hi);
-    transform: translateY(2px);
+    transform: translateX(-2px);
     outline: none;
 }
 
 .pc-chunk-tab.is-current {
-    color: var(--text);
-    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
-    border-color: var(--gold-55);
-    transform: translateY(3px);
+    color: #00223a;
+    background: linear-gradient(to right, #b6af98, #e3cfac);   /* золотая, как лента раздела */
+    transform: translateX(-0.4rem);
 }
 
-.pc-dots {
-    display: flex;
-    gap: 0.45rem;
-    margin-top: 0.5rem;
-}
 
-.pc-dot {
-    width: 0.4rem;
-    height: 0.4rem;
-    border-radius: 50%;
-    border: 1px solid var(--gold-55);
-    transition: background-color 0.25s ease;
-}
 
-.pc-dot.is-current {
-    background-color: var(--gold-55);
-}
 
 /* стрелки перелистывания групп */
 .pc-arrow {
@@ -969,7 +1012,7 @@ html.pc-open .main-scroll-viewport {
     position: relative;
     margin-left: -0.45rem;
     padding: 0.32rem 1.6rem 0.22rem 1.6rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     line-height: 1;
     color: var(--text-80);
     text-decoration: none;
@@ -1196,10 +1239,10 @@ html.pc-open .main-scroll-viewport {
     line-height: 1.35;
     text-align: center;
     color: var(--text);
-    background: var(--pop-bg2);
-    border: 1px solid var(--gold-15);
-    border-radius: 6px;
-    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.4);
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
 }
 
 .pc-room-pop[hidden] {
@@ -1473,68 +1516,171 @@ html.pc-open .main-scroll-viewport {
 
 /* ---------- Факультеты ---------- */
 
+/* вывески факультетов — одна под другой, на всю ширину */
 .fc-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.6rem;
+    padding: 0.5rem 0 2rem;
 }
 
+/* ---- вывеска: держатель, табличка, язычок; у каждого своя мягкая тень, как у шапки ---- */
 .fc-card {
-    display: grid;
-    grid-template-columns: 1.6rem minmax(0, 1fr);
-    gap: 0 1rem;
-    align-items: stretch;
+    --tab-w: 7.5rem;
+    --tab-x: 1.9rem;            /* язычок от левого края таблички */
+    --line-w: 3px;              /* внутренняя обводка — одинаковая у таблички и язычка */
+    --line-in: 0.75rem;         /* её отступ от края (у язычка — 10 из 100 по ширине) */
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 8.5rem;
     padding: 0;
-    overflow: hidden;
-    text-align: left;
     font: inherit;
-    color: var(--text);
-    background: linear-gradient(to bottom, var(--surface-top), var(--surface-bot));
-    border: 1px solid var(--gold-15);
-    border-radius: 6px;
+    text-align: left;
+    background: none;
+    border: 0;
     cursor: pointer;
-    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+    --shadow: drop-shadow(0 0.35rem 0.45rem rgba(0, 0, 0, 0.45));
 }
 
-.fc-card:hover,
 .fc-card:focus-visible {
-    border-color: var(--hover-line);
-    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
-    transform: translateY(-2px);
     outline: none;
 }
 
-/* полоска-галстук в цветах факультета */
-.fc-tie {
-    background:
-        repeating-linear-gradient(135deg,
-            transparent 0 14px, var(--fac-stripe, #888f85) 14px 16px,
-            transparent 16px 18px, var(--fac-stripe, #888f85) 18px 20px, transparent 20px 34px),
-        var(--fac-main, #888f85);
+/* палка-держатель: коричневая, шире таблички; на концах — вытянутые четырёхконечные звёзды */
+.fc-rod {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1.1rem;
+    height: 0.6rem;
+    filter: var(--shadow);
 }
 
-.fc-card-info {
-    display: grid;
-    gap: 0.35rem;
-    padding: 0.95rem 1rem 0.95rem 0;
+.fc-rod-body {
+    position: absolute;
+    left: 1.3rem;
+    right: 1.3rem;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, #8a6650, #5e4234 55%, #3f2b22);
 }
+
+.fc-rod-end {
+    position: absolute;
+    top: 50%;
+    width: 2.6rem;
+    height: 1.6rem;
+    transform: translateY(-50%);
+    fill: #5e4234;
+}
+
+.fc-rod-end--l { left: 0; }
+.fc-rod-end--r { right: 0; }
+
+/* табличка — второй цвет факультета, внутренняя полоска, текст справа сверху */
+.fc-plate {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    margin: 0.6rem 2.8rem 0;          /* по бокам видны концы палки со звёздами */
+    min-height: 7.4rem;
+    padding: 1.3rem 1.8rem 1.6rem calc(var(--tab-x) + var(--tab-w) + 1.4rem);
+    box-sizing: border-box;
+    text-align: right;
+    background: var(--fac-stripe, #e8dcc8);
+    box-shadow: 0 0.35rem 0.6rem rgba(0, 0, 0, 0.4);
+}
+
+.fc-plate::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--line-in);
+    right: var(--line-in);
+    bottom: var(--line-in);
+    border: var(--line-w) solid var(--fac-main, #8a8f88);
+    border-top: 0;
+    pointer-events: none;
+}
+
+.fc-ink--dark .fc-plate { color: #2e221b; }
+.fc-ink--light .fc-plate { color: #f3ebe0; }
 
 .fc-card-title {
-    font-weight: 600;
-    line-height: 1.3;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.7rem;
+    line-height: 1.1;
 }
 
-.fc-card-meta {
-    font-size: 0.8rem;
-    color: var(--text-55);
-}
-
-/* предметы, которые уже кто-то ведёт */
 .fc-card-subjects {
-    margin-top: -0.15rem;
-    font-size: 0.82rem;
+    max-width: 34rem;
+    font-size: 0.9rem;
     line-height: 1.35;
-    color: var(--text-80);
+    opacity: 0.85;
+}
+
+/* язычок — основной цвет факультета, поверх таблички; при наведении съезжает ниже */
+.fc-tab {
+    position: absolute;
+    top: 0.35rem;
+    left: calc(2.8rem + var(--tab-x));
+    width: var(--tab-w);
+    height: 10.4rem;
+    overflow: visible;
+    filter: var(--shadow);
+}
+
+.fc-tab-body {
+    fill: var(--fac-main, #8a8f88);
+}
+
+.fc-tab-line {
+    fill: none;
+    stroke-width: 3;          /* = --line-w */
+    vector-effect: non-scaling-stroke;
+}
+
+@media (max-width: 768px) {
+    .fc-card {
+        --tab-w: 4.6rem;
+        --tab-x: 0.7rem;
+        --line-in: 0.46rem;
+        min-height: 7rem;
+    }
+
+    .fc-plate {
+        margin: 0.6rem 1.8rem 0;
+        min-height: 6.4rem;
+        padding: 1rem 1.1rem 1.2rem calc(var(--tab-x) + var(--tab-w) + 0.9rem);
+    }
+
+    .fc-rod-end {
+        width: 1.9rem;
+        height: 1.15rem;
+    }
+
+    .fc-rod-body {
+        left: 0.9rem;
+        right: 0.9rem;
+    }
+
+    .fc-tab {
+        left: calc(1.8rem + var(--tab-x));
+        height: 7rem;
+    }
+
+    .fc-card-title {
+        font-size: 1.3rem;
+    }
+
+    .fc-card-subjects {
+        font-size: 0.8rem;
+    }
+
 }
 
 .fc-dean {
@@ -1564,6 +1710,17 @@ html.pc-open .main-scroll-viewport {
 
 .fc-head {
     padding-right: 9rem;
+}
+
+/* место под будущую картинку факультета: ~200px, на всю ширину блока (поверх полей) */
+.fc-pic {
+    height: 200px;
+    margin: 0.8rem -9rem 0.2rem -1.8rem;
+}
+
+/* язычок в большой карточке — на месте ленты */
+.fc-big .fc-big-tab .fc-tab-line {
+    stroke-width: 3;
 }
 
 .fc-subjects {
@@ -1633,10 +1790,14 @@ html.pc-open .main-scroll-viewport {
     width: 15rem;
     text-align: center;
     padding: 0.8rem 0.9rem 0.6rem;
-    background: var(--pop-bg, #022a42);
+    /* матовое стекло: полупрозрачный фон и размытие схемы под окошком */
+    background: color-mix(in srgb, var(--pop-bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
     border: 1px solid var(--gold-55);
-    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
+    box-shadow: var(--pop-shadow);
     pointer-events: none;
+    border-radius: var(--pop-radius);
 }
 
 .dm-pop.is-pinned {
@@ -1658,7 +1819,7 @@ html.pc-open .main-scroll-viewport {
 /* как «61 персонаж» под названием группы в картотеке */
 .dm-pop-kind {
     margin: 0.1rem 0 0.6rem;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-55);
@@ -1883,6 +2044,36 @@ html.pc-open .main-scroll-viewport {
 }
 
 /* ---------- Страница отвечающего (js/pages/player.js) ---------- */
+/* «назад» над именем — как стрелки к соседним группам в картотеке */
+.pl-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.pl-back:hover,
+.pl-back:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
+.pl-back-arrow {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-left: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+
 .pl-head {
     display: flex;
     align-items: center;
@@ -2007,7 +2198,7 @@ html.pc-open .main-scroll-viewport {
 .dm-tag {
     padding: 0.05rem 0.55rem;
     border-radius: 1rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     border: 1px solid var(--gold-15);
     color: var(--text-55);
 }
@@ -2027,6 +2218,12 @@ html.pc-open .main-scroll-viewport {
 @media (max-width: 768px) {
     .fc-head {
         padding-right: 5.5rem;
+    }
+
+    .fc-pic {
+        height: 150px;
+        margin-right: -5.5rem;
+        margin-left: -1.1rem;
     }
 
     .fc-big .pc-ribbon {
@@ -2259,7 +2456,7 @@ html.is-full-bleed .main-scroll-viewport::after {
     display: grid;
     gap: 0.25rem;
     margin: 0;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
 }
 
 .ct-card-meta div {
@@ -2396,15 +2593,17 @@ header.has-many-items .star-separator {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.3rem 0.75rem;
+    padding: 0 var(--pill-pad-x);
     font: inherit;
-    font-size: 0.8rem;
+    font-size: var(--pill-font);
     color: var(--text-70);
     background: transparent;
     border: 1px solid var(--gold-15);
-    border-radius: 1rem;
+    border-radius: var(--pill-radius);
     cursor: pointer;
     transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    height: var(--pill-h);
+    box-sizing: border-box;
 }
 
 .rg-drop-btn:hover,
@@ -2439,9 +2638,9 @@ header.has-many-items .star-separator {
     padding: 0.35rem;
     text-align: left;
     background: var(--pop-bg);
-    border: 1px solid var(--gold-15);
-    border-radius: 0.7rem;
-    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
 }
 
 .rg-drop-panel[hidden] {
@@ -2452,14 +2651,15 @@ header.has-many-items .star-separator {
     box-sizing: border-box;
     width: 100%;
     margin-bottom: 0.3rem;
-    padding: 0.3rem 0.6rem;
+    padding: 0 0.75rem;
     font: inherit;
     font-size: 0.8rem;
     color: var(--text);
     background: var(--hover);
     border: 1px solid var(--gold-15);
-    border-radius: 1rem;
+    border-radius: var(--pill-radius);
     outline: none;
+    height: var(--pill-h);
 }
 
 .rg-search:focus {
@@ -2501,7 +2701,7 @@ header.has-many-items .star-separator {
 .rg-opt-meta {
     margin-left: auto;
     padding-left: 0.6rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-55);
 }
 

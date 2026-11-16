@@ -323,7 +323,7 @@ html.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
 
 .sc-when {
     font-family: var(--font-main);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-55);
     padding: 0.05rem 0.5rem;
     border: 1px solid var(--gold-15);
@@ -444,7 +444,7 @@ html.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
     z-index: 2;
     background: #00223a;
     border-bottom: 1px solid var(--gold-15);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-55);
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
@@ -495,13 +495,14 @@ html.is-section .main-scroll-viewport:has(.dl-toolbar)::after {
     font-family: var(--font-main);
     font-size: 0.8rem;
     color: var(--text);
-    background: #001929;
+    background: var(--pop-bg);
     border: 1px solid var(--gold-55);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--pop-shadow);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 5;
+    border-radius: var(--pop-radius);
 }
 
 .ac-crown:hover::after,
@@ -680,7 +681,7 @@ a.ac-name-link:hover {
     .ac-stat::before {
         content: attr(data-label);
         display: block;
-        font-size: 0.68rem;
+        font-size: 0.75rem;
         color: var(--text-55);
     }
 
@@ -719,7 +720,7 @@ a.ac-name-link:hover {
 }
 
 .tg-form .tg-input {
-    height: 2rem;
+    height: var(--pill-h);
     padding: 0 0.9rem;
     background-image: none;   /* без лупы — это не поиск */
 }
@@ -757,10 +758,10 @@ a.ac-name-link:hover {
     list-style: none;
     margin: 0;
     padding: 0.25rem;
-    background: #022a42;
-    border: 1px solid var(--gold-15);
-    border-radius: 0.8rem;
-    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.45);
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
 }
 
 .tg-list[hidden] {
@@ -793,16 +794,17 @@ a.ac-name-link:hover {
 
 .tg-toggle,
 .tg-pick {
-    height: 1.75rem;
-    padding: 0 0.85rem;
+    height: var(--pill-h);
+    padding: 0 var(--pill-pad-x);
     font: inherit;
-    font-size: 0.8rem;
+    font-size: var(--pill-font);
     color: var(--text-80);
     background: transparent;
     border: 1px solid var(--gold-15);
-    border-radius: 2rem;
+    border-radius: var(--pill-radius);
     cursor: pointer;
     transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+    box-sizing: border-box;
 }
 
 .tg-toggle:hover,
@@ -812,8 +814,8 @@ a.ac-name-link:hover {
 }
 
 .tg-toggle[aria-pressed="true"] {
-    color: var(--text);
-    background: var(--gold-08);
+    color: #fff;
+    background: var(--hover);
     border-color: var(--gold-55);
 }
 

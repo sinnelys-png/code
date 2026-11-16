@@ -7,6 +7,15 @@
 
     RCU.playerHref = (key) => `#player/${encodeURIComponent(key)}`;
 
+    // «назад»: туда, откуда пришли по сайту; если страницу открыли сразу по ссылке — в картотеку
+    let moves = 0;
+    window.addEventListener('hashchange', () => { moves++; });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.pl-back')) return;
+        if (moves > 0) history.back();
+        else location.hash = '#characters';
+    });
+
     function avatarHTML(p) {
         return safeUrl(p.avatar)
             ? `<img class="pl-ava" src="${esc(p.avatar)}" alt="" referrerpolicy="no-referrer">`
@@ -54,6 +63,7 @@
             }
             const byName = (a, b) => a.name.localeCompare(b.name, 'ru');
             root.innerHTML = `
+                <button class="pl-back" type="button"><span class="pl-back-arrow" aria-hidden="true"></span>назад</button>
                 <section class="pl-head">
                     ${avatarHTML(p)}
                     <div class="pl-info">
