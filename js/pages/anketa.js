@@ -17,6 +17,8 @@
         [/^имя/i, 'name'],
         [/^возраст/i, 'age'],
         [/^(параметры|рост|внешн)/i, 'params'],
+        // параметры отдельными пунктами: «4. Вес: 72 кг», «5. Порода: персидский кот»
+        [/^(вес|порода|вид(\s+гибрида)?)\s*[:—–-]/i, 'params'],
         [/^(биография|история|био\s*:|био$)/i, 'bio'],
         [/^характер/i, 'character'],
         [/^роль/i, 'role'],
@@ -32,7 +34,7 @@
     const isLetterOrDigit = (ch) => /[\p{L}\p{N}]/u.test(ch);
 
     // «ㅤ» (U+3164) и подобные пустые символы — для отступов в анкетах, считаем пробелами
-    const clean = (s) => String(s || '').replace(/\r/g, '').replace(/[ㅤᅟᅠ⠀ﾠ]/g, ' ').trim();
+    const clean = (s) => String(s || '').replace(/\r/g, '').replace(/[ㅤᅟᅠ⠀ﾠ]/g, ' ').replace(/[「」『』]/g, '').trim();
     // убрать декоративные символы в начале строки («♤Биография» → «Биография»)
     const stripDecor = (s) => s.replace(/^[^\p{L}\p{N}«"(]+/u, '').trim();
 
@@ -74,15 +76,19 @@
     function splitSections(text) {
         const lines = clean(text).replace(/^["«]|["»]$/g, '').split('\n');
 
-        // 1) пронумерованные разделы
-        if (lines.filter(l => /^\s*[1-9]\s*[.)]/.test(l)).length >= 4) {
+        // 1) пронумерованные разделы; перед номером может стоять значок: «✩1. Селена Эсфир»;
+        //    номера бывают и римскими: «IV. Биография»
+        const NUM = /^\s*[^\p{L}\p{N}\s«"(]{0,3}\s*([1-9]|VIII|VII|VI|IV|IX|V|III|II|I)\s*[.)]\s*(.*)$/u;
+        const ROMAN = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9 };
+        const numOf = (v) => ROMAN[v] || Number(v);
+        if (lines.filter(l => NUM.test(l)).length >= 4) {
             const blocks = [[]];
             let lastNum = 0;
             lines.forEach(l => {
-                const m = l.match(/^\s*([1-9])\s*[.)]\s*(.*)$/);
-                if (m && Number(m[1]) === 1 && lastNum >= 5) blocks.push([]);      // вторая анкета подряд
+                const m = l.match(NUM);
+                if (m && numOf(m[1]) === 1 && lastNum >= 5) blocks.push([]);      // вторая анкета подряд
                 if (m) {
-                    lastNum = Number(m[1]);
+                    lastNum = numOf(m[1]);
                     blocks[blocks.length - 1].push({ num: lastNum, lines: [m[2]] });
                 } else if (blocks[blocks.length - 1].length) {
                     const sec = blocks[blocks.length - 1];
@@ -117,7 +123,38 @@
             }));
         }
 
-        // 3) разделы по подписям: «✧ Возраст: …», «✧ Биография:», «✧ Интересные факты:»
+        // 3) разделы через длинное тире в начале строки («– 19 лет», «– Студент»);
+        //    первая строка без тире — имя, пункты через короткий дефис — список фактов.
+        //    Подписей нет, поэтому поле угадываем по содержимому.
+        const DASH = /^\s*[–—]\s+/;
+        if (lines.filter(l => DASH.test(l)).length >= 4) {
+            const sections = [];
+            let prevBlank = true;
+            lines.forEach(l => {
+                const t = l.trim();
+                if (!t) { prevBlank = true; return; }
+                const item = /^[-•*]\s+/.test(t);
+                const last = sections[sections.length - 1];
+                if (DASH.test(l) || !sections.length) sections.push({ lines: [t.replace(DASH, '')] });
+                else if (item && prevBlank && !(last && last.list)) sections.push({ list: true, lines: [t] });
+                else last.lines.push(t);
+                prevBlank = false;
+            });
+            return [sections.map((s, i) => {
+                const head = s.lines[0];
+                let field = labelOf(head) || guessField(head);
+                if (!field) {
+                    if (s.list) field = 'facts';
+                    else if (i === 0) field = 'name';
+                    else if (/\d\s*(см|кг)/i.test(head)) field = 'params';
+                    else if (/взаимодейств/i.test(head)) field = 'interaction';
+                    else if (s.lines.join(' ').length > 150) field = 'bio';
+                }
+                return { field: field || '', lines: s.lines };
+            })];
+        }
+
+        // 4) разделы по подписям: «✧ Возраст: …», «✧ Биография:», «✧ Интересные факты:»
         //    (значок раздела может совпадать с маркером списка, поэтому ищем по самим подписям)
         const isHead = (l) => {
             const t = stripDecor(l);
@@ -132,7 +169,7 @@
             return [sections];
         }
 
-        // 4) без явной разметки — весь текст как биография
+        // 5) без явной разметки — весь текст как биография
         return [[{ field: 'bio', lines }]];
     }
 
@@ -195,7 +232,7 @@
             || t.match(/(?:^|[^\d\/])((?:1\d\d|2[0-4]\d)(?:\s*\/\s*(?:1\d\d|2[0-4]\d))?)(?!\s*кг)(?=[^\d]|$)/i) || [])[1];
         const weight = (t.match(/вес\s*:?\s*(\d{2,3}(?:\s*\/\s*\d{2,3})?)/i) || t.match(/(\d{2,3}(?:\s*\/\s*\d{2,3})?)\s*кг/i) || [])[1];
         // «порода: …» / «вид: …» — только как подпись в начале строки (не «на вид грубый»)
-        let species = (t.match(/(?:^|\n)[^\p{L}\n]*(?:порода|вид)\s*:?\s*([^\n;]+)/iu) || [])[1]
+        let species = (t.match(/(?:^|\n)[^\p{L}\n]*(?:порода|вид)(?:\s+гибрида)?\s*[:–—-]?[^\S\n]*(?:\n[^\p{L}\n]*)?([^\n;]+)/iu) || [])[1]
             // «Гибрид вида: каринтийская коровка»
             || (t.match(/(?:порода|вида?)\s*:\s*([^\n;]+)/i) || [])[1];
         // параметры списком («› 170 / › 60 кг / › лисица») — вид: строка без цифр
@@ -205,7 +242,9 @@
         if (!species) {
             // «188 см, 97 кг, непородистый котик.» — то, что осталось после цифр
             species = t.replace(/рост|вес/gi, '')
+                .replace(/\d{1,3}\s*(?:года|год|лет)(?![а-я])/gi, '')
                 .replace(/\d{2,3}(?:\s*\/\s*\d{2,3})?\s*(см|кг)/gi, '')
+                .replace(/[◦•|·]/g, ' ')
                 .replace(/^[\s,./:;\-–—>]+|[\s,./:;\-–—>]+$/g, '')
                 .split('\n')[0]
                 .replace(/^[\s,./:;\-–—>]+/, '')
@@ -223,6 +262,7 @@
     function cleanSpecies(v) {
         const t = String(v || '')
             .replace(/^[^\p{L}]*(?:вид|порода)\s*[:–—-]?\s*/iu, '')
+            .replace(/^(?:[/\s]*(?:вид|порода))?\s*гибрида\s*[:–—-]\s*/iu, '')
             .replace(/[.;\s]+$/, '')
             .trim();
         return t && t.length <= 60 && !/(^|\s)курс/i.test(t) ? t : '';
@@ -267,7 +307,9 @@
         const idx = shared && nameLine.indexOf(other) < nameLine.indexOf(me) ? 1 : 0;
 
         // параметры без своей подписи могут идти строками под возрастом («🐀19 лет / 158см/45кг / крыса»)
-        const paramsText = block.params || String(block.age || '').split('\n').slice(1).join('\n');
+        const ageLines = String(block.age || '').split('\n');
+        const paramsText = block.params || ageLines.slice(1).join('\n')
+            || (/\d\s*(см|кг)/i.test(ageLines[0]) ? ageLines[0] : '');
         const params = parseParams(personPart(paramsText, me, other), idx);
         const age = (String(block.age || '').match(/\d{1,3}\s*(года|год|лет)?/i) || [''])[0].trim();
 
