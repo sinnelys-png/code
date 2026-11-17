@@ -246,7 +246,7 @@
     function anketaHTML(c, a) {
         if (!a) {
             return `
-                <section class="pc-seg pc-text">
+                <section class="pc-seg pc-text pc-seg--bio-flex">
                     <h3 class="pc-section-title">биография</h3>
                     <p class="pc-soon">${anketaTexts ? 'Анкеты пока нет в таблице.' : 'Загружаем анкету…'}</p>
                 </section>`;
@@ -255,7 +255,7 @@
         const info = a.interaction ? `<span><span class="pc-k">взаимодействия</span> ${esc(String(a.interaction).trim().replace(/[A-Za-zА-Яа-яЁё]/, ch => ch.toLowerCase()))}</span>` : '';
         return `
             ${info ? `<section class="pc-seg pc-interaction">${info}</section>` : ''}
-            <section class="pc-seg pc-text">
+            <section class="pc-seg pc-text pc-seg--bio-flex">
                 <h3 class="pc-section-title">биография</h3>
                 <div class="pc-scroll pc-scroll--bio">
                     ${a.bio.length ? paras(a.bio) : '<p class="pc-soon">Биографии нет в анкете.</p>'}
@@ -675,7 +675,7 @@
                 last.list.push(...pt.list);
             } else chunks.push({ keys: [...pt.keys], list: [...pt.list], part: pt.part });
         });
-        return chunks.map(ch => {
+        const out = chunks.map(ch => {
             let label = ch.keys.length > 1 ? `${ch.keys[0]}–${ch.keys[ch.keys.length - 1]}` : ch.keys[0];
             if (ch.part) {
                 // часть большой буквы — по первым двум буквам первого и последнего имени
@@ -685,6 +685,8 @@
             }
             return { label, list: ch.list };
         });
+        // по имени первой идёт ленточка «все» — она и открыта по умолчанию
+        return by === 'name' && list.length ? [{ label: 'все', list, all: true }, ...out] : out;
     }
 
     function layout() {
@@ -699,10 +701,17 @@
         const avail = box.clientHeight;
         // помещается целиком — пачка от самого верха, а поднятая задняя карточка может зайти
         // на заголовок над картотекой; не помещается — прокрутка и место сверху под подъём
-        const fitAll = n > 1 ? (avail - 8 - H - 8) / (n - 1) : H;
+        // шаг между карточками — не больше, чем у пачки из CHUNK штук; в «все» карточек больше,
+        // поэтому стопка не сжимается, а прокручивается
+        const fitAll = n > CHUNK ? 0 : (n > 1 ? (avail - 8 - H - 8) / (n - 1) : H);
         const fits = fitAll >= MIN_STEP;
         const top0 = fits ? 8 : Math.round(H * 0.55);
-        const fit = n > 1 ? (avail - top0 - H - 8) / (n - 1) : H;
+        // как у полной пачки; высоту карточки берём обычную (среднюю), а не самой высокой из всех
+        const Hs = cards.map(el => el.offsetHeight).sort((x, y) => x - y);
+        const Hmid = Hs[Math.floor(Hs.length / 2)] || H;
+        const fit = n > CHUNK
+            ? (avail - 8 - Hmid - 8) / (CHUNK - 1)
+            : (n > 1 ? (avail - top0 - H - 8) / (n - 1) : H);
         const step = Math.round(Math.max(MIN_STEP, Math.min(H * MAX_STEP, fit)));
         box.classList.toggle('is-fit', fits);
         cards.forEach((el, i) => {
@@ -753,7 +762,8 @@
         box.querySelectorAll('.pc-file-card.is-lifted').forEach(el => el.classList.remove('is-lifted'));
         if (!name) return;
         // карточка из другой пачки — сначала открыть её пачку
-        const ci = file.chunks.findIndex(ch => ch.list.some(c => c.name === name));
+        const inChunk = (k) => file.chunks[k] && file.chunks[k].list.some(c => c.name === name);
+        const ci = inChunk(file.ci) ? file.ci : file.chunks.findIndex((ch, k) => !ch.all && inChunk(k));
         if (ci >= 0 && ci !== file.ci) showChunk(ci, ci > file.ci ? 1 : -1);
         const card = box.querySelector(`.pc-card[data-name="${CSS.escape(name)}"]`);
         const item = card && card.closest('.pc-file-card');

@@ -223,8 +223,8 @@ html[data-theme="light"] .theme-toggle {
     color: var(--text);
     background: linear-gradient(to bottom, var(--surface-top), var(--surface-bot));
     border: 1px solid var(--gold-15);
-    border-top: 3px solid var(--fac-accent, var(--gold-55));   /* основной цвет факультета */
-    border-radius: 0 6px 6px 6px;
+    border-top: 3px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
+    border-radius: 0 0 6px 6px;                              /* сверху углы прямые: справа язычок с буквой */
     cursor: pointer;
     transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
@@ -232,7 +232,7 @@ html[data-theme="light"] .theme-toggle {
 button.pc-card:hover,
 button.pc-card:focus-visible {
     border-color: var(--hover-line);
-    border-top-color: var(--fac-accent, var(--gold-55));
+    border-top-color: var(--fac-main, var(--gold-55));
     background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
     outline: none;
 }
@@ -674,7 +674,7 @@ button.pc-card:focus-visible {
 .pc-file-card.is-lifted .pc-card,
 .pc-file-card:has(.pc-card:focus-visible) .pc-card {
     border-color: var(--hover-line);
-    border-top-color: var(--fac-accent, var(--gold-55));
+    border-top-color: var(--fac-main, var(--gold-55));
     background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
     box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
 }
@@ -1438,6 +1438,30 @@ html.pc-open .main-scroll-viewport {
 
 .pc-scroll--bio {
     max-height: 16rem;
+}
+
+/* Анкета персонажа — одной высоты, сколько бы ни было текста (52.25rem — анкета Арнольда
+   Бондштедта, где биография и факты упираются в свои пределы). Лишнее место или нехватку
+   забирает блок биографии: он растягивается и сжимается, остальные блоки — по содержимому. */
+.pc-big.pc-ticket:not(.fc-big) {
+    height: 52.25rem;
+}
+
+.pc-big.pc-ticket:not(.fc-big) > :not(.pc-seg--bio-flex) {
+    flex: none;
+}
+
+.pc-big.pc-ticket:not(.fc-big) > .pc-seg--bio-flex {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.pc-big.pc-ticket:not(.fc-big) .pc-seg--bio-flex .pc-scroll--bio {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
 }
 
 .pc-scroll--facts {
