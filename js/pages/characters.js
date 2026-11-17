@@ -705,7 +705,9 @@
         // поэтому стопка не сжимается, а прокручивается
         const fitAll = n > CHUNK ? 0 : (n > 1 ? (avail - 8 - H - 8) / (n - 1) : H);
         const fits = fitAll >= MIN_STEP;
-        const top0 = fits ? 8 : Math.round(H * 0.55);
+        // стопка начинается на одной высоте и с прокруткой, и без (подъём верхних карточек
+        // при прокрутке ограничен краем — см. liftCard)
+        const top0 = 8;
         // как у полной пачки; высоту карточки берём обычную (среднюю), а не самой высокой из всех
         const Hs = cards.map(el => el.offsetHeight).sort((x, y) => x - y);
         const Hmid = Hs[Math.floor(Hs.length / 2)] || H;
@@ -719,7 +721,9 @@
             el.style.zIndex = String(i + 1);
             // подскок небольшой: карточка остаётся под указателем (не выше открытой полоски),
             // но приоткрывается заметно — не больше половины своей высоты
-            el.style.setProperty('--lift', `${i < n - 1 ? Math.max(0, Math.min(H - step - 6, Math.round(H * 0.45))) : 0}px`);
+            const lift = i < n - 1 ? Math.max(0, Math.min(H - step - 6, Math.round(H * 0.45))) : 0;
+            el.dataset.lift = String(lift);
+            el.style.setProperty('--lift', `${lift}px`);
             el.style.setProperty('--i', String(i));
         });
         const end = box.querySelector('.pc-file-end');
@@ -768,6 +772,12 @@
         const card = box.querySelector(`.pc-card[data-name="${CSS.escape(name)}"]`);
         const item = card && card.closest('.pc-file-card');
         if (!item) return;
+        // в прокручиваемой стопке карточка не может подняться выше её верхнего края —
+        // верхние карточки поднимаются, насколько есть место
+        if (!box.classList.contains('is-fit')) {
+            const room = Math.max(0, (parseFloat(item.style.top) || 0) - box.scrollTop - 2);
+            item.style.setProperty('--lift', `${Math.min(Number(item.dataset.lift) || 0, room)}px`);
+        }
         item.classList.add('is-lifted');
         if (scroll && box.scrollHeight > box.clientHeight) {
             const top = parseFloat(item.style.top) || 0;

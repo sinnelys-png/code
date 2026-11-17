@@ -213,7 +213,7 @@ html[data-theme="light"] .theme-toggle {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0 1rem;
-    align-items: center;
+    align-items: start;                  /* аватар у всех на одном расстоянии от верха */
     width: 100%;
     margin-top: 0.85rem;                 /* место под «вкладку папки» сверху */
     padding: 0.9rem 1rem;
@@ -1241,7 +1241,8 @@ html.pc-open .main-scroll-viewport {
 }
 
 .pc-big-name {
-    margin: 0;
+    margin: -0.15rem 0 0;      /* у крупного имени внутренний отступ над буквами больше — */
+    line-height: 1.1;          /* подтягиваем, чтобы от «имя» до имени было как от «курс» до номера */
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--text);
