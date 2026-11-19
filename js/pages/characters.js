@@ -292,6 +292,7 @@
         const render = () => {
             modalBody.innerHTML = bigCard(data.byName.get(name));
             fitStats(modalBody);
+            fitName(modalBody);
         };
         // переход из одной открытой карточки в другую (стрелки, ссылка на дуэт или соседа)
         if (unfold) render();
@@ -422,11 +423,15 @@
         ], { duration: GROW, easing: EASE, fill: 'backwards' });
 
         // блоки — по очереди, сверху вниз
+        // (раскрывающийся блок сначала темнее и светлеет вместе с раскрытием)
         lowers.forEach((el, i) => el.animate([
-            { transform: 'perspective(1600px) rotateX(-90deg)', opacity: 0 },
+            { transform: 'perspective(1600px) rotateX(-90deg)', opacity: 0, filter: 'brightness(0.45)' },
             { opacity: 1, offset: 0.25 },
-            { transform: 'none', opacity: 1 },
+            { transform: 'none', opacity: 1, filter: 'brightness(1)' },
         ], { duration: PART, delay: start + i * UNIT, easing: 'cubic-bezier(0.25, 0.6, 0.35, 1)', fill: 'backwards' }));
+        // пока блоки раскладываются, на стыках видны тонкие щели — закрываем их фоном анкеты
+        card.classList.add('is-unfolding');
+        setTimeout(() => card.classList.remove('is-unfolding'), opened + 60);
         if (seam) seam.animate([{ opacity: 0 }, { opacity: 1 }],
             { duration: 300, delay: opened - 120, fill: 'backwards' });
         // рамка анкеты (.pc-ticket::after) проявляется в конце, вместе с лентой —
@@ -560,6 +565,30 @@
             const to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.pc-room-star, .pc-room-pop');
             if (from && !to) popTimer = setTimeout(() => setRoomPop(null, false), 300);
         });
+    }
+
+    // длинное имя: звёздочка дуэта уехала на вторую строку — уменьшаем шрифт имени,
+    // пока имя со звёздочкой не встанет в одну строку (но не меньше 0.95rem)
+    function fitName(root) {
+        const fit = () => {
+            const h = root.querySelector('.pc-big-name');
+            if (!h) return;
+            h.style.fontSize = '';
+            // offsetHeight — без учёта анимации раскрытия (она масштабирует шапку)
+            const oneLine = () => {
+                const lh = parseFloat(getComputedStyle(h).lineHeight) || parseFloat(getComputedStyle(h).fontSize) * 1.2;
+                return h.offsetHeight <= lh * 1.4;
+            };
+            let size = parseFloat(getComputedStyle(h).fontSize);
+            const min = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.95;
+            while (!oneLine() && size > min) {
+                size -= 0.5;
+                h.style.fontSize = `${size}px`;
+            }
+            if (!oneLine()) h.style.fontSize = '';   // не влезает и так — пусть переносится как есть
+        };
+        fit();
+        if (document.fonts) document.fonts.ready.then(fit);
     }
 
     // параметр не помещается в 3 строки (длинный вид) — уменьшаем шрифт

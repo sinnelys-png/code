@@ -1015,6 +1015,11 @@ html.pc-open .main-scroll-viewport {
     pointer-events: none;
 }
 
+/* во время раскрытия анкеты блоки чуть заходят друг на друга — на стыках нет щелей */
+.pc-ticket.is-unfolding .pc-seg {
+    box-shadow: 0 -2px 0 var(--card-bg), 0 2px 0 var(--card-bg);
+}
+
 /* шапка анкеты чуть ниже, чтобы рамка не задевала её содержимое */
 .pc-ticket .pc-seg--head {
     padding-top: calc(var(--frame-in) + 0.9rem);
@@ -1089,7 +1094,8 @@ html.pc-open .main-scroll-viewport {
     position: relative;
     z-index: 5;
     width: 5.5rem;
-    height: 1.55rem;
+    height: calc(1.55rem + 1px);   /* на 1px заходит на анкету — без просвета на стыке */
+    margin-bottom: -1px;
     background: var(--card-bg);
     border-radius: 6px 0 0 0;
     clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 100%, 0 100%);
@@ -1305,7 +1311,7 @@ html.pc-open .main-scroll-viewport {
     transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
-.pc-room-star--yes { color: #8fd4a7; }
+.pc-room-star--yes { color: var(--gold); }
 .pc-room-star--no { color: var(--text-55); }
 
 .pc-room-star:hover,
@@ -1518,8 +1524,12 @@ html.pc-open .main-scroll-viewport {
     content: "✦";
     position: absolute;
     left: 0;
-    top: 0.05em;
-    font-size: 0.75em;
+    top: 0;
+    height: 1lh;                  /* высота строки пункта (шрифт тот же) — звёздочка по её центру */
+    display: flex;
+    align-items: center;
+    transform: scale(0.75);       /* меньше текста — уменьшаем масштабом, не шрифтом */
+    transform-origin: left center;
     color: var(--gold-55);
     transition: color 0.5s ease, text-shadow 0.5s ease;
 }
@@ -2330,6 +2340,210 @@ html.pc-open .main-scroll-viewport {
     .pl-ava {
         width: 4.5rem;
         height: 4.5rem;
+    }
+}
+
+/* ---------- Линейка роста (js/pages/lineup.js) ---------- */
+.lu-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 0.8rem;
+    margin: 0 0 1rem;
+}
+
+.lu-tools .lu-search {
+    width: min(14rem, 100%);
+    height: var(--pill-h, 1.75rem);
+    padding: 0 0.9rem 0 2.2rem;
+    font-size: 0.8rem;
+}
+
+.lu-roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.lu-fac {
+    height: var(--pill-h, 1.75rem);
+    padding: 0 0.8rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--text-80);
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-15);
+    border-radius: var(--pill-radius, 2rem);
+    cursor: pointer;
+}
+
+/* поле линейки: деления от пола, ряд персонажей прокручивается вбок, деления остаются */
+.lu-chart {
+    --name-h: 3.4rem;
+    --chart-h: 30rem;
+    position: relative;
+    height: calc(var(--chart-h) + 0.8rem);     /* снизу — место под полосу прокрутки */
+}
+
+.lu-grid {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(var(--chart-h) - var(--name-h));
+    pointer-events: none;
+}
+
+.lu-mark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed var(--gold-15);
+}
+
+.lu-mark.is-major {
+    border-top-style: solid;
+    border-top-color: var(--gold-55);
+    opacity: 0.6;
+}
+
+.lu-mark span {
+    position: absolute;
+    left: 0;
+    bottom: 0.15rem;
+    font-size: 0.7rem;
+    color: var(--text-55);
+}
+
+.lu-row {
+    position: absolute;
+    inset: 0 0 auto 2.4rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
+}
+
+.lu-person {
+    flex: none;
+    width: 4.4rem;
+    height: var(--chart-h);    /* ровно высота поля — пол совпадает с нулём делений */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    font: inherit;
+    color: var(--text);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.lu-stand {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-bottom: 2px solid var(--gold-55);      /* пол */
+}
+
+.lu-figure {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* число над аватаром — вне высоты: верх аватара стоит ровно на отметке роста */
+.lu-cm {
+    position: absolute;
+    bottom: calc(100% + 0.15rem);
+    font-size: 0.7rem;
+    color: var(--text-55);
+    transition: color 0.2s ease;
+}
+
+.lu-ava {
+    flex: none;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 2px var(--fac-main, var(--gold-55));
+}
+
+.lu-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    color: var(--gold);
+    background: var(--hover);
+}
+
+.lu-bar {
+    flex: 1;
+    width: 0.8rem;
+    margin-top: 0.3rem;
+    background: linear-gradient(to bottom, var(--fac-main, #888f85), color-mix(in srgb, var(--fac-main, #888f85) 35%, transparent));
+    border-radius: 3px 3px 0 0;
+    transition: filter 0.2s ease;
+}
+
+.lu-name {
+    flex: none;
+    height: var(--name-h);
+    padding-top: 0.35rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--text-80);
+    overflow: hidden;
+}
+
+.lu-person:hover .lu-cm,
+.lu-person:focus-visible .lu-cm,
+.lu-person:hover .lu-name,
+.lu-person:focus-visible .lu-name {
+    color: var(--hi);
+}
+
+.lu-person:hover .lu-bar,
+.lu-person:focus-visible .lu-bar {
+    filter: brightness(1.3);
+}
+
+.lu-person:focus-visible {
+    outline: none;
+}
+
+.lu-note,
+.lu-empty {
+    margin: 0.8rem 0 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+@media (max-width: 768px) {
+    .lu-chart {
+        --chart-h: 24rem;
+    }
+
+    .lu-person {
+        width: 3.6rem;
+    }
+
+    .lu-ava {
+        width: 2.3rem;
+        height: 2.3rem;
     }
 }
 

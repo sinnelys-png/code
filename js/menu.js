@@ -2,9 +2,9 @@
 // Чтобы добавить раздел: дописать строку в список и подключить страницу (js/pages/…).
 //
 // Как раскладывается:
-//   • до 6 пунктов — поровну слева и справа от герба (справа на один больше, если нечётно);
+//   • до 7 пунктов — поровну слева и справа от герба (слева на один больше, если нечётно);
 //     больше 4 — каждая сторона в две строки (звёздочки только между пунктами одной строки);
-//   • больше 6 — первые 5 в шапке, остальные в выпадающем «ещё ▾» справа.
+//   • больше 7 — первые 6 в шапке, остальные в выпадающем «ещё ▾» справа.
 // Подключается до js/site.js (там на пункты меню вешаются эффекты блика).
 (() => {
     const items = window.SITE_MENU;
@@ -12,7 +12,7 @@
     const right = document.querySelector('.nav-right');
     if (!Array.isArray(items) || !left || !right) return;
 
-    const MAX_IN_HEADER = 6;
+    const MAX_IN_HEADER = 7;
     const visible = items.length > MAX_IN_HEADER ? items.slice(0, MAX_IN_HEADER - 1) : items;
     const more = items.length > MAX_IN_HEADER ? items.slice(MAX_IN_HEADER - 1) : [];
 
@@ -20,7 +20,7 @@
     const link = ([href, title]) => `<a href="${esc(href)}">${esc(title)}</a>`;
     const join = (list) => list.map(link).join('<span class="star-separator">✦</span>');
 
-    const half = Math.floor(visible.length / 2);
+    const half = Math.ceil(visible.length / 2);   // слева на один больше, если нечётно
     // сторона меню: если пунктов много — две строки, в верхней больше
     const rows = (list) => {
         if (visible.length <= 4 || list.length < 2) return join(list);
