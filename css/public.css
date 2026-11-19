@@ -2344,38 +2344,9 @@ html.pc-open .main-scroll-viewport {
 }
 
 /* ---------- Линейка роста (js/pages/lineup.js) ---------- */
-.lu-tools {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem 0.8rem;
-    margin: 0 0 1rem;
-}
-
-.lu-tools .lu-search {
-    width: min(14rem, 100%);
-    height: var(--pill-h, 1.75rem);
-    padding: 0 0.9rem 0 2.2rem;
-    font-size: 0.8rem;
-}
-
-.lu-roles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-}
-
-.lu-fac {
-    height: var(--pill-h, 1.75rem);
-    padding: 0 0.8rem;
-    font: inherit;
-    font-size: 0.8rem;
-    color: var(--text-80);
-    background: var(--pop-bg);
-    border: 1px solid var(--gold-15);
-    border-radius: var(--pill-radius, 2rem);
-    cursor: pointer;
+/* фильтры — те же выпадающие меню, что в «Отношениях» (.rg-filters) */
+.lu-filters {
+    margin-bottom: 1rem;
 }
 
 /* поле линейки: деления от пола, ряд персонажей прокручивается вбок, деления остаются */
@@ -2428,6 +2399,25 @@ html.pc-open .main-scroll-viewport {
     padding: 0 0.5rem;
     scrollbar-width: thin;
     scrollbar-color: var(--text-30) transparent;
+}
+
+/* ряд можно тянуть мышью */
+.lu-row {
+    cursor: grab;
+}
+
+.lu-row.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.lu-row.is-dragging .lu-person {
+    cursor: grabbing;
+}
+
+.lu-person img {
+    -webkit-user-drag: none;
+    user-select: none;
 }
 
 .lu-person {
