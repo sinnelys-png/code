@@ -97,7 +97,7 @@
     }
 
     RCU.pages.tags = {
-        title: 'Хэштеги',
+        title: 'Генератор',
         load: () => RCU.dataOf('deadlines'),
         render(root, [rows, viewerId]) {
             const byName = new Map(rows.map(r => [r.name, r]));

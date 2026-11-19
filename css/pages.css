@@ -694,11 +694,6 @@ a.ac-name-link:hover {
    ГЕНЕРАТОР ХЭШТЕГОВ (js/pages/tags.js)
    ========================================================================== */
 
-.home-tags {
-    display: block;
-    width: fit-content;
-    margin: 1.5rem auto 0;
-}
 
 .tg-form {
     display: flex;

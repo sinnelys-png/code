@@ -125,11 +125,9 @@
                 : postsBlock('ближайшие посты', posts, 'Запланированных постов пока нет.'));
         }
 
-        root.innerHTML = (blocks.length
+        root.innerHTML = blocks.length
             ? blocks.filter(Boolean).join('')
-            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>')
-            // генератор хэштегов — отдельная страница без пункта в меню (js/pages/tags.js)
-            + '<a class="home-more home-tags" href="#tags">✦ генератор хэштегов для поста</a>';
+            : '<p class="dl-status">Не удалось загрузить сводку. Попробуйте ещё раз чуть позже.</p>';
     }
 
     RCU.home = { render };

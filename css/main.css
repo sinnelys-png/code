@@ -514,6 +514,19 @@ header a.is-glaring {
         padding: 0.15rem 0.3rem;
     }
 
+    /* узкий экран: пункты столбиком по центру, звёздочка — отдельной строкой между ними */
+    header:not(.has-many-items) .nav-left,
+    header:not(.has-many-items) .nav-right {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 0.1rem;
+    }
+
+    header:not(.has-many-items) .star-separator {
+        line-height: 1;
+        font-size: 0.7em;
+    }
+
     .star-separator {
         margin-top: 0;
     }
