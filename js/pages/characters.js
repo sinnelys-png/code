@@ -1106,14 +1106,19 @@
             if (swiped) { swiped = false; return; }
             const item = e.target.closest('.pc-file-card');
             if (!item) { liftCard(null); return; }
-            openCharacter(item.querySelector('.pc-card').dataset.name);
+            const name = item.querySelector('.pc-card').dataset.name;
+            if (!item.classList.contains('is-lifted')) liftCard(name);   // касание — карточка поднимается
+            openCharacter(name);
         });
         // Наведение (мышь или палец). Карточку выбираем по неподвижной разметке, а не по :hover:
         // поднятая карточка уходит из-под указателя, и иначе соседние начинали бы дёргаться.
         // Пока указатель над уже поднятой карточкой — она остаётся, до неё можно дотянуться.
         let lastY = null;
+        // пока анкета открыта (и пока складывается обратно), её карточка остаётся поднятой:
+        // мышь над стопкой её не опускает — опускает closeCharacter, когда анкета «вернулась»
+        const anketaOn = () => modal && !modal.hidden;
         const pick = (e) => {
-            if (!file.geom) return;
+            if (!file.geom || anketaOn()) return;
             const goingUp = lastY != null && e.clientY < lastY;
             lastY = e.clientY;
             if (e.pointerType === 'touch') {
@@ -1139,7 +1144,7 @@
             if (!item.classList.contains('is-lifted')) liftCard(item.querySelector('.pc-card').dataset.name);
         };
         box.addEventListener('pointermove', pick);
-        box.addEventListener('mouseleave', () => liftCard(null));
+        box.addEventListener('mouseleave', () => { if (!anketaOn()) liftCard(null); });
     }
 
     // стрелки клавиатуры ←→ — группы
