@@ -113,19 +113,21 @@
     }
 
     // лента-закладка: снаружи основной цвет факультета, внутренняя линия — второй
-    const RIBBON = `
+    // у каждой ленты свой id градиента: при листании на экране сразу две анкеты,
+    // и с общим id новая лента брала бы цвет обводки у старой
+    let ribbonId = 0;
+    const ribbon = (id = `pc-ribbon-glow-${++ribbonId}`) => `
         <svg class="pc-ribbon" viewBox="0 0 60 140" preserveAspectRatio="none" aria-hidden="true">
             <defs>
-                <radialGradient id="pc-ribbon-glow" class="pc-ribbon-glow" gradientUnits="userSpaceOnUse" cx="-999" cy="-999" r="90">
+                <radialGradient id="${id}" class="pc-ribbon-glow" gradientUnits="userSpaceOnUse" cx="-999" cy="-999" r="90">
                     <stop offset="0%" class="pc-ribbon-glow-core" />
                     <stop offset="50%" class="pc-ribbon-glow-mid" />
                     <stop offset="100%" class="pc-ribbon-glow-edge" />
                 </radialGradient>
             </defs>
             <path class="pc-ribbon-body" d="M0 0 H60 V140 L30 104 L0 140 Z" />
-            <path class="pc-ribbon-line" d="M10 0 V107.7 L30 83.7 L50 107.7 V0" />
+            <path class="pc-ribbon-line" d="M10 0 V107.7 L30 83.7 L50 107.7 V0" style="stroke: url(#${id})" />
         </svg>`;
-    RCU.ribbonHTML = RIBBON;     // та же лента у карточек факультетов
 
     // статус комнаты: сосед уже есть / можно подселиться / нельзя / спросить автора (колонка P)
     function roomStatus(c) {
@@ -173,16 +175,16 @@
         const duetStar = duetName
             ? `<span class="pc-room"><button class="pc-room-star pc-room-star--duet" type="button" aria-expanded="false" aria-label="Дуэт">✦</button><span class="pc-room-info">дуэт: ${duetName}</span></span>`
             : '';
-        const extras = [
-            c.posts.length ? `<div class="pc-k">должности</div><div class="pc-v">${c.posts.map(esc).join('; ')}</div>` : '',
-            c.extra ? `<div class="pc-k">доп. предметы</div><div class="pc-v">${esc(c.extra)}</div>` : '',
-        ].join('');
+        // «преподаватель: предмет» и так видно в строке роли — в должностях только декан, куратор и т. п.
+        const posts = (c.posts || []).filter(p => !/^преподавател/i.test(p));
+        const postsHtml = posts.length ? `<div class="pc-k">${posts.length > 1 ? 'должности' : 'должность'}</div><div class="pc-v">${posts.map(esc).join('; ')}</div>` : '';
+        const extras = c.extra ? `<div class="pc-k">доп. предметы</div><div class="pc-v">${esc(c.extra)}</div>` : '';
 
         return `
             <article class="pc-big pc-ticket"${facStyle(c)}>
                 <nav class="pc-tabs"><span class="pc-tab-own" aria-hidden="true"></span>${tabs}</nav>
                 <div class="pc-top">
-                    ${RIBBON}
+                    ${ribbon()}
                     <div class="pc-room-pop" role="status" hidden></div>
                     <div class="pc-seg pc-seg--head">
                         <button class="pc-close" type="button" data-close aria-label="Закрыть">×</button>
@@ -198,6 +200,7 @@
                                         : c.role === 'персонал'
                                             ? `<div class="pc-k">должность</div><div class="pc-v">${esc(lowerFirst(c.post || '') || '—')}</div>`
                                             : `<div class="pc-k">роль</div><div class="pc-v">${esc(c.role || '—')}</div>`}
+                                ${postsHtml}
                                 ${c.role === 'персонал' ? '' : (c.faculty
                                     ? `<a class="pc-v pc-big-fac pc-fac-link" href="#faculties/${encodeURIComponent(slug(c.faculty))}">${esc(c.faculty.toLowerCase())}</a>`
                                     : '<div class="pc-v pc-big-fac">—</div>')}
@@ -309,6 +312,8 @@
             }
         });
         modal.hidden = false;
+        modal.classList.remove('is-closing');
+        clearTimeout(modal.dropTimer);
         document.documentElement.classList.add('pc-open');
         if (unfold) unfoldCard(name);
         requestAnimationFrame(() => modal.classList.add('is-shown'));
@@ -432,6 +437,10 @@
         // пока блоки раскладываются, на стыках видны тонкие щели — закрываем их фоном анкеты
         card.classList.add('is-unfolding');
         setTimeout(() => card.classList.remove('is-unfolding'), opened + 60);
+        // пока анкета едет и раскладывается, она выходит за окно — без полосы прокрутки на это время
+        modalBody.classList.add('is-animating');
+        clearTimeout(modalBody.animTimer);
+        modalBody.animTimer = setTimeout(() => modalBody.classList.remove('is-animating'), opened + DROP + 80);
         if (seam) seam.animate([{ opacity: 0 }, { opacity: 1 }],
             { duration: 300, delay: opened - 120, fill: 'backwards' });
         // рамка анкеты (.pc-ticket::after) проявляется в конце, вместе с лентой —
@@ -441,13 +450,12 @@
                 { pseudoElement: '::after', duration: 450, delay: opened - 60, easing: 'ease-out', fill: 'backwards' });
         } catch (e) { /* старый браузер — рамка просто видна сразу */ }
 
-        // лента: из-за верхнего края блока поворачивается к нам и ложится на карточку
-        // (ось поворота — верхний край ленты), в конце чуть «качнувшись»
+        // лента спадает вниз от верхнего края карточки: раскрывается сверху вниз во всю ширину
+        // (без поворота — не сужается), в конце чуть проседает и возвращается на место
         if (ribbon) ribbon.animate([
-            { transform: 'perspective(700px) rotateX(-100deg)', opacity: 0 },
-            { opacity: 1, offset: 0.25 },
-            { transform: 'perspective(700px) rotateX(7deg)', offset: 0.72 },
-            { transform: 'none', opacity: 1 },
+            { clipPath: 'inset(0 -20% 100% -20%)', transform: 'translateY(-6px)' },
+            { clipPath: 'inset(0 -20% -20% -20%)', transform: 'translateY(4px)', offset: 0.72 },
+            { clipPath: 'inset(0 -20% -20% -20%)', transform: 'none' },
         ], { duration: DROP, delay: opened - 60, easing: 'cubic-bezier(0.3, 0.6, 0.35, 1)', fill: 'backwards' });
 
         // вкладки слева, друг за другом
@@ -457,6 +465,61 @@
         ], { duration: 420, delay: opened + DROP * 0.75 + i * 130, easing: EASE, fill: 'backwards' }));
     }
     RCU.unfoldCard = unfoldCard;
+
+    /* Закрытие — то же в обратную сторону: вкладки и лента убираются, блоки складываются
+       снизу вверх, шапка уменьшается и улетает в свою карточку в стопке.
+       Возвращает длительность (0 — анимации нет, окно закрывается как обычно). */
+    const FOLD = 200;      // складывание одного блока
+    const FOLD_UNIT = 80;  // шаг между блоками
+    const SHRINK = 420;    // полёт шапки в стопку
+    function foldCard(name) {
+        const card = modalBody.querySelector('.pc-ticket');
+        if (!card || !card.animate || reduceMotion()) return 0;
+        const head = card.querySelector('.pc-seg--head');
+        if (!head) return 0;
+        const ribbon = card.querySelector('.pc-ribbon');
+        const tabs = [...card.querySelectorAll('.pc-tabs > *')];
+        const seam = card.querySelector(':scope > .pc-seam-star');
+        const lowers = [card.querySelector('.pc-top > .pc-seg:not(.pc-seg--head)'),
+            ...[...card.children].filter(el => el.matches('.pc-seg'))].filter(Boolean).reverse();
+        const opt = (o) => Object.assign({ fill: 'forwards' }, o);
+
+        tabs.forEach(el => el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(-0.8rem)' }],
+            opt({ duration: 160, easing: 'ease-in' })));
+        if (ribbon) ribbon.animate([{ clipPath: 'inset(0 -20% -20% -20%)' }, { clipPath: 'inset(0 -20% 100% -20%)' }],
+            opt({ duration: 220, easing: 'ease-in' }));
+        if (seam) seam.animate([{ opacity: 1 }, { opacity: 0 }], opt({ duration: 150 }));
+        try {
+            card.animate([{ opacity: 1 }, { opacity: 0 }], opt({ pseudoElement: '::after', duration: 200 }));
+        } catch (e) { /* старый браузер */ }
+
+        // блоки складываются вверх, начиная с нижнего (и темнеют, как при раскрытии)
+        const start = 120;
+        lowers.forEach((el, i) => el.animate([
+            { transform: 'none', opacity: 1, filter: 'brightness(1)' },
+            { opacity: 1, offset: 0.75 },
+            { transform: 'perspective(1600px) rotateX(-90deg)', opacity: 0, filter: 'brightness(0.45)' },
+        ], opt({ duration: FOLD, delay: start + i * FOLD_UNIT, easing: 'cubic-bezier(0.55, 0, 0.75, 0.4)' })));
+        const folded = start + Math.max(0, lowers.length - 1) * FOLD_UNIT + FOLD;
+        card.classList.add('is-unfolding');
+        modalBody.classList.add('is-animating');
+
+        // шапка — в маленькую карточку (если она видна на экране) или просто уменьшается и гаснет
+        const h = head.getBoundingClientRect();
+        const dst = [...document.querySelectorAll('.pc-card[data-name]')]
+            .filter(el => el.dataset.name === name && !el.closest('.pc-modal'))
+            .map(el => el.getBoundingClientRect())
+            .find(r => r.width && r.bottom > 0 && r.top < innerHeight);
+        const sc = dst ? Math.min(1, dst.width / h.width) : 0.6;
+        const tx = dst ? (dst.left + dst.width / 2) - (h.left + h.width / 2) : 0;
+        const ty = dst ? (dst.top + dst.height / 2) - (h.top + h.height / 2) : 0;
+        head.animate([
+            { transform: 'none', opacity: 1 },
+            { opacity: 0.9, offset: 0.8 },
+            { transform: `translate(${tx}px, ${ty}px) scale(${sc})`, opacity: 0 },
+        ], opt({ duration: SHRINK, delay: folded - 60, easing: EASE_MOVE }));
+        return folded - 60 + SHRINK;
+    }
 
 
     /* ---------- Листание анкет стрелками ----------
@@ -609,15 +672,23 @@
     function closeCharacter() {
         if (!modal || modal.hidden) return;
         setCardHash('');
+        const ms = modal.classList.contains('is-shown') ? foldCard(modalBody.dataset.name) : 0;
+        // пока анкета складывается, окно остаётся видимым (гаснет только фон) и не мешает мыши
+        modal.classList.toggle('is-closing', ms > 0);
         modal.classList.remove('is-shown');
         document.documentElement.classList.remove('pc-open');
         setTimeout(() => {
             if (modal.classList.contains('is-shown')) return;
+            modal.classList.remove('is-closing');
             modal.hidden = true; modalBody.innerHTML = ''; delete modalBody.dataset.name;
-        }, 250);
+            modalBody.classList.remove('is-animating');
+        }, Math.max(250, ms));
         if (lastFocus) lastFocus.focus({ preventScroll: true });
-        // карточка в стопке, с которой открыли анкету, опускается обратно
-        liftCard(null);
+        // карточка в стопке, с которой открыли анкету, опускается обратно — когда шапка в неё «вернётся»
+        clearTimeout(modal.dropTimer);
+        modal.dropTimer = setTimeout(() => {
+            if (!modal.classList.contains('is-shown')) liftCard(null);
+        }, ms ? ms - 80 : 0);
     }
 
     if (modal) {

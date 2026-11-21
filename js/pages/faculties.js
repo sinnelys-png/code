@@ -13,11 +13,16 @@
 
     const shortTitle = (t) => String(t || '').replace(/^факультет\s+/i, '').replace(/\s+факультет$/i, '').toLowerCase();
 
+    // маленькая аватарка слева от имени (нет картинки — первая буква)
+    const miniAva = (c) => RCU.safeUrl(c.avatar)
+        ? `<img class="fc-ava" src="${esc(c.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span class="fc-ava fc-ava--empty" aria-hidden="true">${esc(c.name.charAt(0))}</span>`;
+
     // имя персонажа: ссылка на его карточку, если он есть в данных
     const person = (name) => !name
         ? '<span class="pc-none">—</span>'
         : (data.byName.has(name)
-            ? `<button class="pc-link" type="button" data-name="${esc(name)}">${esc(name)}</button>`
+            ? `<button class="pc-link fc-person" type="button" data-name="${esc(name)}">${miniAva(data.byName.get(name))}<span class="fc-person-name">${esc(name)}</span></button>`
             : esc(name));
 
     // места на факультете: брони из листа [бронь] Техтаблицы тоже занимают место
@@ -33,6 +38,9 @@
         ? (m.name ? `${person(m.name)} <span class="fc-bron">бронь</span>` : '<span class="fc-bron">место занято</span>')
         : person(m.name);
 
+    // правый столбец списка: каждое имя — с новой строки
+    const names = (parts) => `<span class="fc-names">${parts.map(p => `<span class="fc-name">${p}</span>`).join('')}</span>`;
+
     // предметы, которые уже кто-то ведёт (без броней)
     const taughtSubjects = (f) => [...new Set(f.teachers.filter(t => !t.booked && t.subject).map(t => t.subject.toLowerCase()))];
 
@@ -43,7 +51,7 @@
         const label = g.course ? `${g.course} курс` : (named.length ? 'курс не указан' : 'бронь');
         const parts = named.map(member);
         if (anon.length) parts.push(`<span class="fc-bron">${anon.length} ${RCU.plural(anon.length, 'место', 'места', 'мест')} в броне</span>`);
-        return `<li><span class="pc-k">${label}</span> ${parts.join(', ')}</li>`;
+        return `<li><span class="pc-k">${label}</span>${names(parts)}</li>`;
     }
 
     // текст на табличке: тёмный или светлый — что контрастнее на втором цвете факультета
@@ -194,10 +202,10 @@
                 <section class="pc-seg pc-text fc-block">
                     <h3 class="pc-section-title">преподаватели <span class="dl-group-count">${teachersText(f)}</span></h3>
                     ${teachers.length
-                        ? `<ul class="fc-list">${teachers.map(t => `<li><span class="pc-k">${esc((t.subject || (t.booked ? 'бронь' : '—')).toLowerCase())}</span> ${member(t)}</li>`).join('')}</ul>`
+                        ? `<ul class="fc-list">${teachers.map(t => `<li><span class="pc-k">${esc((t.subject || (t.booked ? 'бронь' : '—')).toLowerCase())}</span>${names([member(t)])}</li>`).join('')}</ul>`
                         : '<p class="pc-soon">Пока никого — места свободны.</p>'}
                     <ul class="fc-list fc-list--npc">
-                        <li><span class="pc-k">нпс</span> ${person(f.npc)}</li>
+                        <li><span class="pc-k">нпс</span>${names([person(f.npc)])}</li>
                     </ul>
                 </section>
 
@@ -215,7 +223,8 @@
                             ${electives.map(x => `
                                 <li>
                                     <span class="pc-k">${esc((x.subject || '—').toLowerCase())}</span>
-                                    куратор: ${person(x.curator)}${x.students.length ? `; студенты: ${x.students.map(person).join(', ')}` : ''}
+                                    ${names([`<span class="fc-sub">куратор:</span> ${person(x.curator)}`,
+                                        ...x.students.map((n, k) => `${k ? '' : '<span class="fc-sub">студенты:</span> '}${person(n)}`)])}
                                 </li>`).join('')}
                         </ul>
                     </section>` : ''}`);

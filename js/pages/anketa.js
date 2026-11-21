@@ -50,8 +50,9 @@
         if (!labelOf(t)) return t;
         const m = t.match(/^[^:]{0,60}:\s*/);
         if (m) return t.slice(m[0].length).trim();
-        // подпись без двоеточия на отдельной строке («Биография», «Номер курса»)
-        return /^[\p{L}\s.()]+$/u.test(t) && t.split(/\s+/).length <= 7 ? '' : t;
+        // подпись без двоеточия на отдельной строке («Биография», «Номер курса», «Биография ↓»)
+        const bare = t.replace(/[^\p{L}\p{N})]+$/u, '');
+        return /^[\p{L}\s.()]+$/u.test(bare) && bare.split(/\s+/).length <= 7 ? '' : t;
     }
 
     /* ---------- Блоки (раздельные анкеты дуэта) и разделы ---------- */
@@ -101,25 +102,45 @@
                     }
                 }
             });
-            return blocks.map(b => b.map(s => ({ field: s.field || FIELDS[s.num - 1] || '', lines: s.lines })));
+            const isList = (s) => s.lines.filter(l => /^\s*[—–\-•*➥›»✦·]/.test(l)).length >= 2;
+            return blocks.map(b => b.map(s => {
+                let field = s.field || FIELDS[s.num - 1] || '';
+                if (['course', 'faculty', 'role'].includes(field) && !labelOf(s.lines[0]) && isList(s)) field = 'facts';
+                return { field, lines: s.lines };
+            }));
         }
 
         // 2) разделы со значком в начале строки
         const blocks = [];
         let block = null;
+        let para = 0;          // номер абзаца (абзацы разделены пустой строкой)
         lines.forEach(l => {
+            if (!l.trim()) para++;
             const sym = leadSymbol(l);
             if (sym && (!block || block.sym !== sym) && (!block || !l.trim() || true)) {
                 // новый значок — новый блок (раздельные анкеты дуэта)
                 if (!block || block.sym !== sym) { block = { sym, sections: [] }; blocks.push(block); }
             }
-            if (block && sym === block.sym) block.sections.push({ lines: [l.trim()] });
+            if (block && sym === block.sym) block.sections.push({ para, lines: [l.trim()] });
             else if (block && block.sections.length) block.sections[block.sections.length - 1].lines.push(l);
         });
+        // абзац из 3+ строк с тем же значком, где ни одна не похожа на подпись или
+        // роль/курс/факультет, — это список фактов («🐾 спит везде…», «🐾 боится…»)
+        const isPlain = (s) => !labelOf(stripDecor(s.lines[0])) && !guessField(s.lines[0]);
+        const mergeLists = (secs) => secs.reduce((out, s, i) => {
+            const prev = out[out.length - 1];
+            if (prev && prev.list && prev.para === s.para) { prev.lines.push(...s.lines); return out; }
+            const group = secs.filter(x => x.para === s.para);
+            if (i > 0 && group[0] === s && group.length >= 3 && group.every(isPlain)) {
+                out.push({ para: s.para, list: true, lines: [...s.lines] });
+            } else out.push(s);
+            return out;
+        }, []);
+        blocks.forEach(b => { b.sections = mergeLists(b.sections); });
         if (blocks.length && blocks.some(b => b.sections.length >= 4)) {
             return blocks.filter(b => b.sections.length >= 3).map(b => b.sections.map((s, i) => {
                 s.lines[0] = stripDecor(s.lines[0].replace(new RegExp('^' + b.sym.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), ''));
-                return { field: labelOf(s.lines[0]) || guessField(s.lines[0]) || FIELDS[i] || '', lines: s.lines };
+                return { field: labelOf(s.lines[0]) || guessField(s.lines[0]) || (s.list ? 'facts' : FIELDS[i]) || '', lines: s.lines };
             }));
         }
 
@@ -263,7 +284,10 @@
         const t = String(v || '')
             .replace(/^[^\p{L}]*(?:вид|порода)\s*[:–—-]?\s*/iu, '')
             .replace(/^(?:[/\s]*(?:вид|порода))?\s*гибрида\s*[:–—-]\s*/iu, '')
+            // подпись «гибрид/порода - …» (а «гибрид-кот» — это сам вид, его не трогаем)
+            .replace(/^[^\p{L}]*(?:гибрид|вид|порода)(?:\s*\/\s*(?:гибрид|вид|порода))*(?:\s*:\s*|\s+[–—-]\s+)/iu, '')
             .replace(/[.;\s]+$/, '')
+            .replace(/^[^\p{L}]+/u, '')            // значок перед видом: «🌸 золотистый ретривер»
             .trim();
         return t && t.length <= 60 && !/(^|\s)курс/i.test(t) ? t : '';
     }
@@ -273,7 +297,8 @@
         const items = [];
         // пункт начинается со значка: обычного маркера или любого не-буквенного символа
         // (эмодзи «🥀», «🌕», «💖» и т. п.)
-        const LEAD = /^[^\p{L}\p{N}«"(]+/u;
+        // (тайская «๑» формально цифра, но тут это украшение: «๑✿ …»)
+        const LEAD = /^[^\p{L}0-9«"(]+/u;
         text.split('\n').forEach(l => {
             const raw = l.trim();
             if (!raw) return;

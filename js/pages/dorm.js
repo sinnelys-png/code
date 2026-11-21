@@ -164,12 +164,20 @@
                 const house = root.querySelector(`.dm-house[data-house="${n}"]`).getBoundingClientRect();
                 const box = wrap.getBoundingClientRect();
                 const w = pop.offsetWidth, h = pop.offsetHeight;
-                let x = house.right - box.left + 10;
-                if (x + w > box.width - 8) x = house.left - box.left - w - 10;
+                // окошко справа от домика (треугольник слева смотрит на домик) или, если не влезает, слева
+                const GAP = 14;
+                let x = house.right - box.left + GAP;
+                let side = 'right';
+                if (x + w > box.width - 8) { x = house.left - box.left - w - GAP; side = 'left'; }
                 x = Math.max(8, Math.min(x, box.width - w - 8));
-                const y = Math.max(8, Math.min(house.top - box.top + house.height / 2 - h / 2, box.height - h - 8));
+                const cy = house.top - box.top + house.height / 2;           // центр домика
+                const y = Math.max(8, Math.min(cy - h / 2, box.height - h - 8));
                 pop.style.left = `${x}px`;
                 pop.style.top = `${y}px`;
+                pop.classList.toggle('is-right', side === 'right');
+                pop.classList.toggle('is-left', side === 'left');
+                // треугольник — напротив центра домика (но не выходит за скруглённые углы)
+                pop.style.setProperty('--arrow-y', `${Math.max(16, Math.min(cy - y, h - 16))}px`);
             };
 
             svg.addEventListener('mouseover', (e) => {

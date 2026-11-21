@@ -336,6 +336,43 @@ button.pc-card:focus-visible {
     outline: none;
 }
 
+/* имя с маленькой аватаркой (карточка факультета): подчёркнуто только имя */
+.pc-link.fc-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    border-bottom: 0;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.fc-person-name {
+    border-bottom: 1px dotted var(--gold-55);
+    transition: border-color 0.25s ease;
+}
+
+.pc-link.fc-person:hover .fc-person-name,
+.pc-link.fc-person:focus-visible .fc-person-name {
+    border-color: var(--hover-line);
+}
+
+.fc-ava {
+    flex: none;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(182, 175, 152, 0.45);
+}
+
+.fc-ava--empty {
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.8em;
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    color: var(--text-80);
+}
+
 /* ---------- Картотека на странице «Персонажи» ---------- */
 
 /* поиск персонажа над картотекой */
@@ -1189,8 +1226,7 @@ html.pc-open .main-scroll-viewport {
 .pc-ribbon-glow-edge { stop-color: var(--fac-stripe, #cccccc); }
 
 .pc-ribbon-line {
-    fill: none;
-    stroke: url(#pc-ribbon-glow);
+    fill: none;                  /* stroke — свой градиент у каждой ленты, задаётся в разметке */
     stroke-width: 4;
     vector-effect: non-scaling-stroke;
     stroke-linejoin: miter;
@@ -1221,8 +1257,9 @@ html.pc-open .main-scroll-viewport {
     border-radius: 5px;
 }
 
-/* сама обводка — 1px, как рамка анкеты */
-.pc-ava-frame::before {
+/* сама обводка — 1px, как рамка анкеты; ::after — вторая такая же, вплотную к аватару */
+.pc-ava-frame::before,
+.pc-ava-frame::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -1236,6 +1273,16 @@ html.pc-open .main-scroll-viewport {
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     pointer-events: none;
+}
+
+.pc-ava-frame::after {
+    inset: 4px;                /* по краю аватара (он начинается через 5px) */
+    border-radius: 4px;
+    /* свет от курсора — в тех же координатах, что у внешней рамки */
+    background:
+        radial-gradient(circle 400px at calc(var(--gx, -999px) - 4px) calc(var(--gy, -999px) - 4px),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
 }
 
 .pc-head-info .pc-k {
@@ -1525,7 +1572,7 @@ html.pc-open .main-scroll-viewport {
     position: absolute;
     left: 0;
     top: 0;
-    height: 1lh;                  /* высота строки пункта (шрифт тот же) — звёздочка по её центру */
+    bottom: 0;                    /* на всю высоту пункта — звёздочка посередине, сколько бы строк ни было */
     display: flex;
     align-items: center;
     transform: scale(0.75);       /* меньше текста — уменьшаем масштабом, не шрифтом */
@@ -1603,10 +1650,32 @@ html.pc-open .main-scroll-viewport {
     transform: none;
 }
 
+/* во время раскрытия анкеты полоса прокрутки окна не появляется (место под неё остаётся) */
+.pc-modal-body.is-animating {
+    overflow-y: hidden;
+}
+
 /* шаги анимации — в js/pages/characters.js (unfoldCard); здесь только точки поворота */
 .pc-ticket .pc-seg,
 .pc-ticket .pc-seam-star {
     transform-origin: 50% 0;
+}
+
+/* закрытие: анкета складывается и улетает в стопку (foldCard) — окно видно до конца, фон гаснет */
+.pc-modal.is-closing {
+    pointer-events: none;
+}
+
+.pc-modal.is-closing .pc-modal-body {
+    opacity: 1;
+}
+
+.pc-modal.is-closing .pc-modal-backdrop {
+    transition-duration: 0.5s;
+}
+
+.pc-modal.is-closing .pc-pager {
+    opacity: 0;
 }
 
 /* окно с анкетой появляется сразу — плавность даёт сама анимация карточки */
@@ -1908,15 +1977,50 @@ html.pc-open .main-scroll-viewport {
     margin: 0 0 0.5rem;
     padding: 0;
     display: grid;
-    gap: 0.4rem;
+    gap: 1.3rem;                         /* между курсами (предметами) — заметно больше, чем между именами */
     font-size: 0.92rem;
     color: var(--text-80);
     line-height: 1.45;
 }
 
+/* два столбца: подпись (курс, предмет) и имена — перенос имени не заходит под подпись */
+.fc-list > li:has(> .fc-names) {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);    /* у всех списков одна ширина подписи */
+    gap: 0 0.6rem;
+    align-items: baseline;
+}
+
+/* наведение на курс (предмет) — его подпись загорается, как подзаголовок блока */
+.fc-list > li > .pc-k {
+    transition: color 0.4s ease;
+}
+
+.fc-list > li:hover > .pc-k {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+/* длинный предмет переносится внутри своего столбца */
+.fc-list > li:has(> .fc-names) > .pc-k {
+    min-width: 0;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
 .fc-list .pc-k {
     display: inline-block;
     min-width: 7.5rem;
+}
+
+.fc-names {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.fc-sub {
+    opacity: 0.7;
 }
 
 /* ---------- Общежитие ---------- */
@@ -1967,6 +2071,44 @@ html.pc-open .main-scroll-viewport {
     box-shadow: var(--pop-shadow);
     pointer-events: none;
     border-radius: var(--pop-radius);
+}
+
+/* треугольник у окошка — указывает на домик, про который оно */
+.dm-pop::before,
+.dm-pop::after {
+    content: "";
+    position: absolute;
+    top: var(--arrow-y, 50%);
+    width: 10px;
+    height: 20px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* окошко справа от домика: треугольник на левой стороне, остриём влево */
+.dm-pop.is-right::before {
+    right: 100%;
+    background: var(--gold-55);                         /* рамка */
+    clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+.dm-pop.is-right::after {
+    right: calc(100% - 1.5px);
+    background: color-mix(in srgb, var(--pop-bg) 92%, transparent);   /* заливка, на 1px внутри рамки */
+    clip-path: polygon(100% 1.5px, 1.5px 50%, 100% calc(100% - 1.5px));
+}
+
+/* окошко слева от домика: треугольник на правой стороне, остриём вправо */
+.dm-pop.is-left::before {
+    left: 100%;
+    background: var(--gold-55);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.dm-pop.is-left::after {
+    left: calc(100% - 1.5px);
+    background: color-mix(in srgb, var(--pop-bg) 92%, transparent);
+    clip-path: polygon(0 1.5px, calc(100% - 1.5px) 50%, 0 calc(100% - 1.5px));
 }
 
 .dm-pop.is-pinned {
@@ -2650,6 +2792,10 @@ html.pc-open .main-scroll-viewport {
     .fc-list .pc-k {
         display: block;
         min-width: 0;
+    }
+
+    .fc-list > li:has(> .fc-names) {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
