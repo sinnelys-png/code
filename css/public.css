@@ -1828,7 +1828,8 @@ html.pc-open .main-scroll-viewport {
 /* сведения справа — разделы карточки факультета без её «бумаги»; листаются сами по себе */
 .fc-info {
     min-width: 0;
-    max-height: 33rem;
+    height: 33rem;                     /* одна у всех: иначе страница меняет высоту и ряд сверху прыгает */
+    box-sizing: border-box;
     padding: 1rem 0.6rem 0 3.4rem;      /* бейдж немного заходит на текст, но не на подписи */
 }
 
@@ -1927,7 +1928,7 @@ html.pc-open .main-scroll-viewport {
     }
 
     .fc-info {
-        max-height: none;
+        height: auto;
         padding-left: 0;
     }
 }
@@ -1935,7 +1936,7 @@ html.pc-open .main-scroll-viewport {
 .fc-card {
     --ink: var(--fac-main, #3b2620);
     --paper: #e2e1dd;
-    --paper-a: 78%;                    /* плотность основы */
+    --paper-a: 62%;                    /* плотность основы — у всех одна */
     --paper-glass: color-mix(in srgb, var(--paper) var(--paper-a), transparent);
     --text-ink: color-mix(in srgb, var(--ink) 55%, #2a2622);   /* мелкий текст — темнее, чтобы читался */
     display: flex;
@@ -1958,9 +1959,6 @@ html.pc-open .main-scroll-viewport {
     --text-ink: #f7f6f2;
 }
 
-/* у светлых полос основа плотнее (иначе сливается), у тёплых светлых — прозрачнее */
-.fc-card--solid { --paper-a: 90%; }
-.fc-card--clear { --paper-a: 62%; }
 
 .fc-card:focus-visible {
     outline: none;
@@ -2011,7 +2009,7 @@ html.pc-open .main-scroll-viewport {
 .fc-edge > span:nth-child(5) { --k: 5; }
 .fc-edge > span:nth-child(6) { --k: 6; }
 .fc-edge > span:nth-child(7) { --k: 7; }
-.fc-edge > span:nth-child(8) { --k: 8; box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45), inset 0 0 0 2.5px color-mix(in srgb, var(--paper) 62%, #000); }
+.fc-edge > span:nth-child(8) { --k: 8; box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.2), inset 0 0 0 2.5px color-mix(in srgb, var(--paper) 62%, #000); }
 
 /* блик — следует за мышкой */
 .fc-shine {
@@ -2064,7 +2062,7 @@ html.pc-open .main-scroll-viewport {
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
     backdrop-filter: blur(10px) saturate(1.2);
     border-radius: 1.6rem;
-    box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.22);   /* тень — мягкая, не перетягивает внимание */
     transition: box-shadow 0.3s ease, background 0.3s ease;
 }
 

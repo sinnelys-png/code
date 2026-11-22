@@ -60,21 +60,13 @@
     // наклон крупного бейджа: у каждого факультета свой, в одну или другую сторону, 2–6°
     const TILTS = [-5, 3, -3, 5.5, -6, 2.5, -4, 4.5, -2.5, 5, -5.5, 3.5, -3.5, 4];
 
-    // плотность основы: у мех-мата и гостиничного — плотнее, у художественного и филологического — прозрачнее
-    const density = (f) => {
-        const t = String(f.title || '').toLowerCase();
-        if (/механико|гостинич/.test(t)) return ' fc-card--solid';
-        if (/художеств|филолог/.test(t)) return ' fc-card--clear';
-        return '';
-    };
-
     // Крупный бейдж — как на референсе: широкая полоса с названием пониже,
     // под ней ✦ между линиями и «факультет», внизу герб, заходящий на рамку.
     function smallCard(f, i, pos = 0) {
         const title = f.staff ? 'персонал' : shortTitle(f.title);
         const curl = '<svg class="fc-curl" viewBox="0 0 60 40" aria-hidden="true"><path d="M2 38 C2 18 14 4 34 3 C46 2 56 8 58 16 C50 10 40 10 32 14 C22 19 16 28 14 38 M10 30 C16 22 26 17 38 17" /></svg>';
         return `
-            <button class="fc-card${f.staff ? ' fc-card--staff' : ''}${density(f)}" type="button" data-index="${i}"
+            <button class="fc-card${f.staff ? ' fc-card--staff' : ''}" type="button" data-index="${i}"
                 aria-label="${esc(f.staff ? 'Персонал' : f.title)}: открыть карточку"${facStyle(f.title).replace('style="', `style="--tilt:${TILTS[pos % TILTS.length]}deg;`)}>
                 <span class="fc-tilt">
                     <span class="fc-body">
@@ -532,14 +524,23 @@
                 if (main) info.style.setProperty('--fac-accent', main); else info.style.removeProperty('--fac-accent');
             }
         };
-        if (animate) {
-            [info].filter(Boolean).forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }],
-                { duration: LEAVE * 0.6, easing: 'ease-in', fill: 'forwards' }).finished.then(() => {
+        // текст справа: гаснет, меняется, проявляется. Новое переключение отменяет незаконченное
+        // прежнее (иначе при быстрых нажатиях затухание могло остаться висеть — блок пропадал)
+        if (info) {
+            const token = (info.swapToken = (info.swapToken || 0) + 1);
+            info.getAnimations().forEach(a => a.cancel());
+            if (animate) {
+                const out = info.animate([{ opacity: 1 }, { opacity: 0 }],
+                    { duration: LEAVE * 0.6, easing: 'ease-in', fill: 'forwards' });
+                out.finished.then(() => {
+                    if (info.swapToken !== token) return;
                     swapText();
-                    el.animate([{ opacity: 0, transform: 'translateY(0.6rem)' }, { opacity: 1, transform: 'none' }],
-                        { duration: 420, delay: LEAVE * 0.4, easing: 'ease-out', fill: 'both' });
-                }, () => {}));
-        } else swapText();
+                    info.animate([{ opacity: 0, transform: 'translateY(0.6rem)' }, { opacity: 1, transform: 'none' }],
+                        { duration: 420, delay: LEAVE * 0.4, easing: 'ease-out', fill: 'backwards' });
+                    out.cancel();
+                }, () => {});
+            } else swapText();
+        }
         const card = stage.lastElementChild;
         card.classList.add('is-current');
         card.style.zIndex = '1';
