@@ -23,17 +23,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/deadlines.css">
-    <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/intro.css">
-    <link rel="stylesheet" href="css/sections.css">
-    <link rel="stylesheet" href="css/public.css">
+    <link rel="stylesheet" href="css/main.css?v=803e694c">
+    <link rel="stylesheet" href="css/deadlines.css?v=6ffb4df5">
+    <link rel="stylesheet" href="css/pages.css?v=680e5809">
+    <link rel="stylesheet" href="css/intro.css?v=665e6f0f">
+    <link rel="stylesheet" href="css/sections.css?v=d7d416eb">
+    <link rel="stylesheet" href="css/public.css?v=850ec69c">
     <script>
         // Заставка «конверт» при загрузке (css/intro.css). Ставим класс сразу,
         // до отрисовки страницы, чтобы блок не мелькнул на своём месте раньше времени.
-        // Тема (светлая / тёмная) — до отрисовки, чтобы страница не мигнула другой темой
-        try { document.documentElement.dataset.theme = localStorage.getItem('rcu-theme') || 'dark'; } catch (e) {}
         (function () {
             if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             var html = document.documentElement;
@@ -101,8 +99,6 @@
         <!-- Золотая лента с названием раздела (заполняет js/router.js, стили — css/pages.css) -->
         <div class="page-ribbon is-hidden" aria-hidden="true"><span class="page-ribbon-text"></span></div>
         <div class="main-inner-content">
-            <!-- переключатель светлой / тёмной темы (js/menu.js) -->
-            <button class="theme-toggle" type="button"></button>
             <div class="main-scroll-text">
                 <div class="main-scroll-viewport">
                     <div id="view" class="page-view"></div>
@@ -138,22 +134,22 @@
             ['#dorm', 'общежитие'],
         ];
     </script>
-    <script src="js/menu.js"></script>
-    <script src="js/site.js"></script>
+    <script src="js/menu.js?v=2587ca61"></script>
+    <script src="js/site.js?v=cef0c214"></script>
 
     <!-- Страницы с таблицами и переключение между ними без перезагрузки -->
-    <script src="js/core.js"></script>
-    <script src="js/pages/public-data.js"></script>
-    <script src="js/pages/faculties.js"></script>
-    <script src="js/pages/anketa.js"></script>
-    <script src="js/pages/characters.js"></script>
-    <script src="js/pages/city.js"></script>
-    <script src="js/pages/subroles.js"></script>
-    <script src="js/pages/dorm.js"></script>
-    <script src="js/pages/relations.js"></script>
-    <script src="js/pages/player.js"></script>
-    <script src="js/pages/lineup.js"></script>
-    <script src="js/router.js"></script>
+    <script src="js/core.js?v=b85cc641"></script>
+    <script src="js/pages/public-data.js?v=f94459e2"></script>
+    <script src="js/pages/faculties.js?v=9df1391b"></script>
+    <script src="js/pages/anketa.js?v=a4dd88c9"></script>
+    <script src="js/pages/characters.js?v=234979d1"></script>
+    <script src="js/pages/city.js?v=8de7da03"></script>
+    <script src="js/pages/subroles.js?v=b160a9af"></script>
+    <script src="js/pages/dorm.js?v=7ddfcf95"></script>
+    <script src="js/pages/relations.js?v=d6ec15ae"></script>
+    <script src="js/pages/player.js?v=ebf09144"></script>
+    <script src="js/pages/lineup.js?v=06fdc1b2"></script>
+    <script src="js/router.js?v=f4f826fa"></script>
 </body>
 
 </html>

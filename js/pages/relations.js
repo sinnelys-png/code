@@ -36,14 +36,13 @@
 
     // чёрный «страх» на тёмном фоне или светлое «не знакомы» на бежевом — подмешиваем белый/тёмный,
     // пока цвет не станет заметным
-    function visibleOn(hex, light) {
-        const bg = rgbOf(light ? '#f2e9da' : '#022a42');
-        const to = light ? [20, 40, 60] : [255, 255, 255];
+    function visibleOn(hex) {
+        const bg = rgbOf('#022a42');
+        const to = [255, 255, 255];
         let c = rgbOf(hex);
         for (let k = 0; k < 10 && contrast(c, bg) < 2.2; k++) c = c.map((v, i) => v + (to[i] - v) * 0.18);
         return toHex(c);
     }
-    const isLight = () => document.documentElement.dataset.theme === 'light';
 
     /* ---------- Данные ---------- */
 
@@ -173,7 +172,6 @@
     }
 
     function filtersHTML() {
-        const light = isLight();
         const allActivities = [...new Set(model.people.flatMap(p => p.activities))];
         const peopleSorted = [...model.people].sort((x, y) => x.name.localeCompare(y.name, 'ru'));
         return `
@@ -187,7 +185,7 @@
                 ${drop('courses', 'курс', model.courses.map(c => ({ value: c, label: `${c} курс` })))}
                 ${drop('activities', 'подроль', allActivities.map(a => ({ value: a, label: a })),
                     { empty: 'Появятся вместе со страницей подролей.' })}
-                ${drop('types', 'отношение', model.legend.map((l, i) => ({ value: i, key: i, label: l.name.toLowerCase(), dot: visibleOn(l.color, light) })), { types: true })}
+                ${drop('types', 'отношение', model.legend.map((l, i) => ({ value: i, key: i, label: l.name.toLowerCase(), dot: visibleOn(l.color) })), { types: true })}
                 <button class="rg-reset" type="button">сброс</button>
             </div>`;
     }
@@ -269,8 +267,7 @@
     function graphSVG() {
         const visible = visibleSet();
         const { pos, arcs } = layout(visible);
-        const light = isLight();
-        const colors = model.legend.map(l => visibleOn(l.color, light));
+        const colors = model.legend.map(l => visibleOn(l.color));
         const sel = state.selected;
 
         // связи: пара персонажей → одна линия, если отношение взаимное и одинаковое, иначе две
@@ -357,7 +354,6 @@
     }
 
     function byTypeHTML(links, otherOf) {
-        const light = isLight();
         const byType = new Map();
         links.forEach(l => {
             if (!byType.has(l[2])) byType.set(l[2], []);
@@ -380,7 +376,7 @@
                         </li>`;
                 }).join('');
             return `
-                <details class="rg-type-group" open style="--type:${esc(visibleOn(lg.color, light))}">
+                <details class="rg-type-group" open style="--type:${esc(visibleOn(lg.color))}">
                     <summary class="rg-type-title"><span>${esc(lg.name.toLowerCase())}</span></summary>
                     <ul class="rg-list">${items}</ul>
                 </details>`;
@@ -615,10 +611,6 @@
     // меню фильтров закрываются по клику мимо и по Escape
     document.addEventListener('click', (e) => { if (!e.target.closest('.rg-drop')) closeDrops(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrops(); });
-
-    // смена темы — пересчитать цвета связей (наблюдатель один на всю страницу)
-    new MutationObserver(() => { if (root && root.isConnected && model) draw(); })
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     RCU.pages.relations = {
         title: 'Отношения',

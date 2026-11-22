@@ -145,12 +145,12 @@ window.RCU = (() => {
         return (x + 0.05) / (y + 0.05);
     }
     // фон карточек в тёмной и светлой теме
-    const THEME_BG = { d: '#05304b', l: '#f7f1e6' };
-    // из двух цветов факультета — тот, что контрастнее на фоне темы
+    const THEME_BG = '#05304b';
+    // из двух цветов факультета — тот, что контрастнее на тёмном фоне сайта
     const accentOn = (bg, main, stripe) => (contrast(main, bg) >= contrast(stripe, bg) ? main : stripe);
 
     // Атрибуты для аватара: класс has-faculty, цвета в CSS-переменных и название в подсказке.
-    // --fac-accent-d / --fac-accent-l — цвет акцентов (линии, полосы прокрутки) для тёмной и светлой темы
+    // --fac-accent-d — цвет акцентов (линии, полосы прокрутки) на тёмном фоне
     // role — для персонала без факультета: тогда цвет персонала
     function facultyAttrs(faculty, role) {
         const name = String(faculty || '').trim() || (/персонал/i.test(role || '') ? 'Персонал' : '');
@@ -158,7 +158,7 @@ window.RCU = (() => {
         if (!hit) return { cls: '', attrs: '' };
         return {
             cls: ' has-faculty',
-            attrs: ` style="--fac-main:${hit[1]};--fac-stripe:${hit[2]};--fac-accent-d:${accentOn(THEME_BG.d, hit[1], hit[2])};--fac-accent-l:${accentOn(THEME_BG.l, hit[1], hit[2])}" title="${esc(name)}"`,
+            attrs: ` style="--fac-main:${hit[1]};--fac-stripe:${hit[2]};--fac-accent-d:${accentOn(THEME_BG, hit[1], hit[2])}" title="${esc(name)}"`,
         };
     }
 

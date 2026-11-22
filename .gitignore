@@ -1,0 +1,9 @@
+# Черновики и локальные файлы — не для сайта
+code.html
+*вариант без гэпа*
+apps-script/table-fast.gs
+anketa_old_tmp.js
+
+# настройки Claude Code и снимок проверки анкет (tools/anketa-check.js) — только у себя
+.claude/
+tools/anketa-snapshot.json

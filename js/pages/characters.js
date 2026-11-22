@@ -386,6 +386,8 @@
     const PART = 340;     // раскладывание одного блока
     const UNIT = 250;     // через сколько начинает раскладываться следующий блок
     const DROP = 820;     // появление ленты
+    const REPEAT_RATE = 1.6; // со второй анкеты за посещение раскрытие идёт быстрее
+    let unfoldCount = 0;
     const SLIDE = 900;    // ярлычок едет влево по верхней полосе, стирая её
     const TABS_OUT = 520; // из ярлычка выезжают остальные вкладки
     const SLIDE_EASE = [0.45, 0, 0.3, 1];
@@ -466,6 +468,8 @@
         // стирая полосу, проезжает ленту (она спадает) и становится последней вкладкой анкеты
         const m = ribbon && !card.matches('.fc-big') ? morphParts(card, head, ribbon, srcCard) : null;
 
+        // первая анкета за посещение раскрывается целиком, следующие — быстрее
+        const rate = unfoldCount++ ? REPEAT_RATE : 1;
         const start = GROW * 0.9;                                    // блоки начинают раскладываться
         const blocks = (lowers.length - 1) * UNIT + PART;            // все блоки разложены
         const opened = start + blocks;
@@ -492,11 +496,11 @@
         ], { duration: PART, delay: start + i * UNIT, easing: 'cubic-bezier(0.25, 0.6, 0.35, 1)', fill: 'backwards' }));
         // пока блоки раскладываются, на стыках видны тонкие щели — закрываем их фоном анкеты
         card.classList.add('is-unfolding');
-        setTimeout(() => card.classList.remove('is-unfolding'), opened + 60);
+        setTimeout(() => card.classList.remove('is-unfolding'), (opened + 60) / rate);
         // пока анкета едет и раскладывается, она выходит за окно — без полосы прокрутки на это время
         modalBody.classList.add('is-animating');
         clearTimeout(modalBody.animTimer);
-        modalBody.animTimer = setTimeout(() => modalBody.classList.remove('is-animating'), opened + DROP + 80);
+        modalBody.animTimer = setTimeout(() => modalBody.classList.remove('is-animating'), (opened + DROP + 80) / rate);
         if (seam) seam.animate([{ opacity: 0 }, { opacity: 1 }],
             { duration: 300, delay: opened - 120, fill: 'backwards' });
         // рамка анкеты (.pc-ticket::after) проявляется в конце, вместе с лентой —
@@ -550,7 +554,7 @@
             ], { duration: TABS_OUT, delay: tabsAt, easing: OUT_EASE, fill: 'backwards' }));
             clearTimeout(modalBody.animTimer);
             modalBody.animTimer = setTimeout(() => modalBody.classList.remove('is-animating'),
-                Math.max(ribbonAt + DROP, tabsAt + TABS_OUT) + 100);
+                (Math.max(ribbonAt + DROP, tabsAt + TABS_OUT) + 100) / rate);
         } else {
             // вкладки слева, друг за другом
             tabs.forEach((el, i) => el.animate([
@@ -558,6 +562,21 @@
                 { transform: 'none', opacity: 1 },
             ], { duration: 420, delay: ribbonAt + 60 + DROP * 0.75 + i * 130, easing: EASE, fill: 'backwards' }));
         }
+
+        // скорость и пропуск: клик по анкете или Esc во время раскрытия — сразу конечный вид
+        const anims = card.getAnimations({ subtree: true });
+        if (rate !== 1) anims.forEach(a => a.updatePlaybackRate(rate));
+        const skip = () => {
+            anims.forEach(a => { try { a.finish(); } catch (e) { /* уже снята */ } });
+            card.classList.remove('is-unfolding');
+            clearTimeout(modalBody.animTimer);
+            modalBody.classList.remove('is-animating');
+            modalBody.skipUnfold = null;
+        };
+        modalBody.skipUnfold = skip;
+        Promise.all(anims.map(a => a.finished)).then(() => {
+            if (modalBody.skipUnfold === skip) modalBody.skipUnfold = null;
+        }, () => {});
     }
     RCU.unfoldCard = unfoldCard;
 
@@ -800,6 +819,8 @@
     function closeCharacter() {
         if (!modal || modal.hidden) return;
         setCardHash('');
+        // закрыли посреди раскрытия — сначала конечный вид, от него и складываемся
+        if (modalBody.skipUnfold) modalBody.skipUnfold();
         const ms = modal.classList.contains('is-shown') ? foldCard(modalBody.dataset.name) : 0;
         // пока анкета складывается, окно остаётся видимым (гаснет только фон) и не мешает мыши
         modal.classList.toggle('is-closing', ms > 0);
@@ -821,6 +842,11 @@
 
     if (modal) {
         modal.addEventListener('click', (e) => {
+            // анкета ещё раскрывается: клик по ней — сразу конечный вид (кнопки и ссылки работают как обычно)
+            if (modalBody.skipUnfold) {
+                modalBody.skipUnfold();
+                if (modalBody.contains(e.target) && !e.target.closest('a, button')) return;
+            }
             if (e.target.closest('[data-close]')) { closeCharacter(); return; }
             // звёздочка у «проживает» — статус комнаты
             const star = e.target.closest('.pc-room-star');
@@ -834,7 +860,12 @@
                 openCharacter(link.dataset.name, 0, context && context.includes(link.dataset.name) ? context : null);
             }
         });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCharacter(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            // первый Esc во время раскрытия — доматывает анимацию, второй — закрывает
+            if (modalBody.skipUnfold) { modalBody.skipUnfold(); return; }
+            closeCharacter();
+        });
         window.addEventListener('hashchange', closeCharacter);
     }
 
@@ -913,8 +944,8 @@
             }
             return { label, list: ch.list };
         });
-        // по имени первой идёт ленточка «все» — она и открыта по умолчанию
-        return by === 'name' && list.length ? [{ label: 'все', list, all: true }, ...out] : out;
+        // по имени последней идёт ленточка «все»; по умолчанию открыта первая буквенная
+        return by === 'name' && list.length ? [...out, { label: 'все', list, all: true }] : out;
     }
 
     function layout() {
@@ -935,7 +966,13 @@
         const fits = fitAll >= MIN_STEP;
         // стопка начинается на одной высоте и с прокруткой, и без (подъём верхних карточек
         // при прокрутке ограничен краем — см. liftCard)
-        const top0 = 8;
+        // В прокручиваемой стопке («все») верх обрезан, и верхним карточкам некуда подняться —
+        // над стопкой оставляем место под подъём, а саму картотеку поднимаем на столько же
+        // (стопка начинается там же, где и без прокрутки)
+        const pad = fits ? 0 : Math.round(H * 0.45);
+        box.style.marginTop = pad ? `-${pad}px` : '';
+        box.style.setProperty('--pad', `${pad}px`);
+        const top0 = 8 + pad;
         // как у полной пачки; высоту карточки берём обычную (среднюю), а не самой высокой из всех
         const Hs = cards.map(el => el.offsetHeight).sort((x, y) => x - y);
         const Hmid = Hs[Math.floor(Hs.length / 2)] || H;

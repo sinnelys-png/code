@@ -1,0 +1,4 @@
+#!/bin/sh
+# Метки версий у стилей и скриптов (tools/stamp-versions.js) — перед каждым коммитом
+node tools/stamp-versions.js > /dev/null || exit 1
+git add site.html index.html

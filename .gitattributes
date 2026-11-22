@@ -1,0 +1,14 @@
+# Переводы строк в репозитории и в рабочей папке — LF (как уже хранятся все файлы),
+# без предупреждений «LF will be replaced by CRLF»
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary

@@ -3,10 +3,7 @@
    Общий стиль — из main.css / deadlines.css / pages.css, здесь только новое.
    ========================================================================== */
 
-/* ---------- Темы ----------
-   Тёмная — по умолчанию. Светлая (html[data-theme="light"]) меняет только основной блок
-   и окно карточек: светло-бежевый фон, тёмно-синие полоски; шапка остаётся как есть.
-   Цвета поверхностей и текста — переменные ниже, светлая тема их переопределяет. */
+/* ---------- Цвета поверхностей и текста ---------- */
 :root {
     --surface-top: #063754;          /* маленькие карточки: градиент сверху вниз */
     --surface-bot: #022a42;
@@ -22,143 +19,9 @@
     --hi: #fff;                      /* текст при наведении */
 }
 
-/* акцент факультета — тот из двух цветов, что контрастнее на фоне темы (считает js/core.js) */
+/* акцент факультета — тот из двух цветов, что контрастнее на тёмном фоне (считает js/core.js) */
 [style*="--fac-accent-d"] {
     --fac-accent: var(--fac-accent-d);
-}
-
-html[data-theme="light"] [style*="--fac-accent-d"] {
-    --fac-accent: var(--fac-accent-l);
-}
-
-html[data-theme="light"] .main-content-block,
-html[data-theme="light"] .pc-modal {
-    --text: #14344c;
-    --text-80: rgba(20, 52, 76, 0.85);
-    --text-70: rgba(20, 52, 76, 0.75);
-    --text-55: rgba(20, 52, 76, 0.7);
-    --text-30: rgba(20, 52, 76, 0.32);
-    --gold: #8a6a3a;
-    --gold-80: rgba(138, 106, 58, 0.9);
-    --gold-55: rgba(138, 106, 58, 0.7);
-    --gold-15: rgba(20, 52, 76, 0.16);
-    --gold-08: rgba(20, 52, 76, 0.07);
-    --hover: rgba(20, 52, 76, 0.06);
-    --hover-line: rgba(20, 52, 76, 0.45);
-    --hi: #002f4a;
-    --surface-top: #fffdf9;
-    --surface-bot: #f4ece0;
-    --surface-hover-top: #ffffff;
-    --surface-hover-bot: #f9f3ea;
-    --pop-bg: #fbf7f0;
-    --pop-bg2: #fffaf2;
-    --card-surface: #fbf7f0;
-    --ava-a: #efe6d8;
-    --ava-b: #d9ccb6;
-    --pager-bg: rgba(251, 247, 240, 0.85);
-    --backdrop: rgba(18, 30, 40, 0.5);
-}
-
-/* карта города — картинка тёмная, описания на ней остаются в цветах тёмной темы */
-html[data-theme="light"] .ct-map {
-    --text: #cccccc;
-    --text-80: rgba(204, 204, 204, 0.8);
-    --text-70: rgba(204, 204, 204, 0.7);
-    --text-55: rgba(204, 204, 204, 0.68);
-    --text-30: rgba(204, 204, 204, 0.38);
-    --gold: #E3CFAC;
-    --gold-80: rgba(227, 207, 172, 0.8);
-    --gold-55: rgba(227, 207, 172, 0.55);
-    --gold-15: rgba(227, 207, 172, 0.15);
-    --gold-08: rgba(227, 207, 172, 0.08);
-    --hover: rgba(204, 204, 204, 0.08);
-    --hover-line: rgba(204, 204, 204, 0.55);
-    --hi: #fff;
-}
-
-/* основной блок: светло-бежевый фон */
-html[data-theme="light"] .main-inner-content::after {
-    background-image: linear-gradient(to bottom, #f7f1e6 0%, #e9dfcc 100%);
-}
-
-/* полоски блока и лента раздела — тёмно-синие, свет от мыши тот же (белое ядро) */
-html[data-theme="light"] .main-inner-content::before,
-html[data-theme="light"] .page-ribbon {
-    background-image:
-        radial-gradient(circle var(--glow-r, 400px) at var(--glow2-x, -999px) var(--glow2-y, -999px),
-            #ffffff 0%, #4d7896 50%, rgb(77 120 150 / 0%) 100%),
-        radial-gradient(circle var(--glow-r, 400px) at var(--mouse-x, -999px) var(--mouse-y, -999px),
-            #ffffff 0%, #4d7896 50%, #0b3550 100%);
-}
-
-html[data-theme="light"] .page-ribbon-text {
-    color: #f7f1e6;
-}
-
-html[data-theme="light"] .main-scroll-viewport {
-    color: var(--text-80);
-}
-
-html[data-theme="light"] .main-scroll-viewport::-webkit-scrollbar-thumb {
-    background: rgba(20, 52, 76, 0.18);
-}
-
-html[data-theme="light"] .page-updated {
-    color: var(--text-55);
-}
-
-/* песочные часы загрузки — тёмно-синие на светлом фоне */
-html[data-theme="light"] .hg-loader {
-    background: radial-gradient(circle at 50% 42%, rgba(20, 52, 76, 0.06), transparent 9rem);
-}
-
-html[data-theme="light"] .hg-glass {
-    fill: rgba(20, 52, 76, 0.04);
-    stroke: rgba(20, 52, 76, 0.7);
-}
-
-html[data-theme="light"] .hg-sand-bottom {
-    fill: rgba(138, 106, 58, 0.75);
-}
-
-html[data-theme="light"] .hg-stream {
-    stroke: rgba(138, 106, 58, 0.75);
-}
-
-html[data-theme="light"] .hg-text {
-    color: var(--text-70);
-}
-
-/* переключатель темы — в правом верхнем углу основного блока */
-.theme-toggle {
-    position: absolute;
-    z-index: 5;
-    top: 1.1rem;
-    right: 1.3rem;
-    width: 2.2rem;
-    height: 2.2rem;
-    padding: 0;
-    font-size: 1.05rem;
-    line-height: 1;
-    color: var(--text-55);
-    background: transparent;
-    border: 1px solid var(--gold-15);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
-}
-
-.theme-toggle:hover,
-.theme-toggle:focus-visible {
-    color: var(--hi);
-    border-color: var(--hover-line);
-    background-color: var(--hover);
-    outline: none;
-}
-
-html[data-theme="light"] .theme-toggle {
-    color: rgba(20, 52, 76, 0.6);
-    border-color: rgba(20, 52, 76, 0.2);
 }
 
 /* Основной шрифт публичного сайта — Montserrat, как в прототипе Figma */
@@ -679,6 +542,38 @@ button.pc-card:focus-visible {
     left: 0;
     width: 1px;
     height: 1px;
+}
+
+/* прокручиваемая стопка («все») поднята над рядом на место под подъём верхних карточек
+   (js: layout) — эта полоса заходит на кнопки сортировки, поэтому мышь ловят только карточки */
+.pc-file:not(.is-fit) {
+    pointer-events: none;
+}
+
+.pc-file:not(.is-fit) > .pc-file-card {
+    pointer-events: auto;
+}
+
+/* полоса прокрутки — только вдоль самой стопки, не по поднятой полосе над ней (--pad ставит js) */
+@supports selector(::-webkit-scrollbar) {
+    .pc-file:not(.is-fit) {
+        scrollbar-width: auto;
+        scrollbar-color: auto;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar-track {
+        margin-top: var(--pad, 0px);
+        background: transparent;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar-thumb {
+        background: var(--text-30);
+        border-radius: 3px;
+    }
 }
 
 /* пачка помещается целиком — поднятая карточка может выйти за верх картотеки */
