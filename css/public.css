@@ -1829,6 +1829,7 @@ html.pc-open .main-scroll-viewport {
 .fc-info {
     min-width: 0;
     height: 33rem;                     /* одна у всех: иначе страница меняет высоту и ряд сверху прыгает */
+    scrollbar-gutter: stable;          /* место под полосу прокрутки всегда: свернули раздел — текст не съезжает */
     box-sizing: border-box;
     padding: 1rem 0.6rem 0 3.4rem;      /* бейдж немного заходит на текст, но не на подписи */
 }
@@ -1928,9 +1929,6 @@ html.pc-open .main-scroll-viewport {
     margin-bottom: 0.2rem;
 }
 
-.fc-info .pc-seg.is-collapsed .pc-section-title {
-    margin-bottom: 0;
-}
 
 .fc-info .fc-list > li:has(> .fc-names) {
     grid-template-columns: 7.5rem minmax(0, 1fr);
