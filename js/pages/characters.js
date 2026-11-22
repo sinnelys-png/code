@@ -386,6 +386,57 @@
     const PART = 340;     // раскладывание одного блока
     const UNIT = 250;     // через сколько начинает раскладываться следующий блок
     const DROP = 820;     // появление ленты
+    const SLIDE = 900;    // ярлычок едет влево по верхней полосе, стирая её
+    const TABS_OUT = 520; // из ярлычка выезжают остальные вкладки
+    const SLIDE_EASE = [0.45, 0, 0.3, 1];
+    const OUT_EASE = 'cubic-bezier(0.3, 0.6, 0.4, 1)';
+    const bez = (b) => `cubic-bezier(${b.join(', ')})`;
+
+    // доля времени, к которой кривая cubic-bezier(b) проходит долю пути y
+    function bezierTime(b, y) {
+        const at = (t, p1, p2) => 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;
+        let lo = 0, hi = 1;
+        for (let k = 0; k < 30; k++) {
+            const t = (lo + hi) / 2;
+            if (at(t, b[1], b[3]) < y) lo = t; else hi = t;
+        }
+        return at((lo + hi) / 2, b[0], b[2]);
+    }
+
+    /* Полоса и ярлычок маленькой карточки на шапке анкеты (раскрытие и сворачивание).
+       Оба — внутри шапки: растут и уменьшаются вместе с ней. Ярлычок размером с последнюю
+       вкладку анкеты: стоит у правого угла (startLeft), уезжает влево на место последней
+       вкладки (endLeft); crossPart — доля пути, когда его правый край у левого края ленты.
+       Полоса тянется от левого края шапки до правого края ярлычка: lineAt(left) — её масштаб. */
+    function morphParts(card, head, ribbon, srcCard) {
+        const tabs = [...card.querySelectorAll('.pc-tabs > *')];
+        const last = tabs[tabs.length - 1];
+        if (!last) return null;
+        const h = head.getBoundingClientRect(), rb = ribbon.getBoundingClientRect(), lt = last.getBoundingClientRect();
+        const cardTab = srcCard && srcCard.querySelector('.pc-card-tab');
+        const line = document.createElement('span');
+        line.className = 'pc-morph-line';
+        const label = document.createElement('span');
+        label.className = 'pc-morph-tab';
+        label.textContent = cardTab ? cardTab.textContent : '';
+        Object.assign(label.style, {
+            top: `${lt.top - h.top}px`, width: `${lt.width}px`, height: `${lt.height}px`, lineHeight: `${lt.height}px`,
+        });
+        head.append(line, label);
+        const startLeft = h.width - lt.width, endLeft = lt.left - h.left;
+        const crossLeft = Math.min(startLeft, Math.max(endLeft, rb.left - h.left - lt.width));
+        // в ключевых кадрах нужны готовые значения (var() там не работает)
+        const cs = getComputedStyle(label), ls = getComputedStyle(last);
+        const look = {
+            card: { backgroundColor: cs.backgroundColor, color: cs.color, clipPath: cs.clipPath, borderTopLeftRadius: '0px' },
+            tab: { backgroundColor: ls.backgroundColor, color: 'transparent', clipPath: ls.clipPath, borderTopLeftRadius: ls.borderTopLeftRadius },
+        };
+        const others = tabs.slice(0, -1).map(el => ({ el, dx: lt.left - el.getBoundingClientRect().left }));
+        const lineAt = (left) => `scaleX(${Math.max(0, (left + lt.width) / h.width)})`;
+        const remove = () => { line.remove(); label.remove(); };
+        const crossPart = startLeft > endLeft ? (startLeft - crossLeft) / (startLeft - endLeft) : 0;
+        return { line, label, last, others, startLeft, endLeft, crossPart, look, lineAt, remove };
+    }
 
     // srcEl — маленькая карточка, из которой «вырастает» большая (если не задана — ищем по имени)
     function unfoldCard(name, srcEl) {
@@ -400,15 +451,20 @@
 
         const h = head.getBoundingClientRect();
         // откуда растём: маленькая карточка на экране (если видна) или центр экрана
-        const src = (srcEl ? [srcEl] : [...document.querySelectorAll('.pc-card[data-name]')]
+        const srcCard = (srcEl ? [srcEl] : [...document.querySelectorAll('.pc-card[data-name]')]
             .filter(el => el.dataset.name === name && !el.closest('.pc-modal')))
-            .map(el => el.getBoundingClientRect())
-            .find(r => r.width && r.bottom > 0 && r.top < innerHeight);
+            .find(el => { const r = el.getBoundingClientRect(); return r.width && r.bottom > 0 && r.top < innerHeight; });
+        const src = srcCard && srcCard.getBoundingClientRect();
+
         const midY = innerHeight / 2;
         const dy = midY - (h.top + h.height / 2);             // шапка сначала стоит посередине экрана
         const s = src ? Math.min(1, src.width / h.width) : 0.6;
         const sx = src ? (src.left + src.width / 2) - (h.left + h.width / 2) : 0;
         const sy = src ? (src.top + src.height / 2) - midY : 0;
+
+        // полоса и ярлычок маленькой карточки растут вместе с шапкой; потом ярлычок едет влево,
+        // стирая полосу, проезжает ленту (она спадает) и становится последней вкладкой анкеты
+        const m = ribbon && !card.matches('.fc-big') ? morphParts(card, head, ribbon, srcCard) : null;
 
         const start = GROW * 0.9;                                    // блоки начинают раскладываться
         const blocks = (lowers.length - 1) * UNIT + PART;            // все блоки разложены
@@ -450,19 +506,58 @@
                 { pseudoElement: '::after', duration: 450, delay: opened - 60, easing: 'ease-out', fill: 'backwards' });
         } catch (e) { /* старый браузер — рамка просто видна сразу */ }
 
+        let ribbonAt = opened - 60, tabsAt = 0;
+        if (m) {
+            const slideAt = opened + 80;
+            tabsAt = slideAt + SLIDE;
+            m.label.style.left = `${m.endLeft}px`;
+            Object.assign(m.label.style, m.look.tab);
+            // ярлычок: едет влево, по дороге перекрашивается в последнюю вкладку
+            m.label.animate([
+                { left: `${m.startLeft}px`, ...m.look.card },
+                { ...m.look.card, offset: 0.45 },
+                { left: `${m.endLeft}px`, ...m.look.tab },
+            ], { duration: SLIDE, delay: slideAt, easing: bez(SLIDE_EASE), fill: 'backwards' });
+            // остановился — гаснет над настоящей вкладкой (та же форма и цвет, но с надписью)
+            m.label.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: tabsAt + 60, fill: 'forwards' })
+                .finished.then(m.remove, m.remove);
+            m.last.animate([{ opacity: 0 }, { opacity: 0 }], { duration: tabsAt, fill: 'backwards' });
+            // полоса стирается за ярлычком, а пока выезжают вкладки — уезжает дальше, до конца
+            const T = SLIDE + TABS_OUT;
+            m.line.animate([
+                { transform: 'scaleX(1)', easing: bez(SLIDE_EASE) },
+                { transform: m.lineAt(m.endLeft), offset: SLIDE / T, easing: OUT_EASE },
+                { transform: 'scaleX(0)' },
+            ], { duration: T, delay: slideAt, fill: 'both' });
+            // лента спадает, когда ярлычок правым краем проезжает её левый край
+            ribbonAt = slideAt + bezierTime(SLIDE_EASE, m.crossPart) * SLIDE;
+        }
+
         // лента спадает вниз от верхнего края карточки: раскрывается сверху вниз во всю ширину
         // (без поворота — не сужается), в конце чуть проседает и возвращается на место
         if (ribbon) ribbon.animate([
             { clipPath: 'inset(0 -20% 100% -20%)', transform: 'translateY(-6px)' },
             { clipPath: 'inset(0 -20% -20% -20%)', transform: 'translateY(4px)', offset: 0.72 },
             { clipPath: 'inset(0 -20% -20% -20%)', transform: 'none' },
-        ], { duration: DROP, delay: opened - 60, easing: 'cubic-bezier(0.3, 0.6, 0.35, 1)', fill: 'backwards' });
+        ], { duration: DROP, delay: ribbonAt, easing: 'cubic-bezier(0.3, 0.6, 0.35, 1)', fill: 'backwards' });
 
-        // вкладки слева, друг за другом
-        tabs.forEach((el, i) => el.animate([
-            { transform: 'translateX(-1.2rem)', opacity: 0 },
-            { transform: 'none', opacity: 1 },
-        ], { duration: 420, delay: opened + DROP * 0.75 + i * 130, easing: EASE, fill: 'backwards' }));
+        if (m) {
+            // остальные вкладки выезжают влево из последней
+            m.others.forEach(({ el, dx }) => el.animate([
+                { transform: `translateX(${dx}px)`, opacity: 0 },
+                { opacity: 1, offset: 0.25 },
+                { transform: 'none', opacity: 1 },
+            ], { duration: TABS_OUT, delay: tabsAt, easing: OUT_EASE, fill: 'backwards' }));
+            clearTimeout(modalBody.animTimer);
+            modalBody.animTimer = setTimeout(() => modalBody.classList.remove('is-animating'),
+                Math.max(ribbonAt + DROP, tabsAt + TABS_OUT) + 100);
+        } else {
+            // вкладки слева, друг за другом
+            tabs.forEach((el, i) => el.animate([
+                { transform: 'translateX(-1.2rem)', opacity: 0 },
+                { transform: 'none', opacity: 1 },
+            ], { duration: 420, delay: ribbonAt + 60 + DROP * 0.75 + i * 130, easing: EASE, fill: 'backwards' }));
+        }
     }
     RCU.unfoldCard = unfoldCard;
 
@@ -484,10 +579,48 @@
             ...[...card.children].filter(el => el.matches('.pc-seg'))].filter(Boolean).reverse();
         const opt = (o) => Object.assign({ fill: 'forwards' }, o);
 
-        tabs.forEach(el => el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(-0.8rem)' }],
-            opt({ duration: 160, easing: 'ease-in' })));
-        if (ribbon) ribbon.animate([{ clipPath: 'inset(0 -20% -20% -20%)' }, { clipPath: 'inset(0 -20% 100% -20%)' }],
-            opt({ duration: 220, easing: 'ease-in' }));
+        // шапка уходит в маленькую карточку (если она видна на экране) или просто уменьшается и гаснет
+        const dstCard = [...document.querySelectorAll('.pc-card[data-name]')]
+            .filter(el => el.dataset.name === name && !el.closest('.pc-modal'))
+            .find(el => { const r = el.getBoundingClientRect(); return r.width && r.bottom > 0 && r.top < innerHeight; });
+        const dst = dstCard && dstCard.getBoundingClientRect();
+        // обратно: вкладки въезжают в последнюю, она становится ярлычком карточки и едет вправо,
+        // вытягивая за собой полосу; лента сворачивается, пока он её проезжает
+        const m = ribbon && !card.matches('.fc-big') ? morphParts(card, head, ribbon, dstCard) : null;
+        let slideDone = 0;
+        if (m) {
+            const TABS_IN = 360, BACK = 760, RIB_UP = 300;
+            m.others.forEach(({ el, dx }) => el.animate([
+                { transform: 'none', opacity: 1 },
+                { opacity: 1, offset: 0.7 },
+                { transform: `translateX(${dx}px)`, opacity: 0 },
+            ], opt({ duration: TABS_IN, easing: 'cubic-bezier(0.5, 0, 0.7, 0.4)' })));
+            m.last.animate([{ opacity: 0 }, { opacity: 0 }], opt({ duration: 10 }));
+            Object.assign(m.label.style, { left: `${m.endLeft}px` }, m.look.tab);
+            const backAt = TABS_IN + 60;
+            m.label.animate([
+                { left: `${m.endLeft}px`, ...m.look.tab },
+                { ...m.look.card, offset: 0.55 },
+                { left: `${m.startLeft}px`, ...m.look.card },
+            ], opt({ duration: BACK, delay: backAt, easing: bez(SLIDE_EASE) }));
+            const T = backAt + BACK;
+            m.line.animate([
+                { transform: 'scaleX(0)', easing: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+                { transform: m.lineAt(m.endLeft), offset: TABS_IN / T, easing: 'linear' },
+                { transform: m.lineAt(m.endLeft), offset: backAt / T, easing: bez(SLIDE_EASE) },
+                { transform: 'scaleX(1)' },
+            ], opt({ duration: T }));
+            // лента сворачивается и исчезает к тому моменту, как ярлычок до неё доезжает
+            const cross = backAt + bezierTime(SLIDE_EASE, 1 - m.crossPart) * BACK;
+            if (ribbon) ribbon.animate([{ clipPath: 'inset(0 -20% -20% -20%)' }, { clipPath: 'inset(0 -20% 100% -20%)' }],
+                opt({ duration: RIB_UP, delay: Math.max(0, cross - RIB_UP), easing: 'ease-in' }));
+            slideDone = T + 40;
+        } else {
+            tabs.forEach(el => el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(-0.8rem)' }],
+                opt({ duration: 160, easing: 'ease-in' })));
+            if (ribbon) ribbon.animate([{ clipPath: 'inset(0 -20% -20% -20%)' }, { clipPath: 'inset(0 -20% 100% -20%)' }],
+                opt({ duration: 220, easing: 'ease-in' }));
+        }
         if (seam) seam.animate([{ opacity: 1 }, { opacity: 0 }], opt({ duration: 150 }));
         try {
             card.animate([{ opacity: 1 }, { opacity: 0 }], opt({ pseudoElement: '::after', duration: 200 }));
@@ -504,12 +637,7 @@
         card.classList.add('is-unfolding');
         modalBody.classList.add('is-animating');
 
-        // шапка — в маленькую карточку (если она видна на экране) или просто уменьшается и гаснет
         const h = head.getBoundingClientRect();
-        const dst = [...document.querySelectorAll('.pc-card[data-name]')]
-            .filter(el => el.dataset.name === name && !el.closest('.pc-modal'))
-            .map(el => el.getBoundingClientRect())
-            .find(r => r.width && r.bottom > 0 && r.top < innerHeight);
         const sc = dst ? Math.min(1, dst.width / h.width) : 0.6;
         const tx = dst ? (dst.left + dst.width / 2) - (h.left + h.width / 2) : 0;
         const ty = dst ? (dst.top + dst.height / 2) - (h.top + h.height / 2) : 0;
@@ -517,8 +645,8 @@
             { transform: 'none', opacity: 1 },
             { opacity: 0.9, offset: 0.8 },
             { transform: `translate(${tx}px, ${ty}px) scale(${sc})`, opacity: 0 },
-        ], opt({ duration: SHRINK, delay: folded - 60, easing: EASE_MOVE }));
-        return folded - 60 + SHRINK;
+        ], opt({ duration: SHRINK, delay: Math.max(folded - 60, slideDone), easing: EASE_MOVE }));
+        return Math.max(folded - 60, slideDone) + SHRINK;
     }
 
 

@@ -1678,6 +1678,35 @@ html.pc-open .main-scroll-viewport {
     opacity: 0;
 }
 
+/* открытие: полоса и ярлычок маленькой карточки на шапке анкеты (unfoldCard) —
+   полоса уезжает вправо, ярлычок переезжает влево и становится язычком */
+.pc-morph-line {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--fac-main, var(--gold-55));
+    transform-origin: 0 50%;             /* улетает влево (при закрытии — вытягивается слева) */
+    pointer-events: none;
+}
+
+.pc-morph-tab {
+    position: absolute;
+    z-index: 6;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    font-size: 0.75rem;                  /* как у вкладок анкеты: ярлычок становится последней из них */
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--fac-stripe, var(--text-80));
+    background: var(--fac-main, #0a3e5d);
+    clip-path: polygon(0.5rem 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
 /* окно с анкетой появляется сразу — плавность даёт сама анимация карточки */
 .pc-modal-body:has(.pc-ticket) {
     transition: none;
