@@ -1057,6 +1057,11 @@ html.pc-open .main-scroll-viewport {
     box-shadow: 0 -2px 0 var(--card-bg), 0 2px 0 var(--card-bg);
 }
 
+/* у шапки сверху щели нет — там полоса цвета факультета, над ней не должно быть каёмки */
+.pc-ticket.is-unfolding .pc-seg--head {
+    box-shadow: 0 2px 0 var(--card-bg);
+}
+
 /* шапка анкеты чуть ниже, чтобы рамка не задевала её содержимое */
 .pc-ticket .pc-seg--head {
     padding-top: calc(var(--frame-in) + 0.9rem);
