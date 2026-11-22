@@ -30,6 +30,8 @@ const FACULTY_GID = 0;
 const BRON_GID = 2050639534;
 // Лист игровой (должники) в Техтаблице
 const DEBTS_GID = 1875298653;
+// Лист «Архив» в Техтаблице — ушедшие персонажи (переносит туда delChar)
+const ARCHIVE_GID = 839732908;
 // Таблица факультетов (структура: предметы, преподаватели, декан, нпс, студенты по курсам, факультативы)
 const FACULTY_INFO_SHEET_ID = '1Rs16v2rZ_PwRoVF-gNBU0fW4sdw_r5eZ2JjcbEyJ17s';
 const FACULTY_INFO_GID = 1846439865;
@@ -44,7 +46,7 @@ const WARMUP_MINUTES = 5;
 // Первый утренний посетитель один раз подождёт, пока скрипт прочитает таблицы.
 const WARMUP_NIGHT_FROM = 2;   // с 02:00
 const WARMUP_NIGHT_TO = 9;     // до 09:00
-const CACHE_KEY = 'site-v8';
+const CACHE_KEY = 'site-v9';
 
 // Лист «Дедлайн» в этой же таблице (число после gid= в адресе)
 const SHEET_GID = 236702218;
@@ -167,20 +169,28 @@ function buildRelations_() {
   return out;
 }
 
-const ANKETAS_KEY = 'anketas-v1';
-const ANKETA_COL = 24;   // X — анкета персонажа
+const ANKETAS_KEY = 'anketas-v2';
+const ANKETA_COL = 24;          // X — анкета персонажа
+const ARCHIVE_ANKETA_COL = 17;  // Q — анкета в листе «Архив»
 
 function buildAnketas_() {
-  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), FACULTY_GID);
-  const last = sheet.getLastRow();
-  const names = sheet.getRange(1, 2, last, 1).getDisplayValues();
-  const texts = sheet.getRange(1, ANKETA_COL, last, 1).getDisplayValues();
+  const book = SpreadsheetApp.openById(FACULTY_SHEET_ID);
   const anketas = {};
-  for (let i = 0; i < last; i++) {
-    const name = String(names[i][0] || '').trim();
-    const text = String(texts[i][0] || '').trim();
-    if (name && text && name !== 'Имя персонажа') anketas[name] = text;
-  }
+  // сначала архив: если персонаж вернулся и снова есть в списке — берётся нынешняя анкета
+  const read = (gid, col) => {
+    const sheet = sheetByGid_(book, gid);
+    const last = sheet.getLastRow();
+    if (last < 1 || sheet.getLastColumn() < col) return;
+    const names = sheet.getRange(1, 2, last, 1).getDisplayValues();
+    const texts = sheet.getRange(1, col, last, 1).getDisplayValues();
+    for (let i = 0; i < last; i++) {
+      const name = String(names[i][0] || '').trim();
+      const text = String(texts[i][0] || '').trim();
+      if (name && text && name !== 'Имя персонажа') anketas[name] = text;
+    }
+  };
+  try { read(ARCHIVE_GID, ARCHIVE_ANKETA_COL); } catch (e) { /* архива может не быть */ }
+  read(FACULTY_GID, ANKETA_COL);
   const out = JSON.stringify({ updated: new Date().toISOString(), anketas: anketas });
   cachePut_(ANKETAS_KEY, out);
   return out;
@@ -248,6 +258,7 @@ function build_() {
   try { out.activity = activity_(); } catch (e) { out.activityError = String(e); }
   try { out.faculties = faculties_(); } catch (e) { out.facultiesError = String(e); }
   try { out.tech = tech_(); } catch (e) { out.techError = String(e); }
+  try { out.archive = archive_(); } catch (e) { out.archiveError = String(e); }
   try { out.facultyInfo = facultyInfo_(); } catch (e) { out.facultyInfoError = String(e); }
   try { out.bron = bron_(); } catch (e) { out.bronError = String(e); }
   try { out.debts = debts_(); } catch (e) { out.debtsError = String(e); }
@@ -380,6 +391,79 @@ function faculties_() {
  * поэтому порядок колонок в таблице можно менять. Безымянные колонки I и L
  * отдаются как есть (i, l).
  */
+/**
+ * Лист «Архив» Техтаблицы — ушедшие персонажи. Колонки ищутся по заголовкам (строка,
+ * где в B написано «Имя персонажа»). Аватар — =IMAGE("…") или просто ссылка,
+ * приветка — =HYPERLINK, ссылка-текст или ссылка, вставленная в ячейку.
+ */
+function archive_() {
+  const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), ARCHIVE_GID);
+  const last = sheet.getLastRow();
+  if (last < 2) return [];
+  const range = sheet.getRange(1, 1, last, Math.max(sheet.getLastColumn(), 16));
+  const display = range.getDisplayValues();
+  const formulas = range.getFormulas();
+  const rich = range.getRichTextValues();
+  const head = display.findIndex(r => String(r[1]).trim() === 'Имя персонажа');
+  if (head < 0) throw new Error('В архиве не найдена строка заголовков');
+  const titles = display[head].map(t => String(t).trim().toLowerCase());
+  const col = (start) => titles.findIndex(t => t.startsWith(start));
+  const C = {
+    avatar: col('ссылка на аватар') >= 0 ? col('ссылка на аватар') : 0,
+    role: col('роль'), duet: col('дуэт'), player: col('отвечающий'), playerName: col('имя отвечающего'),
+    privetka: col('приветка'), height: col('рост'), faculty: col('факультет'), subrole: col('подроль'),
+    l: col('курс/предмет'), extra: col('доп предметы'), house: col('дом в общежитии'), room: col('комната'),
+    since: col('дата прихода'), left: col('дата ухода'),
+  };
+  const fixUrl = (v) => {
+    v = String(v || '').trim();
+    return v && !/^https?:\/\//i.test(v) && /^[\w.-]+\.\w+\//.test(v) ? 'https://' + v : v;
+  };
+  // ссылка из ячейки: сам текст-адрес (как он виден в таблице), а если там слово
+  // («ссылка») или картинка — формула или ссылка на весь текст или на его часть
+  const isUrl = (v) => /^(https?:\/\/)?[\w.-]+\.\w+\/\S*$/.test(String(v || '').trim());
+  const urlAt = (i, c) => {
+    if (c < 0) return '';
+    if (isUrl(display[i][c])) return fixUrl(display[i][c]);
+    const f = formulas[i][c];
+    if (f) return /HYPERLINK/i.test(f) ? linkOf_(f, display[i]) : fixUrl(firstQuoted_(f));
+    const rt = rich[i][c];
+    if (rt) {
+      if (rt.getLinkUrl()) return fixUrl(rt.getLinkUrl());
+      const run = rt.getRuns().find(x => x.getLinkUrl());
+      if (run) return fixUrl(run.getLinkUrl());
+    }
+    return '';
+  };
+  const get = (r, c) => (c >= 0 ? String(r[c] || '').trim() : '');
+
+  const rows = [];
+  for (let i = head + 1; i < display.length; i++) {
+    const r = display[i];
+    const name = String(r[1]).trim();
+    if (!name || name === 'Имя персонажа') continue;
+    rows.push({
+      name: name,
+      avatar: urlAt(i, C.avatar),
+      role: get(r, C.role),
+      duet: get(r, C.duet),
+      playerUrl: urlAt(i, C.player),
+      player: get(r, C.playerName),
+      privetkaUrl: urlAt(i, C.privetka),
+      height: get(r, C.height),
+      faculty: get(r, C.faculty),
+      subrole: get(r, C.subrole),
+      l: get(r, C.l),
+      extra: get(r, C.extra),
+      house: get(r, C.house),
+      room: get(r, C.room),
+      since: get(r, C.since),
+      left: get(r, C.left),
+    });
+  }
+  return rows;
+}
+
 function tech_() {
   const sheet = sheetByGid_(SpreadsheetApp.openById(FACULTY_SHEET_ID), FACULTY_GID);
   const display = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 16)).getDisplayValues();

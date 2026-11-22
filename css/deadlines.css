@@ -281,7 +281,6 @@ a.dl-name:hover {
 .dl-player-link {
     color: var(--text-80);
     text-decoration: none;
-    border-bottom: 1px dotted var(--gold-55);
 }
 
 .dl-player-link:hover {
@@ -339,7 +338,6 @@ a.dl-name:hover {
     padding: 0;
     background: none;
     border: none;
-    border-bottom: 1px dotted var(--gold-55);
     font: inherit;
     color: var(--text-80);
     cursor: pointer;

@@ -97,7 +97,7 @@
         else if (c.role === 'преподаватель') rows = row('фак.', shortFaculty(c.faculty), 'pc-fac') + row('предм.', lowerFirst(c.subject || ''), 'pc-fac');
         else rows = row('курс', course) + row('фак.', shortFaculty(c.faculty), 'pc-fac');
         return `
-            <button class="pc-card" type="button" data-name="${esc(c.name)}"${facStyle(c)}>
+            <button class="pc-card${c.archived ? ' is-archived' : ''}" type="button" data-name="${esc(c.key || c.name)}"${facStyle(c)}>
                 <span class="pc-card-tab">${esc(tabLabel ?? tabText(c, sortBy))}</span>
                 ${tabLabel != null ? `<span class="pc-card-face"${safeUrl(c.avatar) ? ` style="background-image:url('${esc(c.avatar)}')"` : ''}></span>` : ''}
                 ${avatar(c, 'pc-card-avatar')}
@@ -156,10 +156,11 @@
 
     function bigCard(c) {
         const a = anketaOf(c);
-        const tabs = [
+        // у ушедшего персонажа (архив) вместо альбома и темы — приветка в альбоме ушедших
+        const tabs = (c.archived ? [['приветка', c.privetkaUrl]] : [
             ['альбом', c.albumUrl],
             ['тема', c.topicUrl],
-        ].filter(([, u]) => safeUrl(u))
+        ]).filter(([, u]) => safeUrl(u))
             .map(([t, u]) => `<a class="pc-tab" href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join('')
             // «отвечающий» ведёт на его страницу на сайте (js/pages/player.js), а не сразу во ВК
             + (c.playerKey && RCU.playerHref
@@ -181,7 +182,7 @@
         const extras = c.extra ? `<div class="pc-k">доп. предметы</div><div class="pc-v">${esc(c.extra)}</div>` : '';
 
         return `
-            <article class="pc-big pc-ticket"${facStyle(c)}>
+            <article class="pc-big pc-ticket${c.archived ? ' is-archived' : ''}"${facStyle(c)}>
                 <nav class="pc-tabs"><span class="pc-tab-own" aria-hidden="true"></span>${tabs}</nav>
                 <div class="pc-top">
                     ${ribbon()}
@@ -210,7 +211,7 @@
                     </div>
                     <section class="pc-seg pc-stats">
                         ${stat('возраст', a && a.age)}
-                        ${homeStat(c)}
+                        ${c.archived ? stat('в архиве с', c.left) : homeStat(c)}
                         ${stat('вид', a && a.species && String(a.species).toLowerCase())}
                         ${stat('рост', (a && a.height) || (c.height ? `${c.height}${/^\d+$/.test(c.height) ? ' см' : ''}` : ''))}
                         ${stat('вес', a && a.weight)}
@@ -306,11 +307,15 @@
         updatePager(name);
         setCardHash(name);
         // анкеты грузятся отдельно — когда придут, перерисуем открытую карточку
-        if (!anketaTexts) loadAnketas().then(() => {
-            if (!modal.hidden && modalBody.dataset.name === name && modalBody.querySelector('.pc-big:not(.fc-big)')) {
-                render();
-            }
-        });
+        // (если анкета ещё раскрывается — после раскрытия, иначе перерисовка оборвёт анимацию:
+        // пропадут ярлычок с буквой и полоса)
+        const rerender = () => {
+            if (modal.hidden || modal.classList.contains('is-closing') || modalBody.dataset.name !== name
+                || !modalBody.querySelector('.pc-big:not(.fc-big)')) return;
+            if (modalBody.skipUnfold) { setTimeout(rerender, 150); return; }
+            render();
+        };
+        if (!anketaTexts) loadAnketas().then(rerender);
         modal.hidden = false;
         modal.classList.remove('is-closing');
         clearTimeout(modal.dropTimer);
@@ -420,7 +425,9 @@
         line.className = 'pc-morph-line';
         const label = document.createElement('span');
         label.className = 'pc-morph-tab';
-        label.textContent = cardTab ? cardTab.textContent : '';
+        // нет маленькой карточки (анкету открыли из общежития, по ссылке) — буква, как на её ярлычке
+        const c = data && data.byName.get(modalBody.dataset.name);
+        label.textContent = cardTab ? cardTab.textContent : (c ? tabText(c) : '');
         Object.assign(label.style, {
             top: `${lt.top - h.top}px`, width: `${lt.width}px`, height: `${lt.height}px`, lineHeight: `${lt.height}px`,
         });
@@ -599,13 +606,23 @@
         const opt = (o) => Object.assign({ fill: 'forwards' }, o);
 
         // шапка уходит в маленькую карточку (если она видна на экране) или просто уменьшается и гаснет
-        const dstCard = [...document.querySelectorAll('.pc-card[data-name]')]
+        // или в аватарку (окошко дома в общежитии — .pc-open-char): тогда аватар анкеты ложится на неё
+        const visible = (sel) => [...document.querySelectorAll(sel)]
             .filter(el => el.dataset.name === name && !el.closest('.pc-modal'))
             .find(el => { const r = el.getBoundingClientRect(); return r.width && r.bottom > 0 && r.top < innerHeight; });
-        const dst = dstCard && dstCard.getBoundingClientRect();
+        // карточка факультета — в свою маленькую карточку на странице факультетов
+        const fac = modalBody.dataset.fac;
+        const facCard = fac != null && document.querySelector(`.fc-card[data-index="${CSS.escape(fac)}"]`);
+        const onScreen = facCard && (() => { const r = facCard.getBoundingClientRect(); return r.width && r.bottom > 0 && r.top < innerHeight; })();
+        const dstCard = onScreen ? facCard : (visible('.pc-card[data-name]') || visible('.pc-open-char[data-name]'));
+        const toAvatar = !!dstCard && !dstCard.matches('.pc-card');
+        // имя с аватаркой (списки на странице факультетов) — садимся на саму аватарку
+        const dstEl = toAvatar && !dstCard.matches('.fc-card') ? (dstCard.querySelector('.fc-ava') || dstCard) : dstCard;
+        const dst = dstEl && dstEl.getBoundingClientRect();
+        const bigAva = toAvatar && head.querySelector('.pc-big-avatar');
         // обратно: вкладки въезжают в последнюю, она становится ярлычком карточки и едет вправо,
         // вытягивая за собой полосу; лента сворачивается, пока он её проезжает
-        const m = ribbon && !card.matches('.fc-big') ? morphParts(card, head, ribbon, dstCard) : null;
+        const m = ribbon && !card.matches('.fc-big') ? morphParts(card, head, ribbon, toAvatar ? null : dstCard) : null;
         let slideDone = 0;
         if (m) {
             const TABS_IN = 360, BACK = 760, RIB_UP = 300;
@@ -657,15 +674,41 @@
         modalBody.classList.add('is-animating');
 
         const h = head.getBoundingClientRect();
-        const sc = dst ? Math.min(1, dst.width / h.width) : 0.6;
-        const tx = dst ? (dst.left + dst.width / 2) - (h.left + h.width / 2) : 0;
-        const ty = dst ? (dst.top + dst.height / 2) - (h.top + h.height / 2) : 0;
-        head.animate([
+        // шапка масштабируется от середины верхнего края (.pc-ticket .pc-seg в css):
+        // точка p после масштаба s и сдвига t окажется в o + s·(p − o) + t
+        const ox = h.left + h.width / 2, oy = h.top;
+        const shift = (px, py, s, qx, qy) => [qx - ox - s * (px - ox), qy - oy - s * (py - oy)];
+        let sc = dst ? Math.min(1, dst.width / h.width) : 0.6;
+        // центр шапки — в центр маленькой карточки
+        let [tx, ty] = dst ? shift(ox, h.top + h.height / 2, sc, dst.left + dst.width / 2, dst.top + dst.height / 2) : [0, 0];
+        const shrinkAt = Math.max(folded - 60, slideDone);
+        if (bigAva) {
+            // шапка уменьшается так, чтобы аватар анкеты лёг ровно на аватарку
+            const a = bigAva.getBoundingClientRect();
+            sc = dst.width / a.width;
+            [tx, ty] = shift(a.left + a.width / 2, a.top + a.height / 2, sc, dst.left + dst.width / 2, dst.top + dst.height / 2);
+            // всё, кроме аватара, гаснет по дороге — до аватарки долетает только он
+            [...head.querySelectorAll('.pc-close, .pc-head-info, .pc-morph-line, .pc-morph-tab')].forEach(el => el.animate(
+                [{ opacity: 1 }, { opacity: 0 }], opt({ duration: SHRINK * 0.5, delay: shrinkAt, easing: 'ease-in' })));
+            head.animate([
+                { backgroundColor: getComputedStyle(head).backgroundColor, borderColor: getComputedStyle(head).borderTopColor, boxShadow: 'none' },
+                { backgroundColor: 'transparent', borderColor: 'transparent', boxShadow: 'none' },
+            ], opt({ duration: SHRINK * 0.6, delay: shrinkAt, easing: 'ease-in' }));
+            try {
+                head.animate([{ opacity: 1 }, { opacity: 0 }], opt({ pseudoElement: '::before', duration: SHRINK * 0.6, delay: shrinkAt }));
+                head.animate([{ opacity: 1 }, { opacity: 0 }], opt({ pseudoElement: '::after', duration: SHRINK * 0.6, delay: shrinkAt }));
+            } catch (e) { /* старый браузер */ }
+        }
+        head.animate(bigAva ? [
+            { transform: 'none', opacity: 1 },
+            { opacity: 1, offset: 0.85 },
+            { transform: `translate(${tx}px, ${ty}px) scale(${sc})`, opacity: 0 },
+        ] : [
             { transform: 'none', opacity: 1 },
             { opacity: 0.9, offset: 0.8 },
             { transform: `translate(${tx}px, ${ty}px) scale(${sc})`, opacity: 0 },
-        ], opt({ duration: SHRINK, delay: Math.max(folded - 60, slideDone), easing: EASE_MOVE }));
-        return Math.max(folded - 60, slideDone) + SHRINK;
+        ], opt({ duration: SHRINK, delay: shrinkAt, easing: EASE_MOVE }));
+        return shrinkAt + SHRINK;
     }
 
 
@@ -836,8 +879,9 @@
         // карточка в стопке, с которой открыли анкету, опускается обратно — когда шапка в неё «вернётся»
         clearTimeout(modal.dropTimer);
         modal.dropTimer = setTimeout(() => {
-            if (!modal.classList.contains('is-shown')) liftCard(null);
-        }, ms ? ms - 80 : 0);
+            if (modal.classList.contains('is-shown')) return;
+            liftCard(null);
+            if (RCU.playerLift) RCU.playerLift(null);        }, ms ? ms - 80 : 0);
     }
 
     if (modal) {
@@ -866,7 +910,30 @@
             if (modalBody.skipUnfold) { modalBody.skipUnfold(); return; }
             closeCharacter();
         });
-        window.addEventListener('hashchange', closeCharacter);
+        // переход по вкладке «отвечающий»: анкета остаётся открытой, пока страница отвечающего
+        // рисуется, и сворачивается в свою карточку в его стопке (а не в картотеку, которой уже нет)
+        let waitRender = null;
+        window.addEventListener('hashchange', () => {
+            if (waitRender) { waitRender(); waitRender = null; }
+            const name = modalBody.dataset.name;
+            if (!/^#player\//.test(location.hash) || !name || modal.hidden || !modal.classList.contains('is-shown')) {
+                closeCharacter();
+                return;
+            }
+            const go = () => {
+                cancel();
+                if (!modal.classList.contains('is-shown') || modalBody.dataset.name !== name) return;
+                // карточка этого персонажа поднята, пока в неё складывается анкета
+                if (RCU.playerLift) RCU.playerLift(name);
+                closeCharacter();
+            };
+            // страница проявляется (0.5 с, pages.css) — сворачиваемся, когда карточка уже на месте
+            const onRendered = (e) => { if (e.detail && e.detail.page === 'player') { clearTimeout(t); t = setTimeout(go, 450); } };
+            let t = setTimeout(go, 3000);     // страница так и не нарисовалась — закрываем как обычно
+            const cancel = () => { clearTimeout(t); window.removeEventListener('rcu:rendered', onRendered); };
+            window.addEventListener('rcu:rendered', onRendered);
+            waitRender = cancel;
+        });
     }
 
     // клики по маленьким карточкам на любой странице

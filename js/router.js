@@ -170,6 +170,8 @@
                 if (page.updated === true) addUpdated(root);
                 RCU.widenHeadings(root);
                 enter(root);
+                // страница нарисована (по нему, например, анкета сворачивается в карточку на новой странице)
+                window.dispatchEvent(new CustomEvent('rcu:rendered', { detail: { page: name } }));
             } catch (err) {
                 console.error(err);
                 if (token === navToken) {

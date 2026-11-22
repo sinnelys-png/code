@@ -4,6 +4,7 @@
 //   tech        — Техтаблица: H альбом, I рост, J факультет, L курс, M доп. предметы,
 //                 N дом и O комната в общежитии, P можно ли соседа;
 //   faculties   — Техтаблица: имя → факультет;
+//   archive     — лист «Архив» Техтаблицы: ушедшие персонажи (аватар, отвечающий, приветка, даты);
 //   facultyInfo — таблица факультетов: предметы, преподаватели, декан, нпс, студенты по курсам, факультативы.
 // Анкет (возраст, рост, биография…) в таблицах пока нет — они в обсуждениях ВК.
 (() => {
@@ -116,8 +117,8 @@
        из ссылки («vk.ru/durov» → «durov»). Одна ссылка с ID и коротким именем у разных персонажей
        сводится к одному отвечающему.
        На будущее (когда появятся в таблицах — скрипт отдаст их в bundle):
-         data.players — [{ id или url, name, avatar, about, birthday, blogs: [{ title, url }] }];
-         data.archive — имена ушедших персонажей (или флаг archived у персонажа). */
+         data.players — [{ id или url, name, avatar, about, birthday, blogs: [{ title, url }] }].
+       Ушедшие персонажи (archived) — из листа «Архив», см. load(). */
     function vkHandle(url) {
         const m = String(url || '').match(/vk\.(?:com|ru)\/([\w.]+)/i);
         if (!m) return null;
@@ -128,7 +129,6 @@
 
     function buildPlayers(characters, data) {
         const extra = Array.isArray(data.players) ? data.players : [];
-        const archive = new Set(Array.isArray(data.archive) ? data.archive : []);
 
         // короткое имя → ID, если хоть у одного персонажа известны оба
         const idOfScreen = {};
@@ -154,7 +154,6 @@
             p.name = p.name || (isEmpty(c.player) ? '' : c.player);
             p.url = p.url || c.playerUrl || '';
             p.id = p.id || (key.startsWith('id') ? key.slice(2) : '');
-            c.archived = c.archived || archive.has(c.name);
             p.characters.push(c);
         });
         byKey.forEach(p => {
@@ -248,6 +247,33 @@
             c.duet = c.duet || (isEmpty(r.duet) ? '' : r.duet);
             c.faculty = c.faculty || facultyOf[r.name] || r.faculty || '';
         });
+        // ушедшие персонажи (лист «Архив» Техтаблицы): их анкеты открываются со страницы
+        // отвечающего, но в картотеке, общежитии, линейке и на факультетах их нет.
+        // Персонаж есть и в списке, и в архиве (вернулся) — видны обе версии: архивная
+        // хранится под своим ключом (key), по нему её открывают; имя на карточке то же.
+        const archived = Array.isArray(data.archive) ? data.archive.filter(x => x && x.name) : [];
+        archived.forEach(x => {
+            let key = x.name;
+            for (let n = 1; byName.has(key); n++) key = `${x.name} · архив${n > 1 ? ` ${n}` : ''}`;
+            byName.set(key, {
+                name: x.name,
+                key: key === x.name ? undefined : key,
+                archived: true,
+                avatar: x.avatar || '',
+                role: x.role || '',
+                faculty: x.faculty || '',
+                duet: isEmpty(x.duet) ? '' : x.duet,
+                playerUrl: x.playerUrl || '',
+                player: isEmpty(x.player) ? '' : x.player,
+                privetkaUrl: x.privetkaUrl || '',
+                since: isEmpty(x.since) ? '' : x.since,
+                left: isEmpty(x.left) ? '' : x.left,
+                extra: isEmpty(x.extra) ? '' : x.extra,
+                height: isEmpty(x.height) ? '' : x.height,
+                colL: isEmpty(x.l) ? '' : x.l,
+            });
+        });
+
         byName.forEach(c => {
             c.role = (c.role || '').toLowerCase();
             // колонка L: у студентов — курс (иначе — из таблицы факультетов),
@@ -259,7 +285,8 @@
             c.role = (c.role || '').toLowerCase();
         });
 
-        const characters = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+        const everyone = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+        const characters = everyone.filter(c => !c.archived);
         // брони из листа [бронь] Техтаблицы: роль приводим к «студент / преподаватель / персонал»
         const roleOf = (x) => {
             const r = String(x.role || '').toLowerCase();
@@ -274,7 +301,7 @@
             .map(x => ({ ...x, role: roleOf(x), course: String(x.course || '').replace(/\D+/g, '') }))
             .filter(x => x.role && !byName.has(x.name));
 
-        const players = buildPlayers(characters, data);
+        const players = buildPlayers(everyone, data);
 
         return { characters, byName, facultyInfo, bron, players, hasTech: tech.length > 0 };
     }
