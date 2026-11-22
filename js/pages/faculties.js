@@ -64,10 +64,9 @@
     // под ней ✦ между линиями и «факультет», внизу герб, заходящий на рамку.
     function smallCard(f, i, pos = 0) {
         const title = f.staff ? 'персонал' : shortTitle(f.title);
-        const curl = '<svg class="fc-curl" viewBox="0 0 60 40" aria-hidden="true"><path d="M2 38 C2 18 14 4 34 3 C46 2 56 8 58 16 C50 10 40 10 32 14 C22 19 16 28 14 38 M10 30 C16 22 26 17 38 17" /></svg>';
         return `
-            <button class="fc-card${f.staff ? ' fc-card--staff' : ''}" type="button" data-index="${i}"
-                aria-label="${esc(f.staff ? 'Персонал' : f.title)}: открыть карточку"${facStyle(f.title).replace('style="', `style="--tilt:${TILTS[pos % TILTS.length]}deg;`)}>
+            <div class="fc-card${f.staff ? ' fc-card--staff' : ''}" data-index="${i}" role="img"
+                aria-label="${esc(f.staff ? 'Персонал' : f.title)}"${facStyle(f.title).replace('style="', `style="--tilt:${TILTS[pos % TILTS.length]}deg;`)}>
                 <span class="fc-tilt">
                     <span class="fc-body">
                     <span class="fc-strap" aria-hidden="true"></span>
@@ -75,7 +74,7 @@
                     <span class="fc-badge">
                         <span class="fc-shine" aria-hidden="true"></span>
                         <span class="fc-slot" aria-hidden="true"></span>
-                        <span class="fc-frame" aria-hidden="true">${curl}${curl.replace('fc-curl', 'fc-curl fc-curl--r')}</span>
+                        <span class="fc-frame" aria-hidden="true"><span class="fc-wing"></span><span class="fc-wing fc-wing--r"></span></span>
                         <span class="fc-band"><span class="fc-card-title${title.length > 28 ? ' fc-card-title--xlong' : title.length > 14 ? ' fc-card-title--long' : ''}">${esc(title)}</span></span>
                         <span class="fc-divider" aria-hidden="true"><span></span>✦<span></span></span>
                         <span class="fc-kicker">${f.staff ? 'университет' : 'факультет'}</span>
@@ -83,7 +82,7 @@
                     </span>
                     </span>
                 </span>
-            </button>`;
+            </div>`;
     }
 
     /* ---------- Объём: бейдж поворачивается за мышкой ----------
@@ -161,7 +160,8 @@
        выводятся отдельным блоком «другие должности». */
     const STAFF = [
         ['оказание первой помощи', [['мед. сотрудник', 4], ['главный врач', 1]]],
-        ['охрана', [['дневной охранник', 3], ['ночной охранник', 3]]],
+        // третье — как подписать на сайте (должность в таблице — первое)
+        ['охранники', [['дневной охранник', 3, 'дневные'], ['ночной охранник', 3, 'ночные']]],
         ['уборка', [['уборщик', 5]]],
         ['столовая', [['повар', 4], ['буфетчик', 2]]],
         ['сад', [['садовник', 4]]],
@@ -188,12 +188,13 @@
         return { byPost, other };
     }
 
-    // строка должности: название | «занято/мест» таблеткой, как у отдела | кто на ней (никого — прочерк)
+    // строка должности: название | ряд ✦ по числу мест (занятые — ярко) | кто на ней (никого — прочерк)
     function postLine(post, seats, people) {
         return `
             <li class="fc-post">
                 <span class="pc-k">${esc(post)}</span>
-                <span class="dl-group-count fc-seats">${people.length}/${seats}</span>
+                <span class="fc-stars" role="img" aria-label="занято ${people.length} из ${seats}">${
+                    Array.from({ length: seats }, (_, k) => `<span class="${k < people.length ? 'is-busy' : ''}">✦</span>`).join('')}</span>
                 <span class="fc-post-people">${people.length ? people.map(member).join(', ') : '<span class="pc-none">—</span>'}</span>
             </li>`;
     }
@@ -207,7 +208,7 @@
                 return `
                 <section class="pc-seg pc-text fc-block">
                     <h3 class="pc-section-title">${esc(dept)} <span class="dl-group-count">${busy}/${all}</span></h3>
-                    <ul class="fc-list">${posts.map(([p, k]) => postLine(p, k, byPost.get(postKey(p)) || [])).join('')}</ul>
+                    <ul class="fc-list">${posts.map(([p, k, label]) => postLine(label || p, k, byPost.get(postKey(p)) || [])).join('')}</ul>
                 </section>`;
             }).join('') + (other.length ? `
                 <section class="pc-seg pc-text fc-block">
@@ -518,10 +519,37 @@
                     h.tabIndex = 0;
                     h.setAttribute('role', 'button');
                     h.setAttribute('aria-expanded', 'true');
+                    // «занято/мест» — полоской под заголовком, цифры — при наведении на неё
+                    const count = h.querySelector('.dl-group-count');
+                    const m = count && count.textContent.match(/(\d+)\s*\/\s*(\d+)/);
+                    if (!m) return;
+                    count.remove();
+                    const busy = Number(m[1]), all = Number(m[2]);
+                    const pct = all ? Math.min(100, Math.round(busy / all * 100)) : 0;
+                    h.insertAdjacentHTML('afterend', `
+                        <div class="fc-meter" role="meter" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${busy}"
+                            aria-label="занято ${busy} из ${all}">
+                            <span class="fc-meter-fill" style="width:${pct}%"></span>
+                            <span class="fc-meter-num">${busy}/${all}</span>
+                        </div>`);
                 });
                 // бегунок прокрутки — цвета факультета (как в анкетах)
                 const main = (RCU.facultyAttrs(f.staff ? 'Персонал' : f.title).attrs.match(/--fac-main:([^;"]+)/) || [])[1];
                 if (main) info.style.setProperty('--fac-accent', main); else info.style.removeProperty('--fac-accent');
+                // полоски мест: у тёмных факультетов основной цвет на тёмном фоне не виден — берём второй
+                const stripe = (RCU.facultyAttrs(f.staff ? 'Персонал' : f.title).attrs.match(/--fac-stripe:([^;"]+)/) || [])[1];
+                const dark = /философ|экономич|музыкал|юридич/i.test(f.title || '');
+                info.style.setProperty('--fac-meter', (dark && stripe) || main || '');
+                // колонка должностей у персонала — по самому длинному названию
+                const posts = [...info.querySelectorAll('.fc-post > .pc-k')];
+                if (posts.length) {
+                    posts.forEach(k => { k.style.whiteSpace = 'nowrap'; });
+                    const w = Math.ceil(Math.max(...posts.map(k => k.scrollWidth)));
+                    posts.forEach(k => { k.style.whiteSpace = ''; });
+                    info.style.setProperty('--post-k', `${w + 2}px`);
+                }
+                // основа бейджа: у персонала голубая (для пустой части полосок мест)
+                info.style.setProperty('--fac-paper', f.staff ? '#98afd3' : '#e2e1dd');
             }
         };
         // текст справа: гаснет, меняется, проявляется. Новое переключение отменяет незаконченное
@@ -643,12 +671,7 @@
             if (pos !== cur) showAt(pos, 'grow');
             return;
         }
-        // крупный — открыть карточку факультета
-        const card = e.target.closest('.fc-card[data-index]');
-        if (!card) return;
-        const stage = card.closest('.fc-stage');
-        if (stage && stage.dataset.swiped) return;             // провели пальцем — только листание
-        openFaculty(Number(card.dataset.index), card);
+        // крупный бейдж ничего не открывает — всё о факультете уже справа от него
     });
 
     RCU.pages.faculties = {
@@ -677,7 +700,7 @@
             // адрес вида #faculties/Музыкальный_факультет — открыть карточку факультета
             const wanted = key(String(RCU.routeParam || '').replace(/_/g, ' '));
             const i = wanted ? faculties.findIndex(f => key(f.title) === wanted) : -1;
-            if (i >= 0) setTimeout(() => openFaculty(i), 300);
+            if (i >= 0 && shown.includes(i)) showAt(shown.indexOf(i));
         },
     };
 })();

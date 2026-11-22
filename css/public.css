@@ -1890,8 +1890,42 @@ html.pc-open .main-scroll-viewport {
     transform: rotate(-45deg);
 }
 
-.fc-info .pc-seg.is-collapsed > :not(.pc-section-title) {
+.fc-info .pc-seg.is-collapsed > :not(.pc-section-title):not(.fc-meter) {
     display: none;
+}
+
+/* занятые места — тонкая полоска под заголовком, как бегунок прокрутки: заполненная часть —
+   основной цвет факультета, пустая — цвета основы бейджа; цифры — справа */
+.fc-meter {
+    position: relative;
+    width: 55%;
+    height: 2.5px;
+    margin: -0.35rem auto 1rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--fac-paper, #e2e1dd) 15%, transparent);   /* цвет основы бейджа, едва заметно */
+}
+
+.fc-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--fac-meter, var(--fac-accent, var(--gold-55)));   /* у тёмных факультетов — второй цвет */
+}
+
+.fc-meter-num {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 0.5rem);
+    font-size: 0.75rem;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--text-80);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.fc-info .pc-seg.is-collapsed .fc-meter {
+    margin-bottom: 0.2rem;
 }
 
 .fc-info .pc-seg.is-collapsed .pc-section-title {
@@ -1903,7 +1937,13 @@ html.pc-open .main-scroll-viewport {
 }
 
 .fc-info .fc-list .fc-post {
-    grid-template-columns: 7.5rem 2.6rem minmax(0, 1fr);
+    /* должности — по самому длинному названию (--post-k ставит js), ✦ — колонкой одной ширины (до 6 мест) */
+    grid-template-columns: var(--post-k, 7.5rem) 4.3rem minmax(0, 1fr);
+    column-gap: 0;                     /* от должности до ✦ — вплотную (✦ и так по центру своей колонки) */
+}
+
+.fc-info .fc-list .fc-post .fc-post-people {
+    padding-left: 0.4rem;
 }
 
 /* длинное название на бейдже — мельче, чтобы влезло в полосу */
@@ -1936,7 +1976,7 @@ html.pc-open .main-scroll-viewport {
 .fc-card {
     --ink: var(--fac-main, #3b2620);
     --paper: #e2e1dd;
-    --paper-a: 62%;                    /* плотность основы — у всех одна */
+    --paper-a: 72%;                    /* плотность основы — у всех одна */
     --paper-glass: color-mix(in srgb, var(--paper) var(--paper-a), transparent);
     --text-ink: color-mix(in srgb, var(--ink) 55%, #2a2622);   /* мелкий текст — темнее, чтобы читался */
     display: flex;
@@ -1949,7 +1989,7 @@ html.pc-open .main-scroll-viewport {
     color: var(--ink);
     background: none;
     border: 0;
-    cursor: pointer;
+    cursor: default;                   /* крупный бейдж ничего не открывает */
     transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.35s ease;
 }
 
@@ -1992,6 +2032,12 @@ html.pc-open .main-scroll-viewport {
     inset: 0;
     transform-style: preserve-3d;
     pointer-events: none;
+}
+
+/* пока поворот за мышкой выключен (TILT_ON в faculties.js), толщины не видно, а её контур
+   за бейджем просвечивал по его краю светлой линией — прячем; включить поворот — убрать это */
+.fc-edge {
+    display: none;
 }
 
 .fc-edge > span {
@@ -2090,28 +2136,27 @@ html.pc-open .main-scroll-viewport {
     /* разрыв в нижней линии под гербом (бейдж прозрачный — закрыть линию фоном нельзя) */
     -webkit-mask:
         linear-gradient(#000, #000) top / 100% calc(100% - 1.2rem) no-repeat,
-        linear-gradient(to right, #000 calc(50% - 3.9rem), transparent 0 calc(50% + 3.9rem), #000 0) bottom / 100% 1.2rem no-repeat;
+        linear-gradient(to right, #000 calc(50% - 4.6rem), transparent 0 calc(50% + 4.6rem), #000 0) bottom / 100% 1.2rem no-repeat;
     mask:
         linear-gradient(#000, #000) top / 100% calc(100% - 1.2rem) no-repeat,
-        linear-gradient(to right, #000 calc(50% - 3.9rem), transparent 0 calc(50% + 3.9rem), #000 0) bottom / 100% 1.2rem no-repeat;
+        linear-gradient(to right, #000 calc(50% - 4.6rem), transparent 0 calc(50% + 4.6rem), #000 0) bottom / 100% 1.2rem no-repeat;
 }
 
-/* завитки в верхних углах рамки */
-.fc-curl {
+/* крылья в верхних углах рамки (img/badge-wing.png — маской, цвета рисунка); правое — зеркальное */
+.fc-wing {
     position: absolute;
-    top: 0.15rem;
-    left: 0.15rem;
-    width: 3rem;
-    height: 2rem;
-    fill: none;
-    stroke: var(--ink);
-    stroke-width: 2;
-    stroke-linecap: round;
+    top: -0.1rem;
+    left: -0.15rem;
+    width: 6.2rem;
+    aspect-ratio: 281 / 123;
+    background: var(--ink);
+    -webkit-mask: url(../img/badge-wing.png) left top / contain no-repeat;
+    mask: url(../img/badge-wing.png) left top / contain no-repeat;
 }
 
-.fc-curl--r {
+.fc-wing--r {
     left: auto;
-    right: 0.15rem;
+    right: -0.15rem;
     transform: scaleX(-1);
 }
 
@@ -2126,6 +2171,10 @@ html.pc-open .main-scroll-viewport {
     height: 8.6rem;                    /* одна у всех — разделитель и герб на одной высоте */
     box-sizing: border-box;
     margin-top: 2.4rem;                /* полоса — ниже, примерно на пятой части высоты */
+    /* чуть шире бейджа (лишнее обрезается его краем): иначе на сглаженном краю бейджа
+       под тёмной полосой просвечивает светлая основа — тонкие светлые линии слева и справа */
+    margin-left: -3px;
+    margin-right: -3px;
     padding: 0.8rem 1.2rem;
     /* название — «прорезано» в полосе: того цвета, каким основа видна на тёмном фоне страницы
        (основа полупрозрачная, сквозь неё — фон; сквозь буквы был бы цвет полосы) */
@@ -2185,11 +2234,11 @@ html.pc-open .main-scroll-viewport {
 
 .fc-crest > span {
     display: block;
-    width: 6.6rem;
-    height: 6.5rem;
+    width: 9.4rem;
+    aspect-ratio: 494 / 333;
     background: var(--ink);
-    -webkit-mask: url(../img/crest-light.png) center / contain no-repeat;
-    mask: url(../img/crest-light.png) center / contain no-repeat;
+    -webkit-mask: url(../img/badge-crest.png) center bottom / contain no-repeat;
+    mask: url(../img/badge-crest.png) center bottom / contain no-repeat;
 }
 
 /* язычок большой карточки факультета (fc-big-tab) */
@@ -2206,7 +2255,7 @@ html.pc-open .main-scroll-viewport {
 /* должность персонала: название | таблетка «занято/мест» | имена */
 .fc-list .fc-post {
     display: grid;
-    grid-template-columns: 9rem 3rem minmax(0, 1fr);
+    grid-template-columns: 9rem 4.8rem minmax(0, 1fr);
     align-items: baseline;
     gap: 0 0.6rem;
 }
@@ -2215,8 +2264,24 @@ html.pc-open .main-scroll-viewport {
     min-width: 0;
 }
 
-.fc-seats {
-    justify-self: center;
+/* места на должности — ряд ✦: занятые — в полную силу, свободные — едва видны */
+.fc-stars {
+    display: inline-flex;
+    justify-content: center;           /* по центру своей колонки */
+    justify-self: stretch;
+    gap: 0;
+    font-size: 0.68rem;
+    line-height: 1;
+    color: var(--fac-accent, var(--gold));
+    white-space: nowrap;
+}
+
+.fc-stars > span {
+    opacity: 0.15;
+}
+
+.fc-stars > span.is-busy {
+    opacity: 1;
 }
 
 .fc-dean {
@@ -2315,6 +2380,22 @@ html.pc-open .main-scroll-viewport {
     display: grid;
     gap: 0.25rem;
     min-width: 0;
+}
+
+/* пропуск «—» (никого нет) — по центру своей колонки: нпс, куратор, студенты факультатива,
+   люди на должности у персонала */
+.fc-names:has(> .fc-name > .pc-none:only-child):not(:has(.fc-person)) {
+    justify-items: center;
+}
+
+.fc-info .fc-list .fc-post .fc-post-people:has(> .pc-none:only-child) {
+    padding-left: 0;
+    text-align: center;
+}
+
+.fc-elective-col > .pc-none {
+    display: block;
+    text-align: center;
 }
 
 .fc-sub {
