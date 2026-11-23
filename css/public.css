@@ -3942,6 +3942,10 @@ html.is-section.header-peek .nav-rib {
     align-items: stretch;
     padding: var(--rib-pad, 8rem) 1.15rem 2.6rem;
     background:
+        /* фонарик: мягкое пятно света за мышью — только на золоте,
+           обводка и текст лежат поверх и не светлеют */
+        radial-gradient(circle 300px at var(--gx, -999px) var(--gy, -999px),
+            rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 100%),
         linear-gradient(to bottom,
             color-mix(in srgb, #e3cfac 80%, #022a42),
             color-mix(in srgb, #e3cfac 72%, #022a42));
@@ -3963,16 +3967,6 @@ html.is-section.header-peek .nav-rib {
     stroke: #0a2c42;
     stroke-width: 7;
     stroke-linejoin: miter;
-}
-
-/* фонарик: пятно света за мышью, как на полосках конверта */
-.nav-rib-body::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(circle 300px at var(--gx, -999px) var(--gy, -999px),
-        rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 100%);
 }
 
 /* между ссылками — маленькие четырёхконечные звёздочки */
@@ -4011,6 +4005,29 @@ html header .nav-rib a.nav-tab-link.nav-tab-link {
 
 html header .nav-rib a.nav-tab-link.nav-tab-link span {
     position: relative;
+    display: inline-block;
+    transition: transform 0.35s cubic-bezier(0.34, 1.8, 0.64, 1);   /* с отскоком */
+}
+
+/* навели — ссылка немного отскакивает вправо, слева — пустой треугольник (контур) */
+html header .nav-rib a.nav-tab-link.nav-tab-link:hover span,
+html header .nav-rib a.nav-tab-link.nav-tab-link:focus-visible span {
+    transform: translateX(0.3rem);
+}
+
+html header .nav-rib a.nav-tab-link.nav-tab-link:not(.is-current):hover span::before,
+html header .nav-rib a.nav-tab-link.nav-tab-link:not(.is-current):focus-visible span::before {
+    content: '▹';
+    position: absolute;
+    right: 100%;
+    margin-right: 0.3rem;
+}
+
+/* страница, на которой находишься, — ещё и подчёркнута */
+html header .nav-rib a.nav-tab-link.nav-tab-link.is-current span {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
 }
 
 /* страница, на которой находишься, — стрелочка слева */
