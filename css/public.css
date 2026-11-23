@@ -3978,6 +3978,11 @@ html.is-section.header-peek .nav-rib {
     opacity: 0.75;
 }
 
+/* на главной ленты висят из-под шапки — тень от неё падает и на них (в разделах тень у шапки своя, css/sections.css) */
+html:not(.is-section):not(.intro) .header-bookmark svg {
+    filter: drop-shadow(0 0.35rem 0.5rem rgba(0, 0, 0, 0.45));
+}
+
 /* крышка шапки ловит мышь только своей фигурой: пустые углы её картинки не закрывают ленты */
 html.is-section.header-peek .header-bookmark,
 html.is-section.header-peek .header-bookmark svg {
