@@ -356,7 +356,49 @@ button.pc-card:focus-visible {
 }
 
 /* экран: стрелка — картотека — стрелка; высоту ставит js/pages/characters.js */
+/* общежитие: внизу справа — на карту университета (легенда — посередине) */
+.dm-to-uni {
+    position: absolute;
+    right: 0.9rem;
+    bottom: 0.5rem;
+    z-index: 3;
+    font-size: 0.85rem;
+    color: var(--text-80);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.dm-to-uni:hover,
+.dm-to-uni:focus-visible {
+    color: var(--hi);
+}
+
+/* «архив» / «← действующие» — маленькая серая надпись внизу справа */
+.pc-archive-link {
+    position: absolute;
+    right: 0.2rem;
+    bottom: 0;
+    z-index: 2;
+    font-size: 0.72rem;
+    color: var(--text-55);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.pc-archive-link:hover,
+.pc-archive-link:focus-visible {
+    color: var(--hi);
+}
+
+.dl-status + .pc-archive-link {
+    position: static;
+    display: block;
+    text-align: right;
+}
+
 .pc-screen {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: center;
@@ -1678,10 +1720,360 @@ html.pc-open .main-scroll-viewport {
     display: grid;
     grid-template-columns: repeat(var(--n, 14), minmax(0, 1fr));
     justify-items: center;
-    margin: 0.4rem auto 1.8rem;
+    margin: -0.6rem auto 1.4rem;       /* повыше — под самым краем блока */
     max-width: calc(var(--n, 14) * 2.4rem);
     padding: 0 1rem;
 }
+
+/* ---- шкафчики: у каждого факультета свой (до выбора) ----
+   Сколько в ряд (--cols) и масштаб бейджа внутри (--s, --fw) ставит js */
+.fc-lockers {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 7), 1fr);
+    grid-template-rows: repeat(var(--rows, 2), 1fr);
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--gold-15);
+    border-radius: 4px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.12));
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.3);
+}
+
+/* во весь основной блок — без общих отступов карусели */
+.fc-carousel.fc-lockers {
+    margin: 0;
+}
+
+.fc-locker {
+    position: relative;
+    min-height: 0;
+    perspective: 900px;
+    cursor: pointer;
+    outline: none;
+}
+
+/* внутри: тёмная глубина и крючок, на нём бейдж на своей ленте */
+.fc-locker-inside {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 3px;
+    background: linear-gradient(to bottom, #03111b, #0a2233);
+    box-shadow: inset 0 5px 12px rgba(0, 0, 0, 0.75), inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.fc-locker-face {
+    position: absolute;
+    left: calc(50% - var(--fw, 4rem) / 2);
+    top: 5%;
+    width: max-content;
+    transform-origin: 0 0;
+    transform: scale(var(--s, 0.25));
+}
+
+.fc-lockers .fc-card {
+    width: 18rem;
+    --paper-a: 94%;                    /* в тёмном шкафчике стекло не видно — основа плотная */
+}
+
+.fc-lockers .fc-tilt {
+    transform: none;
+}
+
+/* дверца: цвета факультета, крепится слева */
+.fc-locker-door {
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--door) 50%, #000);
+    border-radius: 3px;
+    background:
+        linear-gradient(100deg, rgba(255, 255, 255, 0.1), transparent 40%, rgba(0, 0, 0, 0.18)),
+        color-mix(in srgb, var(--door) 62%, #0b2536);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05), 0 3px 8px rgba(0, 0, 0, 0.35);
+    transform-origin: left center;
+    transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.3, 1), filter 0.2s ease;
+}
+
+/* жалюзи — сверху и снизу */
+.fc-locker-vents {
+    position: absolute;
+    left: 24%;
+    right: 24%;
+    top: 7%;
+    height: 13%;
+    border-radius: 2px;
+    background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0 3px, rgba(255, 255, 255, 0.06) 3px 4px, transparent 4px 7px);
+}
+
+.fc-locker-vents--low {
+    top: auto;
+    bottom: 6%;
+}
+
+/* табличка с названием */
+.fc-locker-plate {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 27%;
+    padding: 0.2rem 0.1rem;
+    border-radius: 2px;
+    background: #e2e1dd;
+    color: #0a2c42;
+    font-size: 0.64rem;
+    line-height: 1.15;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: 0 0 0 1px var(--gold-55), inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ручка — латунная, справа */
+.fc-locker-handle {
+    position: absolute;
+    right: 11%;
+    top: 50%;
+    width: 5px;
+    height: 15%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #f3e6bd, var(--gold-80) 50%, #6f5f36);
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* навели — дверца приоткрывается; выбрали — распахивается */
+.fc-locker:hover .fc-locker-door,
+.fc-locker:focus-visible .fc-locker-door {
+    transform: rotateY(-22deg);
+    filter: brightness(1.12);
+}
+
+.fc-locker.is-open .fc-locker-door {
+    transform: rotateY(-105deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fc-locker-door {
+        transition: none;
+    }
+}
+
+/* ---- страница «Университет»: карта кампуса ---- */
+.uv-campus {
+    position: relative;
+    margin: 0.3rem 0 1rem;
+}
+
+/* ---- карта кампуса: факультеты цветными участками своих корпусов ---- */
+.fc-page {
+    position: relative;
+}
+
+.fc-carousel {
+    position: relative;
+    margin: 0.3rem 0 1rem;
+}
+
+/* участок факультета: цвет факультета, навели — ярче */
+.fc-zone {
+    cursor: pointer;
+    outline: none;
+}
+
+.fc-zone-area {
+    fill: color-mix(in srgb, var(--zone) 42%, transparent);
+    stroke: color-mix(in srgb, var(--zone) 85%, transparent);
+    stroke-width: 2;
+    transition: fill 0.25s ease, stroke-width 0.25s ease;
+}
+
+.fc-zone-label {
+    fill: var(--text-80);
+    font-family: var(--font-main);
+    font-size: 20px;
+    text-anchor: middle;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 4px;
+    transition: fill 0.25s ease;
+}
+
+.fc-zone:hover .fc-zone-area,
+.fc-zone:focus-visible .fc-zone-area,
+.fc-zone.is-picked .fc-zone-area {
+    fill: color-mix(in srgb, var(--zone) 70%, transparent);
+    stroke: var(--zone);
+    stroke-width: 4;
+}
+
+.fc-zone:hover .fc-zone-label,
+.fc-zone:focus-visible .fc-zone-label,
+.fc-zone.is-picked .fc-zone-label {
+    fill: var(--hi);
+}
+
+/* части карты: кнопки над ней */
+.fc-map-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin: 0 0 0.7rem;
+}
+
+.fc-map-go {
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-55);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.fc-map-go:hover,
+.fc-map-go:focus-visible {
+    color: var(--hi);
+    border-color: var(--gold-55);
+    outline: none;
+}
+
+.fc-map-go.is-on {
+    color: var(--hi);
+    border-color: var(--gold-55);
+    background: color-mix(in srgb, #e2e1dd 8%, transparent);
+}
+
+/* план кампуса — квадрат во всю ширину, в кадре одна часть (кнопки над картой не прыгают) */
+.fc-map {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+/* дороги, сад, деревья, разметка парковки */
+.fc-map-road {
+    fill: color-mix(in srgb, #e2e1dd 7%, transparent);
+}
+
+.fc-map-garden {
+    fill: color-mix(in srgb, #8fae7a 11%, transparent);
+    stroke: color-mix(in srgb, #8fae7a 35%, transparent);
+    stroke-width: 2;
+}
+
+.fc-map-path {
+    fill: none;
+    stroke: color-mix(in srgb, #e2e1dd 8%, transparent);
+    stroke-width: 16;
+}
+
+.fc-map-tree {
+    fill: color-mix(in srgb, #8fae7a 24%, transparent);
+    stroke: color-mix(in srgb, #8fae7a 45%, transparent);
+    stroke-width: 1.5;
+}
+
+.fc-map-line {
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+/* проходы в соседние части карты */
+.fc-go {
+    cursor: pointer;
+    outline: none;
+}
+
+.fc-go-hit {
+    fill: transparent;
+}
+
+.fc-map-hall {
+    fill: color-mix(in srgb, #e2e1dd 4%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 2;
+    stroke-dasharray: 6 6;
+}
+
+.fc-go-arrow {
+    fill: var(--gold-80);
+    font-family: var(--font-main);
+    font-size: 44px;
+    text-anchor: middle;
+}
+
+.fc-go text {
+    transition: fill 0.2s ease;
+}
+
+.fc-go:hover text,
+.fc-go:focus-visible text {
+    fill: var(--hi);
+}
+
+.fc-map-ground {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+.fc-map-bld {
+    fill: color-mix(in srgb, #e2e1dd 9%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 2;
+}
+
+.fc-map-yard {
+    fill: color-mix(in srgb, #e2e1dd 5%, transparent);
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+.fc-map-ring {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 3;
+}
+
+.fc-map-water {
+    fill: color-mix(in srgb, #9cb8c2 18%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 1.5;
+}
+
+.fc-map-label {
+    fill: var(--gold-80);
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 30px;
+    text-anchor: middle;
+}
+
+.fc-map-num {
+    fill: var(--gold-80);
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 54px;
+    text-anchor: middle;
+}
+
+.fc-map-label--small {
+    fill: var(--text-55);
+    font-family: var(--font-main);
+    font-size: 22px;
+}
+
+/* выбранный летит на своё место (копия поверх страницы) */
+.fc-ghost .fc-badge {
+    box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.22);
+}
+
 
 .fc-mini {
     --ink: var(--fac-main, #3b2620);
@@ -1716,11 +2108,14 @@ html.pc-open .main-scroll-viewport {
     visibility: hidden;
 }
 
+/* лента — поверх основы, заходит на неё */
 .fc-mini-strap {
+    position: relative;
+    z-index: 1;
     flex: none;
     width: 0.9rem;
-    height: 1.1rem;
-    margin-bottom: -0.3rem;
+    height: 1.3rem;
+    margin-bottom: -0.55rem;
     background: color-mix(in srgb, var(--ink) 88%, transparent);
     transition: transform 0.3s cubic-bezier(0.3, 0.7, 0.3, 1);
 }
@@ -1913,6 +2308,17 @@ html.pc-open .main-scroll-viewport {
     background: var(--fac-meter, var(--fac-accent, var(--gold-55)));   /* у тёмных факультетов — второй цвет */
 }
 
+/* забронированные места — следом за занятыми, плотность посередине между занятыми (100%)
+   и свободными (15%) */
+.fc-meter-booked {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--fac-meter, var(--fac-accent, var(--gold-55)));
+    opacity: 0.575;
+}
+
 .fc-meter-num {
     position: absolute;
     top: 50%;
@@ -1987,7 +2393,7 @@ html.pc-open .main-scroll-viewport {
     color: var(--ink);
     background: none;
     border: 0;
-    cursor: default;                   /* крупный бейдж ничего не открывает */
+    cursor: pointer;                   /* нажатие — обратно в карусель */
     transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.35s ease;
 }
 
@@ -2063,6 +2469,13 @@ html.pc-open .main-scroll-viewport {
     border-radius: inherit;
     background: radial-gradient(circle at var(--gx, 30%) var(--gy, 20%), rgba(255, 255, 255, 0.22), transparent 55%);
     pointer-events: none;
+}
+
+/* пока открыта или сворачивается анкета, бейджи под затемнением: размытие стекла под гаснущим
+   фоном Chrome рисует с бликами, а видно его всё равно не будет — выключаем */
+body:has(.pc-modal:not([hidden])) .fc-badge {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .fc-card.is-flat .fc-tilt,
@@ -2280,6 +2693,11 @@ html.pc-open .main-scroll-viewport {
 
 .fc-stars > span.is-busy {
     opacity: 1;
+}
+
+/* бронь — посередине между занятым и свободным */
+.fc-stars > span.is-booked {
+    opacity: 0.575;
 }
 
 .fc-dean {
@@ -3487,6 +3905,140 @@ html.is-full-bleed .main-scroll-viewport::after {
 }
 
 /* ---------- Меню из списка (js/menu.js) ---------- */
+
+/* ленты-язычки (js/menu.js): свисают из-под крышки шапки, золотые (как основной золотой
+   поверх тёмно-синего), с тёмно-синей полоской по каждому краю и остриём внизу.
+   На главной висят всегда; в разделах — пока шапка выглянула (опускаются чуть позже неё),
+   у спрятанной шапки их не видно. Где ссылкам начинаться (--rib-pad, ниже края крышки) и где
+   висеть (left) — ставит js. */
+.nav-ribbons {
+    position: absolute;
+    inset: 0;
+    z-index: 0;                                    /* ниже крышки (.header-bookmark, z-index 1) */
+    pointer-events: none;
+}
+
+.nav-rib {
+    position: absolute;
+    top: 0;
+    width: 12rem;
+    padding-bottom: 1rem;                          /* место под тень */
+    clip-path: inset(0 -1rem 100% -1rem);          /* свёрнута: целиком под крышкой */
+    transition: clip-path 0.4s cubic-bezier(0.5, 0, 0.75, 0);
+    filter: drop-shadow(0 0.4rem 0.6rem rgba(0, 0, 0, 0.45));
+}
+
+html:not(.is-section):not(.intro) .nav-rib,
+html.is-section.header-peek .nav-rib {
+    clip-path: inset(0 -1rem -1rem -1rem);
+    pointer-events: auto;
+    transition: clip-path 0.6s cubic-bezier(0.3, 0.7, 0.3, 1) 0.35s;   /* опускается следом за шапкой */
+}
+
+.nav-rib-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--rib-pad, 8rem) 1.15rem 2.6rem;
+    background:
+        linear-gradient(to bottom,
+            color-mix(in srgb, #e3cfac 80%, #022a42),
+            color-mix(in srgb, #e3cfac 72%, #022a42));
+    /* остриё внизу — перевёрнутый треугольник */
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 1.4rem), 50% 100%, 0 calc(100% - 1.4rem));
+}
+
+/* внутренняя обводка: тёмно-синяя полоса 7px по бокам и вдоль острия (путь рисует js) */
+.nav-rib-edge {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.nav-rib-edge path {
+    fill: none;
+    stroke: #0a2c42;
+    stroke-width: 7;
+    stroke-linejoin: miter;
+}
+
+/* фонарик: пятно света за мышью, как на полосках конверта */
+.nav-rib-body::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle 300px at var(--gx, -999px) var(--gy, -999px),
+        rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* между ссылками — маленькие четырёхконечные звёздочки */
+.nav-rib-star {
+    font-size: 0.5rem;
+    line-height: 1;
+    text-align: center;
+    color: #0a2c42;
+    opacity: 0.75;
+}
+
+/* крышка шапки ловит мышь только своей фигурой: пустые углы её картинки не закрывают ленты */
+html.is-section.header-peek .header-bookmark,
+html.is-section.header-peek .header-bookmark svg {
+    pointer-events: none;
+}
+
+html.is-section.header-peek .header-bookmark svg * {
+    pointer-events: visiblePainted;
+}
+
+/* ссылки на ленте — без «шапочных» бликов и приглушения */
+html header .nav-rib a.nav-tab-link.nav-tab-link {
+    display: block;
+    padding: 0.2rem 0.4rem;
+    font-size: 1.1rem;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: #0a2c42;
+    opacity: 1;
+    outline: none;
+}
+
+html header .nav-rib a.nav-tab-link.nav-tab-link span {
+    position: relative;
+}
+
+/* страница, на которой находишься, — стрелочка слева */
+html header .nav-rib a.nav-tab-link.nav-tab-link.is-current span::before {
+    content: '▸';
+    position: absolute;
+    right: 100%;
+    margin-right: 0.3rem;
+}
+
+@media (max-width: 768px) {
+    .nav-rib {
+        width: 9.5rem;
+    }
+
+    html header .nav-rib a.nav-tab-link.nav-tab-link {
+        font-size: 0.95rem;
+        padding: 0.15rem 0.2rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-rib,
+    html:not(.is-section):not(.intro) .nav-rib,
+    html.is-section.header-peek .nav-rib {
+        transition: none;
+    }
+}
 
 /* много пунктов — длинные названия переносятся на две строки по центру */
 /* много пунктов — каждая сторона меню в две строки (js/menu.js), звёздочки поменьше */

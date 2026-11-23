@@ -146,6 +146,7 @@
                     </ul>
                     ${d.hasTech ? '' : '<p class="pc-soon dm-note">Жильцы появятся, когда обновится скрипт данных (Техтаблица).</p>'}
                     <div class="dm-pop" role="dialog" aria-live="polite" hidden></div>
+                    <a class="dm-to-uni" href="#university" data-slide="down">карта университета ↓</a>
                 </div>`;
 
             // окошко у домика: наведение показывает, нажатие закрепляет (повторное — открепляет)

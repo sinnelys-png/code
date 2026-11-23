@@ -17,6 +17,7 @@
             text: 'Главный корпус университета на вершине холма. Здесь проходят лекции, заседает совет факультетов и работает библиотека.',
             hours: 'пн–сб, 8:00–20:00',
             staff: 'преподаватели, секретарь, библиотекарь',
+            link: '#university', linkText: 'карта университета', arrow: '↑', slide: 'up',
         },
         {
             id: 'quarter', name: 'Жилой квартал', x: 490, y: 410, side: 'left',
@@ -55,7 +56,7 @@
                     <div><dt>часы работы</dt><dd>${esc(p.hours || '—')}</dd></div>
                     <div><dt>работают</dt><dd>${esc(p.staff || '—')}</dd></div>
                 </dl>
-                ${p.link ? `<a class="pc-link ct-card-link" href="${p.link}">подробнее →</a>` : ''}
+                ${p.link ? `<a class="pc-link ct-card-link" href="${p.link}"${p.slide ? ` data-slide="${p.slide}"` : ''}>${p.linkText || 'подробнее'} ${p.arrow || '→'}</a>` : ''}
             </article>`;
     }
 

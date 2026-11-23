@@ -128,6 +128,20 @@
     setInterval(tickUpdated, 30000);
     window.addEventListener('rcu:fresh', () => setTimeout(tickUpdated, 0));
 
+    // стрелка ↑ ↓ ← → у ссылки → куда уезжает старая страница и откуда наезжает новая
+    function slideOf(dir) {
+        const d = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+        if (!d || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+        const box = scroller || view;
+        const mx = -d[0] * box.clientWidth * 0.6, my = -d[1] * box.clientHeight * 0.6;
+        return { out: `translate(${mx}px, ${my}px)`, in: `translate(${-mx}px, ${-my}px)` };
+    }
+    // ссылка со стрелкой нажата — запомнить направление до смены адреса
+    document.addEventListener('click', (e) => {
+        const s = e.target.closest && e.target.closest('[data-slide]');
+        if (s) RCU.navSlide = s.dataset.slide;
+    }, true);
+
     async function show() {
         const name = currentPage();
         const token = ++navToken;
@@ -144,10 +158,22 @@
         const opts = name ? RCU.pages[name] : {};
         setRibbon(name && opts.ribbon !== false ? opts.title : '');
         setSectionMode(!!name);
-        html.classList.toggle('is-full-bleed', !!opts.fullBleed);
-        view.classList.add('is-leaving');
-        await new Promise(r => setTimeout(r, 150));
+        // переход по стрелке между картами (data-slide у ссылки): старая страница уезжает
+        // в сторону, обратную стрелке, новая наезжает с другой стороны следом за ней
+        const slide = slideOf(RCU.navSlide);
+        RCU.navSlide = null;
+        if (slide) {
+            view.getAnimations().forEach(a => a.cancel());
+            await view.animate([{ transform: 'none', opacity: 1 }, { transform: slide.out, opacity: 0 }],
+                { duration: 380, easing: 'cubic-bezier(0.5, 0, 0.75, 0)', fill: 'forwards' }).finished.catch(() => {});
+        } else {
+            view.classList.add('is-leaving');
+            await new Promise(r => setTimeout(r, 150));
+        }
         if (token !== navToken) return;
+        // блок «на весь экран» или обычный — только теперь, иначе уходящая страница меняет размер на ходу
+        html.classList.toggle('is-full-bleed', !!opts.fullBleed);
+        if (slide) view.getAnimations().forEach(a => a.cancel());
 
         if (!name) {
             view.innerHTML = homeHTML;
@@ -169,7 +195,9 @@
                 page.render(root, data);
                 if (page.updated === true) addUpdated(root);
                 RCU.widenHeadings(root);
-                enter(root);
+                if (slide) root.animate([{ transform: slide.in, opacity: 0 }, { transform: 'none', opacity: 1 }],
+                    { duration: 480, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' });
+                else enter(root);
                 // страница нарисована (по нему, например, анкета сворачивается в карточку на новой странице)
                 window.dispatchEvent(new CustomEvent('rcu:rendered', { detail: { page: name } }));
             } catch (err) {

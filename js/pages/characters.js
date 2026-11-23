@@ -785,6 +785,7 @@
 
     function setCardHash(name) {
         if (!/^#characters/.test(location.hash)) return;           // только на странице персонажей
+        if (file.inArchive) return;                                // в архиве адрес остаётся #characters/архив
         const h = name ? `#characters/${encodeURIComponent(slug(name))}` : '#characters';
         if (location.hash !== h) history.replaceState(history.state, '', h);
     }
@@ -1253,7 +1254,7 @@
             if (!q) { close(); return; }
             foundPlayers = data.players ? [...data.players.values()].filter(p => playerMatches(p, q)).slice(0, 3) : [];
             const ofPlayer = new Set(foundPlayers.flatMap(p => p.characters.map(c => c.name)));
-            found = data.characters.filter(c => has(c.name) || has(c.faculty)
+            found = (file.pool || data.characters).filter(c => has(c.name) || has(c.faculty)
                 || has(c.subject) || has(c.post) || ofPlayer.has(c.name)).slice(0, 8);
             const players = foundPlayers.map((p, i) => `
                     <li><button class="pc-search-item pc-search-item--player" type="button" data-p="${i}">
@@ -1416,16 +1417,28 @@
         load: () => RCU.publicData(),
         render(root, d) {
             data = d;
+            // #characters/архив — ушедшие персонажи (те же стопки по ролям)
+            const inArchive = String(RCU.routeParam || '').trim().toLowerCase() === 'архив';
+            const pool = inArchive ? [...d.byName.values()].filter(c => c.archived) : d.characters;
+            file.pool = pool;
+            file.inArchive = inArchive;
             const SORTS_OF = { 'студент': ['name', 'faculty', 'course'], 'преподаватель': ['name', 'faculty'] };
-            const groups = ROLES.map(([role, title]) => ({ title, list: d.characters.filter(c => c.role === role), sorts: SORTS_OF[role] || [] }));
-            const other = d.characters.filter(c => !ROLES.some(([r]) => r === c.role));
+            const groups = ROLES.map(([role, title]) => ({ title, list: pool.filter(c => c.role === role), sorts: SORTS_OF[role] || [] }));
+            const other = pool.filter(c => !ROLES.some(([r]) => r === c.role));
             if (other.length) groups.push({ title: 'остальные', list: other });
             file.groups = groups.filter(g => g.list.length);
             file.gi = Math.min(file.gi, Math.max(0, file.groups.length - 1));
             file.busy = false;
             file.root = root;
             loadAnketas();
-            if (!file.groups.length) { root.innerHTML = '<p class="dl-status">Персонажей пока нет.</p>'; return; }
+            // ссылка внизу справа: в архив ушедших — и обратно
+            const switchLink = inArchive
+                ? '<a class="pc-archive-link" href="#characters">← действующие</a>'
+                : '<a class="pc-archive-link" href="#characters/архив">архив</a>';
+            if (!file.groups.length) {
+                root.innerHTML = `<p class="dl-status">${inArchive ? 'В архиве пока никого.' : 'Персонажей пока нет.'}</p>${switchLink}`;
+                return;
+            }
 
             root.innerHTML = `
                 <div class="pc-screen">
@@ -1454,12 +1467,13 @@
                             <div class="pc-file"></div>
                         </div>
                     </div>
+                    ${switchLink}
                 </div>`;
             bindFile(root);
             bindSearch(root);
             renderGroup();
             // адрес вида #characters/Аден_Кингсли — сразу открыть его карточку
-            const wanted = unslug(RCU.routeParam);
+            const wanted = inArchive ? '' : unslug(RCU.routeParam);
             if (wanted && d.byName.has(wanted)) setTimeout(() => goTo(wanted, true), 400);
             // после загрузки шрифтов и картинок и после того, как блок раздела
             // принял форму прямоугольника (≈0,7 с), высота экрана и карточек меняется

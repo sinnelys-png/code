@@ -20,7 +20,7 @@
         ribbon.style.setProperty(name, `${parseFloat(value) + shift}px`);
     }
     const scrollContainer = document.querySelector('.main-scroll-viewport');
-    const menuLinks = document.querySelectorAll('header a');
+    const menuLinks = document.querySelectorAll('header a:not(.nav-tab-link)');
     const logoContainer = document.querySelector('.logo-container');
     const strokeAnim1 = document.getElementById('stroke-anim-1');
     const strokeAnim2 = document.getElementById('stroke-anim-2');
@@ -153,7 +153,7 @@
         }
 
         // Анимация перелива ссылок и герба при наведении
-        const glareElements = document.querySelectorAll('header a, .logo-container');
+        const glareElements = document.querySelectorAll('header a:not(.nav-tab-link), .logo-container');
         glareElements.forEach(element => {
             element.addEventListener('mouseenter', () => element.classList.add('is-glaring'));
             element.addEventListener('animationend', () => element.classList.remove('is-glaring'));
