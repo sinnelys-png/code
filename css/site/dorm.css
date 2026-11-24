@@ -1,0 +1,325 @@
+/* ==========================================================================
+   Общежитие (js/pages/dorm.js)
+   Схема домиков на весь блок, окошко с жильцами.
+   ========================================================================== */
+
+/* ---------- Общежитие ---------- */
+
+/* схема на весь блок (страница fullBleed), легенда — внизу поверх схемы */
+.dm-wrap {
+    position: relative;
+    height: 100%;
+    min-height: 20rem;
+}
+
+.dm-map {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem 1rem 3rem;
+    box-sizing: border-box;
+    font-family: var(--font-main);
+}
+
+.dm-wrap > .dm-legend {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.9rem;
+}
+
+.dm-note {
+    position: absolute;
+    top: 1rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+/* окошко дома */
+.dm-pop {
+    position: absolute;
+    z-index: 20;
+    width: 15rem;
+    text-align: center;
+    padding: 0.8rem 0.9rem 0.6rem;
+    /* матовое стекло: полупрозрачный фон и размытие схемы под окошком */
+    background: color-mix(in srgb, var(--pop-bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
+    border: 1px solid var(--gold-55);
+    box-shadow: var(--pop-shadow);
+    pointer-events: none;
+    border-radius: var(--pop-radius);
+}
+
+/* треугольник у окошка — указывает на домик, про который оно */
+.dm-pop::before,
+.dm-pop::after {
+    content: "";
+    position: absolute;
+    top: var(--arrow-y, 50%);
+    width: 10px;
+    height: 20px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* окошко справа от домика: треугольник на левой стороне, остриём влево */
+.dm-pop.is-right::before {
+    right: 100%;
+    background: var(--gold-55);                         /* рамка */
+    clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+.dm-pop.is-right::after {
+    right: calc(100% - 1.5px);
+    background: color-mix(in srgb, var(--pop-bg) 92%, transparent);   /* заливка, на 1px внутри рамки */
+    clip-path: polygon(100% 1.5px, 1.5px 50%, 100% calc(100% - 1.5px));
+}
+
+/* окошко слева от домика: треугольник на правой стороне, остриём вправо */
+.dm-pop.is-left::before {
+    left: 100%;
+    background: var(--gold-55);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.dm-pop.is-left::after {
+    left: calc(100% - 1.5px);
+    background: color-mix(in srgb, var(--pop-bg) 92%, transparent);
+    clip-path: polygon(0 1.5px, calc(100% - 1.5px) 50%, 0 calc(100% - 1.5px));
+}
+
+.dm-pop.is-pinned {
+    pointer-events: auto;
+}
+
+.dm-pop[hidden] {
+    display: none;
+}
+
+.dm-pop-title {
+    margin: 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.6rem;
+    color: var(--gold);
+}
+
+/* как «61 персонаж» под названием группы в картотеке */
+.dm-pop-kind {
+    margin: 0.1rem 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-55);
+}
+
+.dm-room + .dm-room {
+    margin-top: 0.55rem;
+}
+
+.dm-pop .dm-room-title {
+    display: block;
+    margin: 0;
+    font-size: 0.8rem;
+    text-align: center;
+    color: var(--text-80);
+}
+
+.dm-room-people {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+
+.dm-ava {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    overflow: hidden;
+    color: var(--gold);
+    background: var(--hover);
+    border: 1px solid var(--gold-55);
+    cursor: pointer;
+}
+
+.dm-ava img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dm-ava--empty {
+    background: none;
+    border: 1px dashed var(--gold-55);
+    cursor: default;
+}
+
+/* знак на свободном месте: можно подселиться / без соседей / уточняйте у автора */
+.dm-ava--yes,
+.dm-ava--no,
+.dm-ava--ask {
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: help;
+}
+
+.dm-ava--yes { color: #8fd4a7; }
+/* × — две диагонали на всю клетку, от угла до угла */
+.dm-ava--no {
+    font-size: 0;
+    --x: var(--text-55);
+    background:
+        linear-gradient(to top right, transparent calc(50% - 0.75px), var(--x) calc(50% - 0.75px),
+            var(--x) calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+        linear-gradient(to bottom right, transparent calc(50% - 0.75px), var(--x) calc(50% - 0.75px),
+            var(--x) calc(50% + 0.75px), transparent calc(50% + 0.75px));
+}
+.dm-ava--ask { color: var(--gold); }
+
+.dm-road {
+    fill: none;
+    stroke: #0e3a55;
+    stroke-width: 70;
+}
+
+.dm-road-fill,
+.dm-parking {
+    fill: #0e3a55;
+}
+
+.dm-road-line {
+    stroke: var(--gold-15);
+    stroke-width: 3;
+    stroke-dasharray: 18 14;
+}
+
+.dm-lawn {
+    fill: #23493a;
+}
+
+.dm-parking-lines {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 3;
+}
+
+.dm-gate {
+    fill: none;
+    stroke: var(--gold-55);
+    stroke-width: 4;
+}
+
+.dm-icon rect {
+    fill: #022a42;
+    stroke: var(--gold-55);
+    stroke-width: 2;
+}
+
+.dm-icon text,
+.dm-legend-icon text {
+    fill: var(--gold);
+    font-size: 22px;
+    text-anchor: middle;
+}
+
+.dm-ico {
+    fill: var(--gold-80);
+    stroke: var(--gold-80);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.dm-house {
+    cursor: pointer;
+    outline: none;
+}
+
+.dm-house rect {
+    stroke: rgba(227, 207, 172, 0.55);
+    stroke-width: 3;
+    opacity: 0.55;
+    transition: opacity 0.25s ease, stroke 0.25s ease;
+}
+
+.dm-house.has-people rect {
+    opacity: 1;
+}
+
+.dm-blue rect { fill: #4f7fa8; }
+.dm-violet rect { fill: #7b6aa8; }
+.dm-red rect { fill: #a8483d; }
+
+.dm-num {
+    fill: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.dm-badge circle {
+    fill: var(--gold);
+}
+
+.dm-badge text {
+    fill: #001929;
+    font-size: 14px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.dm-house:hover rect,
+.dm-house:focus-visible rect,
+.dm-house.is-active rect {
+    stroke: #fff;
+    opacity: 1;
+}
+
+.dm-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 1.4rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+.dm-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dm-legend-icon {
+    width: 1.3em;
+    height: 1.3em;
+}
+
+/* общежитие: внизу справа — на карту университета (легенда — посередине) */
+.dm-to-uni {
+    position: absolute;
+    right: 0.9rem;
+    bottom: 0.5rem;
+    z-index: 3;
+    font-size: 0.85rem;
+    color: var(--text-80);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.dm-to-uni:hover,
+.dm-to-uni:focus-visible {
+    color: var(--hi);
+}

@@ -1,0 +1,568 @@
+/* ==========================================================================
+   Отношения: граф (js/pages/relations.js)
+   ========================================================================== */
+
+/* ---------- Отношения: граф ---------- */
+
+.rg {
+    display: grid;
+    gap: 1rem;
+}
+
+.rg-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+/* выпадающее меню фильтра */
+.rg-drop {
+    position: relative;
+}
+
+.rg-drop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 var(--pill-pad-x);
+    font: inherit;
+    font-size: var(--pill-font);
+    color: var(--text-70);
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: var(--pill-radius);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    height: var(--pill-h);
+    box-sizing: border-box;
+}
+
+.rg-drop-btn:hover,
+.rg-drop-btn:focus-visible,
+.rg-drop-btn[aria-expanded="true"] {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+/* фильтр что-то отсекает — кнопка выделена рамкой */
+.rg-drop.is-active .rg-drop-btn {
+    color: var(--text);
+    border-color: var(--gold-80);
+    box-shadow: inset 0 0 0 1px var(--gold-55);
+}
+
+.rg-caret {
+    margin-left: 0.15rem;
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+
+.rg-drop-panel {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    width: max-content;
+    min-width: 12rem;
+    max-width: min(20rem, 90vw);
+    padding: 0.35rem;
+    text-align: left;
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
+}
+
+.rg-drop-panel[hidden] {
+    display: none;
+}
+
+.rg-search {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 0.3rem;
+    padding: 0 0.75rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--hover);
+    border: 1px solid var(--gold-15);
+    border-radius: var(--pill-radius);
+    outline: none;
+    height: var(--pill-h);
+}
+
+.rg-search:focus {
+    border-color: var(--hover-line);
+}
+
+.rg-drop-list {
+    max-height: 18rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.rg-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.4rem;
+    color: var(--text-80);
+    cursor: pointer;
+}
+
+.rg-opt[hidden] {
+    display: none;
+}
+
+.rg-opt:hover {
+    color: var(--hi);
+    background: var(--hover);
+}
+
+.rg-check {
+    flex: none;
+    margin: 0;
+    accent-color: var(--gold);
+}
+
+.rg-opt-meta {
+    margin-left: auto;
+    padding-left: 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-55);
+}
+
+.rg-drop-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 0.3rem;
+    padding: 0.35rem 0.45rem 0.1rem;
+    border-top: 1px solid var(--gold-15);
+}
+
+.rg-drop-foot button,
+.rg-reset {
+    padding: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.rg-drop-foot button:hover,
+.rg-reset:hover {
+    color: var(--hi);
+}
+
+.rg-reset {
+    margin-left: 0.4rem;
+}
+
+.rg-dot {
+    display: inline-block;
+    flex: none;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--gold-15);
+}
+
+.rg-soon {
+    margin: 0.3rem 0.45rem;
+    max-width: 16rem;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--text-55);
+}
+
+/* сам граф — во всю ширину блока */
+.rg-graph {
+    position: relative;
+    margin: 0 calc(-1 * var(--pad-x, 0px));
+    border-top: 1px solid var(--gold-15);
+    border-bottom: 1px solid var(--gold-15);
+}
+
+.rg-stage {
+    height: min(80vh, 46rem);
+    /* граф — на отдельном слое: свет от мыши на полосках блока перерисовывает фон,
+       и без этого вместе с ним каждый раз заново рисовались бы все линии */
+    will-change: transform;
+    contain: paint;
+    touch-action: none;
+    cursor: grab;
+}
+
+.rg-stage.is-dragging {
+    cursor: grabbing;
+}
+
+.rg-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-main);
+    user-select: none;
+}
+
+.rg-bg {
+    fill: transparent;
+}
+
+.rg-group {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 0.8;
+}
+
+.rg-link {
+    fill: none;
+    stroke-width: 1.3;
+    opacity: 0.16;               /* по умолчанию почти прозрачные — проявляются при наведении */
+}
+
+.rg-link.is-mutual {
+    stroke-width: 2.2;
+}
+
+/* «*» — отношения ещё не обсуждались */
+.rg-link.is-pending {
+    stroke-dasharray: 4 4;
+}
+
+.rg-svg.has-selection .rg-link {
+    opacity: 0.95;
+}
+
+/* слой подсветки: копии линий и персонажей поверх графа; проявляется целиком */
+.rg-stage {
+    position: relative;
+}
+
+.rg-hot {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    will-change: opacity;
+}
+
+.rg-hot.is-on {
+    opacity: 1;
+}
+
+.rg-hot-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-main);
+}
+
+.rg-hot .rg-link {
+    opacity: 0.95;
+}
+
+.rg-hot .rg-node.is-hover .rg-ava-bg {
+    stroke: var(--hi) !important;
+}
+
+.rg-hot .rg-node.is-hover .rg-name {
+    fill: var(--hi);
+    font-weight: 600;
+}
+
+.rg-node {
+    cursor: pointer;
+    outline: none;
+    transition: opacity 0.2s ease;
+}
+
+.rg-node.is-dim {
+    opacity: 0.25;
+}
+
+.rg-ava-bg {
+    fill: var(--card-surface);
+    stroke-width: 2.5;
+}
+
+.rg-node:focus-visible .rg-ava-bg,
+.rg-node.is-selected .rg-ava-bg {
+    stroke: var(--hi) !important;
+}
+
+.rg-initials {
+    font-size: 11px;
+    text-anchor: middle;
+    fill: var(--text-80);
+}
+
+.rg-name {
+    font-size: 10.5px;
+    fill: var(--text-70);
+    transition: fill 0.3s ease;   /* в такт с проявлением линий */
+}
+
+.rg-node.is-selected .rg-name {
+    fill: var(--hi);
+    font-weight: 600;
+}
+
+.rg-zoom {
+    position: absolute;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    display: grid;
+    gap: 0.3rem;
+}
+
+.rg-zoom button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text-70);
+    background: var(--pager-bg);
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.rg-zoom button:hover,
+.rg-zoom button:focus-visible {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+/* список отношений выбранного персонажа */
+.rg-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    text-align: center;
+    color: var(--text-55);
+}
+
+.rg-details-name {
+    margin: 0 0 0.8rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text);
+}
+
+/* «показать всех» — в правом верхнем углу графа */
+.rg-clear {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.9rem;
+    padding: 0.25rem 0.7rem;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--text-70);
+    background: var(--pager-bg);
+    border: 1px solid var(--gold-15);
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.rg-clear[hidden] {
+    display: none;
+}
+
+.rg-clear:hover,
+.rg-clear:focus-visible {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+.rg-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4rem;
+}
+
+.rg-details-link {
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+button.rg-details-link:hover,
+button.rg-details-link:focus-visible {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+span.rg-details-link {
+    border: 0;
+    cursor: default;
+}
+
+/* отношения по типам: «—— любовь ——» (сворачивается), под ним персонажи с описаниями */
+.rg-type-group + .rg-type-group {
+    margin-top: 0.7rem;
+}
+
+.rg-type-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.55rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-80);
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.rg-type-title::-webkit-details-marker {
+    display: none;
+}
+
+.rg-type-title::before,
+.rg-type-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--type, var(--gold-55));
+    opacity: 0.7;
+}
+
+.rg-type-title span {
+    color: var(--type, var(--text-80));
+    transition: opacity 0.2s ease;
+}
+
+.rg-type-title:hover span {
+    opacity: 0.75;
+}
+
+/* свёрнутый вид — линии пунктиром */
+.rg-type-group:not([open]) > .rg-type-title::before,
+.rg-type-group:not([open]) > .rg-type-title::after {
+    background: repeating-linear-gradient(to right, var(--type, var(--gold-55)) 0 4px, transparent 4px 8px);
+}
+
+.rg-type-group:not([open]) > .rg-type-title {
+    margin-bottom: 0;
+}
+
+.rg-empty {
+    margin: 0;
+    font-size: 0.8rem;
+    text-align: center;
+    color: var(--text-55);
+}
+
+.rg-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+    font-size: 0.84rem;
+    line-height: 1.35;
+    text-align: left;
+}
+
+.rg-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.rg-item-body {
+    min-width: 0;
+}
+
+/* аватары в списках */
+.rg-ava {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    object-fit: cover;
+    border-radius: 3px;
+    background: var(--pop-bg);
+    box-shadow: 0 0 0 1px var(--gold-15);
+}
+
+.rg-ava--small {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.rg-ava--empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--gold-80);
+    background: radial-gradient(circle at 50% 35%, var(--ava-a), var(--ava-b));
+}
+
+/* отношения, которые ещё не обсуждались, — отдельно, ниже */
+.rg-pending-block {
+    margin-top: 1.1rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--gold-15);
+}
+
+.rg-pending-title {
+    margin: 0 0 0.6rem;
+    font-size: 0.78rem;
+    font-weight: normal;
+    font-style: italic;
+    color: var(--text-55);
+}
+
+.rg-person {
+    padding: 0;
+    font: inherit;
+    color: var(--text);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.rg-person:hover {
+    color: var(--hi);
+}
+
+.rg-note {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-70);
+}
+
+@media (max-width: 768px) {
+    .rg-stage {
+        height: min(70vh, 30rem);
+    }
+
+    .rg-columns {
+        grid-template-columns: 1fr;
+    }
+}

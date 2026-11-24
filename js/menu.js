@@ -68,13 +68,17 @@
     }
 
     // внутренняя обводка ленты: по бокам и вдоль острия внизу, на одном отступе от края
-    // (острие — 1.4rem, как в clip-path у .nav-rib-body; полоса 7px, от края 6px)
+    // (острие — 1.4rem, как в clip-path у .nav-rib-body; полоса 7px, от края 6px;
+    //  на узком экране — 1.5px, как тонкая вторая полоска шапки, от края 5px)
+    const narrow = window.matchMedia('(max-width: 768px)');
     function outline(body) {
         const svg = body.querySelector('.nav-rib-edge');
         const W = body.offsetWidth, H = body.offsetHeight;
         if (!svg || !W || !H) return;
         const T = parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.4;
-        const d = 6 + 7 / 2;                              // середина полосы — от края
+        const sw = narrow.matches ? 1.5 : 7;
+        svg.querySelector('path').style.strokeWidth = String(sw);
+        const d = (narrow.matches ? 5 : 6) + sw / 2;      // середина полосы — от края
         const s = T / (W / 2);                            // наклон краёв острия
         const k = d * Math.sqrt(1 + s * s);               // на столько выше проходит параллельная линия
         const yL = H - T + s * d - k, yTip = H - k;

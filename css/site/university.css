@@ -1,0 +1,205 @@
+/* ==========================================================================
+   Университет: карта кампуса (js/pages/university.js)
+   Классы .fc-map / .fc-zone / .fc-go — от прежнего места карты на странице факультетов.
+   ========================================================================== */
+
+/* ---- страница «Университет»: карта кампуса ---- */
+.uv-campus {
+    position: relative;
+    margin: 0.3rem 0 1rem;
+}
+
+/* ---- карта кампуса: факультеты цветными участками своих корпусов ---- */
+/* участок факультета: цвет факультета, навели — ярче */
+.fc-zone {
+    cursor: pointer;
+    outline: none;
+}
+
+.fc-zone-area {
+    fill: color-mix(in srgb, var(--zone) 42%, transparent);
+    stroke: color-mix(in srgb, var(--zone) 85%, transparent);
+    stroke-width: 2;
+    transition: fill 0.25s ease, stroke-width 0.25s ease;
+}
+
+.fc-zone-label {
+    fill: var(--text-80);
+    font-family: var(--font-main);
+    font-size: 20px;
+    text-anchor: middle;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 4px;
+    transition: fill 0.25s ease;
+}
+
+.fc-zone:hover .fc-zone-area,
+.fc-zone:focus-visible .fc-zone-area,
+.fc-zone.is-picked .fc-zone-area {
+    fill: color-mix(in srgb, var(--zone) 70%, transparent);
+    stroke: var(--zone);
+    stroke-width: 4;
+}
+
+.fc-zone:hover .fc-zone-label,
+.fc-zone:focus-visible .fc-zone-label,
+.fc-zone.is-picked .fc-zone-label {
+    fill: var(--hi);
+}
+
+/* части карты: кнопки над ней */
+.fc-map-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin: 0 0 0.7rem;
+}
+
+.fc-map-go {
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-55);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.fc-map-go:hover,
+.fc-map-go:focus-visible {
+    color: var(--hi);
+    border-color: var(--gold-55);
+    outline: none;
+}
+
+.fc-map-go.is-on {
+    color: var(--hi);
+    border-color: var(--gold-55);
+    background: color-mix(in srgb, #e2e1dd 8%, transparent);
+}
+
+/* план кампуса — квадрат во всю ширину, в кадре одна часть (кнопки над картой не прыгают) */
+.fc-map {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+/* дороги, сад, деревья, разметка парковки */
+.fc-map-road {
+    fill: color-mix(in srgb, #e2e1dd 7%, transparent);
+}
+
+.fc-map-garden {
+    fill: color-mix(in srgb, #8fae7a 11%, transparent);
+    stroke: color-mix(in srgb, #8fae7a 35%, transparent);
+    stroke-width: 2;
+}
+
+.fc-map-path {
+    fill: none;
+    stroke: color-mix(in srgb, #e2e1dd 8%, transparent);
+    stroke-width: 16;
+}
+
+.fc-map-tree {
+    fill: color-mix(in srgb, #8fae7a 24%, transparent);
+    stroke: color-mix(in srgb, #8fae7a 45%, transparent);
+    stroke-width: 1.5;
+}
+
+.fc-map-line {
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+/* проходы в соседние части карты */
+.fc-go {
+    cursor: pointer;
+    outline: none;
+}
+
+.fc-go-hit {
+    fill: transparent;
+}
+
+.fc-map-hall {
+    fill: color-mix(in srgb, #e2e1dd 4%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 2;
+    stroke-dasharray: 6 6;
+}
+
+.fc-go-arrow {
+    fill: var(--gold-80);
+    font-family: var(--font-main);
+    font-size: 44px;
+    text-anchor: middle;
+}
+
+.fc-go text {
+    transition: fill 0.2s ease;
+}
+
+.fc-go:hover text,
+.fc-go:focus-visible text {
+    fill: var(--hi);
+}
+
+.fc-map-ground {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+.fc-map-bld {
+    fill: color-mix(in srgb, #e2e1dd 9%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 2;
+}
+
+.fc-map-yard {
+    fill: color-mix(in srgb, #e2e1dd 5%, transparent);
+    stroke: var(--gold-15);
+    stroke-width: 2;
+}
+
+.fc-map-ring {
+    fill: none;
+    stroke: var(--gold-15);
+    stroke-width: 3;
+}
+
+.fc-map-water {
+    fill: color-mix(in srgb, #9cb8c2 18%, transparent);
+    stroke: var(--gold-55);
+    stroke-width: 1.5;
+}
+
+.fc-map-label {
+    fill: var(--gold-80);
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 30px;
+    text-anchor: middle;
+}
+
+.fc-map-num {
+    fill: var(--gold-80);
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 54px;
+    text-anchor: middle;
+}
+
+.fc-map-label--small {
+    fill: var(--text-55);
+    font-family: var(--font-main);
+    font-size: 22px;
+}

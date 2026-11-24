@@ -41,9 +41,6 @@
     // правый столбец списка: каждое имя — с новой строки
     const names = (parts) => `<span class="fc-names">${parts.map(p => `<span class="fc-name">${p}</span>`).join('')}</span>`;
 
-    // предметы, которые уже кто-то ведёт (без броней)
-    const taughtSubjects = (f) => [...new Set(f.teachers.filter(t => !t.booked && t.subject).map(t => t.subject.toLowerCase()))];
-
     // строка курса; брони без имени и курса — одной строкой «забронировано: 2 места»
     function courseLine(g) {
         const anon = g.students.filter(m => m.booked && !m.name);

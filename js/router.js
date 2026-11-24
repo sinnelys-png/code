@@ -136,6 +136,26 @@
         const mx = -d[0] * box.clientWidth * 0.6, my = -d[1] * box.clientHeight * 0.6;
         return { out: `translate(${mx}px, ${my}px)`, in: `translate(${-mx}px, ${-my}px)` };
     }
+    // переходы по стрелкам запоминаются: «Назад» в браузере едет обратно (в другую сторону),
+    // «Вперёд» — снова туда же
+    const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+    const slidBack = [], slidFwd = [];
+    let prevPage = null;
+    function slideDir(page) {
+        let dir = RCU.navSlide || null;
+        if (prevPage === null) dir = null;
+        else if (dir) {
+            slidBack.push({ from: prevPage, to: page, dir });
+            slidFwd.length = 0;
+        } else {
+            const b = slidBack[slidBack.length - 1], f = slidFwd[slidFwd.length - 1];
+            if (b && b.to === prevPage && b.from === page) { dir = OPP[b.dir]; slidFwd.push(slidBack.pop()); }
+            else if (f && f.from === prevPage && f.to === page) { dir = f.dir; slidBack.push(slidFwd.pop()); }
+        }
+        prevPage = page;
+        return dir;
+    }
+
     // ссылка со стрелкой нажата — запомнить направление до смены адреса
     document.addEventListener('click', (e) => {
         const s = e.target.closest && e.target.closest('[data-slide]');
@@ -160,7 +180,7 @@
         setSectionMode(!!name);
         // переход по стрелке между картами (data-slide у ссылки): старая страница уезжает
         // в сторону, обратную стрелке, новая наезжает с другой стороны следом за ней
-        const slide = slideOf(RCU.navSlide);
+        const slide = slideOf(slideDir(name));
         RCU.navSlide = null;
         if (slide) {
             view.getAnimations().forEach(a => a.cancel());

@@ -1,0 +1,204 @@
+/* ==========================================================================
+   Город (js/pages/city.js)
+   Карта на весь блок, описания мест по бокам или списком.
+   ========================================================================== */
+
+/* ---------- Город: карта на весь блок ----------
+   Страница с fullBleed (js/router.js ставит html.is-full-bleed): содержимое занимает весь
+   основной блок между его верхней и нижней полосками, без полей по краям.
+   Картинку и боковые панели раскладывает js/pages/city.js (как background-size: cover). */
+
+html.is-full-bleed .main-inner-content {
+    padding-bottom: 7px;              /* до нижней полоски блока */
+}
+
+html.is-full-bleed .main-scroll-text,
+html.is-section.is-full-bleed:not(.intro) .main-scroll-text {
+    padding-top: 7px;                 /* от верхней полоски блока (и под кончиком шапки) */
+}
+
+html.is-full-bleed .main-scroll-viewport {
+    padding: 0;
+    scrollbar-gutter: auto;
+}
+
+html.is-full-bleed #view,
+html.is-full-bleed .page-root {
+    height: 100%;
+}
+
+/* распорки, которые ставят короткие страницы посередине блока (css/pages.css), здесь не нужны:
+   иначе снизу под картой остаётся пустая полоса */
+html.is-full-bleed .main-scroll-viewport::before,
+html.is-full-bleed .main-scroll-viewport::after {
+    display: none;
+}
+
+.ct-map {
+    position: relative;
+    height: 100%;
+    min-height: 20rem;
+    overflow: hidden;
+}
+
+.ct-inner {
+    position: absolute;
+}
+
+.ct-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* отметки мест */
+.ct-spot {
+    position: absolute;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: rgba(0, 25, 41, 0.55);
+    border: 1px solid var(--gold-55);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ct-spot-dot {
+    font-size: 0.85rem;
+    line-height: 1;
+    color: var(--gold);
+}
+
+.ct-spot-label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.4rem);
+    transform: translateX(-50%);
+    padding: 0.2rem 0.55rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    color: var(--text);
+    background: rgba(0, 25, 41, 0.85);
+    border: 1px solid var(--gold-15);
+    border-radius: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.ct-spot:hover,
+.ct-spot:focus-visible,
+.ct-spot.is-active {
+    transform: translate(-50%, -50%) scale(1.15);
+    background: rgba(0, 25, 41, 0.85);
+    box-shadow: 0 0 0.8rem rgba(227, 207, 172, 0.45);
+    outline: none;
+}
+
+.ct-spot:hover .ct-spot-label,
+.ct-spot:focus-visible .ct-spot-label,
+.ct-spot.is-active .ct-spot-label {
+    opacity: 1;
+}
+
+/* описания мест на тёмных краях карты: ширину ставит js; если места мало — их нет, есть список */
+.ct-side {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    bottom: 0;
+    display: none;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-sizing: border-box;
+    padding: 1rem 0.7rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(227, 207, 172, 0.25) transparent;
+}
+
+.ct-map.has-sides .ct-side {
+    display: flex;
+}
+
+.ct-side--left {
+    left: 0;
+}
+
+.ct-side--right {
+    right: 0;
+    padding-top: 3.6rem;              /* под кнопкой темы в углу блока */
+}
+
+.ct-card {
+    padding: 0.65rem 0.75rem;
+    background: rgba(1, 25, 45, 0.62);
+    border: 1px solid var(--gold-15);
+    border-top: 2px solid var(--gold-55);
+    border-radius: 0 0 6px 6px;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.ct-card.is-active {
+    border-color: var(--hover-line);
+    border-top-color: var(--gold);
+    background: rgba(4, 40, 66, 0.8);
+}
+
+.ct-card-title {
+    margin: 0 0 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.ct-card-text {
+    margin: 0 0 0.45rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--text-80);
+}
+
+.ct-card-meta {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    font-size: 0.75rem;
+}
+
+.ct-card-meta div {
+    display: grid;
+    gap: 0.05rem;
+}
+
+.ct-card-meta dt {
+    color: var(--text-55);
+}
+
+.ct-card-meta dd {
+    margin: 0;
+    color: var(--text-80);
+}
+
+.ct-card-link {
+    display: inline-block;
+    margin-top: 0.45rem;
+    font-size: 0.75rem;
+}
+
+/* список под картой — когда по бокам тесно (узкий экран) */
+.ct-list {
+    display: none;
+}
+
+.ct-map:not(.has-sides) + .ct-list {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem;
+}

@@ -1,0 +1,200 @@
+/* ==========================================================================
+   Страница отвечающего (js/pages/player.js)
+   Шапка отвечающего, две стопки персонажей: действующие и архив.
+   ========================================================================== */
+
+/* ---------- Страница отвечающего (js/pages/player.js) ---------- */
+/* «назад» над именем — как стрелки к соседним группам в картотеке */
+.pl-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+    padding: 0.2rem 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.pl-back:hover,
+.pl-back:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
+.pl-back-arrow {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-left: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.pl-head {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0 0 1rem;
+}
+
+.pl-ava {
+    flex: none;
+    width: 6rem;
+    height: 6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 2px var(--gold-55);
+}
+
+.pl-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 2.6rem;
+    color: var(--gold);
+    background: var(--hover);
+}
+
+.pl-info {
+    min-width: 0;
+}
+
+.pl-name {
+    display: inline;
+    margin: 0 0.6rem 0 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pl-status {
+    display: inline-block;
+    padding: 0.05rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    vertical-align: 0.2em;
+}
+
+.pl-status--on { color: #8fd4a7; }
+.pl-status--off { color: var(--text-55); }
+
+.pl-row {
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.pl-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-top: 0.5rem;
+}
+
+.pl-link {
+    font-size: 0.9rem;
+    color: var(--gold-80);
+    text-decoration: none;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.pl-link:hover,
+.pl-link:focus-visible {
+    color: var(--hi);
+    border-color: var(--hi);
+    outline: none;
+}
+
+.pl-about {
+    margin: 0 0 1rem;
+    white-space: pre-line;
+}
+
+/* шапка — у самого верха; «назад» — в правом верхнем углу */
+.pl-page {
+    position: relative;
+}
+
+.pl-page > .pl-back {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    z-index: 1;
+}
+
+.pl-page > .pl-head {
+    padding-right: 5rem;   /* имя не заходит под «назад» */
+}
+
+/* две стопки рядом; одна (вторая пуста) — посередине */
+.pl-stacks {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+/* рядом, пока каждая не уже 16rem; иначе архив уходит под действующих */
+.pl-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 16rem;
+    max-width: 22rem;
+    min-width: 0;
+    text-align: center;
+}
+
+.pl-stack .pc-deck-count {
+    margin-bottom: 0.6rem;
+}
+
+/* место над стопкой — поднятая верхняя карточка не наезжает на заголовок */
+.pl-stack-cards {
+    position: relative;
+    width: 100%;
+    margin-top: 1.2rem;
+}
+
+.pl-stack-cards .pc-file-card {
+    width: 100%;
+    text-align: left;
+}
+
+/* ушедшие персонажи (архив): аватар чёрно-белый, при наведении — настоящий */
+.pc-card.is-archived .pc-ava,
+.pc-big.is-archived .pc-big-avatar {
+    filter: grayscale(1);
+    transition: filter 0.35s ease;
+}
+
+.pc-file-card.is-lifted .pc-card.is-archived .pc-ava,
+.pc-card.is-archived:hover .pc-ava,
+.pc-card.is-archived:focus-visible .pc-ava,
+.pc-big.is-archived .pc-ava-frame:hover .pc-big-avatar {
+    filter: none;
+}
+
+@media (max-width: 768px) {
+    .pl-head {
+        gap: 0.9rem;
+    }
+
+    .pl-page > .pl-head {
+        padding-right: 0;
+        padding-top: 1.8rem;    /* «назад» над шапкой справа */
+    }
+
+    .pl-ava {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+}

@@ -785,8 +785,10 @@
 
     function setCardHash(name) {
         if (!/^#characters/.test(location.hash)) return;           // только на странице персонажей
-        if (file.inArchive) return;                                // в архиве адрес остаётся #characters/архив
-        const h = name ? `#characters/${encodeURIComponent(slug(name))}` : '#characters';
+        // в архиве — #characters/архив/Имя (и #characters/архив без открытой анкеты)
+        const base = file.inArchive ? '#characters/архив' : '#characters';
+        const h = name ? `${base}/${encodeURIComponent(slug(name))}` : base;
+        if (decodeURIComponent(location.hash) === decodeURIComponent(h)) return;
         if (location.hash !== h) history.replaceState(history.state, '', h);
     }
 
@@ -1224,14 +1226,17 @@
 
     // перейти к персонажу: нужная группа, его карточка выдвинута и видна; при open — открыть анкету
     async function goTo(name, open) {
-        const gi = file.groups.findIndex(g => g.list.some(c => c.name === name));
+        // по имени или по ключу (у вернувшегося персонажа архивная версия — «Имя · архив»)
+        let hit = null;
+        const gi = file.groups.findIndex(g => (hit = g.list.find(c => c.name === name || c.key === name)));
         if (gi < 0 || file.busy) return false;
         if (gi !== file.gi) {
             file.gi = gi;
             renderGroup();
         }
-        liftCard(name, true);
-        if (open) openCharacter(name);
+        const id = hit.key || hit.name;
+        liftCard(id, true);
+        if (open) openCharacter(id);
         return true;
     }
 
@@ -1418,7 +1423,8 @@
         render(root, d) {
             data = d;
             // #characters/архив — ушедшие персонажи (те же стопки по ролям)
-            const inArchive = String(RCU.routeParam || '').trim().toLowerCase() === 'архив';
+            const [head, ...rest] = String(RCU.routeParam || '').trim().split('/');
+            const inArchive = head.toLowerCase() === 'архив';
             const pool = inArchive ? [...d.byName.values()].filter(c => c.archived) : d.characters;
             file.pool = pool;
             file.inArchive = inArchive;
@@ -1473,7 +1479,7 @@
             bindSearch(root);
             renderGroup();
             // адрес вида #characters/Аден_Кингсли — сразу открыть его карточку
-            const wanted = inArchive ? '' : unslug(RCU.routeParam);
+            const wanted = unslug(inArchive ? rest.join('/') : RCU.routeParam);
             if (wanted && d.byName.has(wanted)) setTimeout(() => goTo(wanted, true), 400);
             // после загрузки шрифтов и картинок и после того, как блок раздела
             // принял форму прямоугольника (≈0,7 с), высота экрана и карточек меняется

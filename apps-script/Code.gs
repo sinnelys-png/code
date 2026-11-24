@@ -646,15 +646,20 @@ function facultyInfo_() {
   return list;
 }
 
-/* Кэш скрипта хранит не больше 100 КБ на ключ — длинный ответ кладём по кусочкам */
+/* Кэш скрипта хранит не больше 100 КБ (байт, не символов!) на ключ — длинный ответ кладём
+   по кусочкам. В UTF-8 русская буква — 2 байта, значки вроде ✦ — 3 байта на единицу строки
+   (эмодзи — 4 байта на две единицы), поэтому кусочек — 30 000 единиц: даже в худшем случае
+   это 90 КБ. Раньше кусочек был 90 000: когда ответ вырос, первый кусочек перевалил за 100 КБ,
+   кэш перестал сохраняться, и каждый запрос заново читал все таблицы (~20 секунд). */
 function cachePut_(key, text) {
   const cache = CacheService.getScriptCache();
-  const size = 90000;
+  const size = 30000;
   const parts = {};
   let n = 0;
   for (let i = 0; i < text.length; i += size) parts[key + ':' + (n++)] = text.slice(i, i + size);
   parts[key] = String(n);
-  try { cache.putAll(parts, CACHE_SECONDS); } catch (e) { /* не влезло — просто без кэша */ }
+  // не влезло — работаем без кэша, но пишем в журнал выполнений, чтобы это было видно
+  try { cache.putAll(parts, CACHE_SECONDS); } catch (e) { console.warn('Кэш не сохранился (' + key + '): ' + e); }
 }
 
 function cacheGet_(key) {

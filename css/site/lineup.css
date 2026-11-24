@@ -1,0 +1,208 @@
+/* ==========================================================================
+   Линейка роста (js/pages/lineup.js)
+   ========================================================================== */
+
+/* ---------- Линейка роста (js/pages/lineup.js) ---------- */
+/* фильтры — те же выпадающие меню, что в «Отношениях» (.rg-filters) */
+.lu-filters {
+    margin-bottom: 1rem;
+}
+
+/* поле линейки: деления от пола, ряд персонажей прокручивается вбок, деления остаются */
+.lu-chart {
+    --name-h: 3.4rem;
+    --chart-h: 30rem;
+    position: relative;
+    height: calc(var(--chart-h) + 0.8rem);     /* снизу — место под полосу прокрутки */
+}
+
+.lu-grid {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(var(--chart-h) - var(--name-h));
+    pointer-events: none;
+}
+
+.lu-mark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed var(--gold-15);
+}
+
+.lu-mark.is-major {
+    border-top-style: solid;
+    border-top-color: var(--gold-55);
+    opacity: 0.6;
+}
+
+.lu-mark span {
+    position: absolute;
+    left: 0;
+    bottom: 0.15rem;
+    font-size: 0.7rem;
+    color: var(--text-55);
+}
+
+.lu-row {
+    position: absolute;
+    inset: 0 0 auto 2.4rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
+}
+
+/* ряд можно тянуть мышью */
+.lu-row {
+    cursor: grab;
+}
+
+.lu-row.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.lu-row.is-dragging .lu-person {
+    cursor: grabbing;
+}
+
+.lu-person img {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.lu-person {
+    flex: none;
+    width: 4.4rem;
+    height: var(--chart-h);    /* ровно высота поля — пол совпадает с нулём делений */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    font: inherit;
+    color: var(--text);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.lu-stand {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-bottom: 2px solid var(--gold-55);      /* пол */
+}
+
+.lu-figure {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* число над аватаром — вне высоты: верх аватара стоит ровно на отметке роста */
+.lu-cm {
+    position: absolute;
+    bottom: calc(100% + 0.15rem);
+    font-size: 0.7rem;
+    color: var(--text-55);
+    transition: color 0.2s ease;
+}
+
+.lu-ava {
+    flex: none;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 2px var(--fac-main, var(--gold-55));
+}
+
+.lu-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    color: var(--gold);
+    background: var(--hover);
+}
+
+.lu-bar {
+    flex: 1;
+    width: 0.8rem;
+    margin-top: 0.3rem;
+    background: linear-gradient(to bottom, var(--fac-main, #888f85), color-mix(in srgb, var(--fac-main, #888f85) 35%, transparent));
+    border-radius: 3px 3px 0 0;
+    transition: filter 0.2s ease;
+}
+
+.lu-name {
+    flex: none;
+    height: var(--name-h);
+    padding-top: 0.35rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--text-80);
+    overflow: hidden;
+}
+
+.lu-person:hover .lu-cm,
+.lu-person:focus-visible .lu-cm,
+.lu-person:hover .lu-name,
+.lu-person:focus-visible .lu-name {
+    color: var(--hi);
+}
+
+.lu-person:hover .lu-bar,
+.lu-person:focus-visible .lu-bar {
+    filter: brightness(1.3);
+}
+
+.lu-person:focus-visible {
+    outline: none;
+}
+
+.lu-note,
+.lu-empty {
+    margin: 0.8rem 0 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-55);
+}
+
+@media (max-width: 768px) {
+    .lu-chart {
+        --chart-h: 24rem;
+    }
+
+    .lu-person {
+        width: 3.6rem;
+    }
+
+    .lu-ava {
+        width: 2.3rem;
+        height: 2.3rem;
+    }
+}
+
+.dm-room-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0.6rem 0 0;
+    font-weight: normal;
+    font-size: 0.85rem;
+    color: var(--text-80);
+}

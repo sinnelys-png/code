@@ -1,0 +1,1638 @@
+/* ==========================================================================
+   Персонажи: маленькие карточки, картотека, большая карточка (анкета)
+   Большая карточка открывается и с других страниц (факультеты, общежитие, отвечающий).
+   ========================================================================== */
+
+/* ---------- Маленькая карточка персонажа ---------- */
+
+.pc-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1rem;
+    align-items: start;                  /* аватар у всех на одном расстоянии от верха */
+    width: 100%;
+    margin-top: 0.85rem;                 /* место под «вкладку папки» сверху */
+    padding: 0.9rem 1rem;
+    box-sizing: border-box;
+    text-align: left;
+    font: inherit;
+    color: var(--text);
+    background: linear-gradient(to bottom, var(--surface-top), var(--surface-bot));
+    border: 1px solid var(--gold-15);
+    border-top: 3px solid var(--fac-main, var(--gold-55));   /* основной цвет факультета */
+    border-radius: 0 0 6px 6px;                              /* сверху углы прямые: справа язычок с буквой */
+    cursor: pointer;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+button.pc-card:hover,
+button.pc-card:focus-visible {
+    border-color: var(--hover-line);
+    border-top-color: var(--fac-main, var(--gold-55));
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
+    outline: none;
+}
+
+/* «вкладка папки» в цвете факультета */
+.pc-card-tab {
+    position: absolute;
+    right: -1px;   /* у правого края */
+    text-align: right;
+    bottom: 100%;
+    min-width: 2.6rem;
+    height: 0.85rem;
+    padding: 0 0.6rem;
+    font-size: 0.6rem;
+    line-height: 0.85rem;
+    color: var(--fac-stripe, var(--text-80));
+    background: var(--fac-main, #0a3e5d);
+    border: 1px solid var(--gold-15);
+    border-bottom: 0;
+    clip-path: polygon(0.5rem 0, 100% 0, 100% 100%, 0 100%);   /* скос — с левой стороны */
+}
+
+/* квадратный аватар без рамки факультета */
+.pc-ava {
+    display: block;
+    width: 5rem;
+    height: 5rem;
+    object-fit: cover;
+    border-radius: 3px;
+    background: var(--pop-bg);
+    box-shadow: 0 0 0 1px var(--gold-15);
+}
+
+.pc-ava--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 2rem;
+    color: var(--gold-80);
+    background: radial-gradient(circle at 50% 35%, var(--ava-a), var(--ava-b));
+}
+
+.pc-card-info {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.pc-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.pc-k {
+    font-size: 0.75rem;
+    color: var(--text-55);
+}
+
+.pc-v {
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.pc-name {
+    font-weight: 600;
+}
+
+.pc-fac {
+    font-size: 0.82rem;
+    color: var(--text-80);
+}
+
+.pc-none {
+    color: var(--text-30);
+}
+
+.pc-soon {
+    color: var(--text-55);
+    font-style: italic;
+}
+
+.pc-link {
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: var(--text-80);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.pc-link:hover,
+.pc-link:focus-visible {
+    color: var(--hi);
+    border-color: var(--hover-line);
+    outline: none;
+}
+
+/* имя с маленькой аватаркой (карточка факультета): подчёркнуто только имя */
+.pc-link.fc-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    border-bottom: 0;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.fc-person-name {
+    transition: border-color 0.25s ease;
+}
+
+.pc-link.fc-person:hover .fc-person-name,
+.pc-link.fc-person:focus-visible .fc-person-name {
+    border-color: var(--hover-line);
+}
+
+.fc-ava {
+    flex: none;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(182, 175, 152, 0.45);
+}
+
+.fc-ava--empty {
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.8em;
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    color: var(--text-80);
+}
+
+/* ---------- Картотека на странице «Персонажи» ---------- */
+
+/* поиск персонажа над картотекой */
+/* сортировка и поиск в одной строке; раскрытая строка поиска сдвигает кнопки влево */
+.pc-tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0 0 0.4rem;
+}
+
+.pc-tools .pc-sort {
+    margin: 0;
+}
+
+.pc-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pc-search .pc-search-input {
+    width: 0;
+    height: 1.75rem;
+    padding: 0;
+    font-size: 0.8rem;
+    border-width: 0;
+    opacity: 0;
+    background-image: none;
+    transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+.pc-search.is-open .pc-search-input {
+    width: min(12rem, 40vw);
+    padding: 0 0.8rem;
+    border-width: 1px;
+    opacity: 1;
+}
+
+.pc-search-btn {
+    flex: none;
+    width: var(--pill-h);
+    height: var(--pill-h);
+    margin-left: 0.3rem;
+    padding: 0;
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+    background:
+        no-repeat 50% 50% / 0.8rem
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23E3CFAC' stroke-opacity='.75' stroke-width='1.6'%3E%3Ccircle cx='6.5' cy='6.5' r='5'/%3E%3Cpath d='M10.3 10.3 15 15'/%3E%3C/svg%3E"),
+        transparent;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-search-btn:hover,
+.pc-search-btn:focus-visible,
+.pc-search.is-open .pc-search-btn {
+    border-color: var(--gold-55);
+    background-color: var(--hover);
+    outline: none;
+}
+
+.pc-search-list {
+    position: absolute;
+    z-index: 30;
+    right: 0;
+    width: min(20rem, 80vw);
+    top: calc(100% + 0.3rem);
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
+}
+
+.pc-search-list[hidden] {
+    display: none;
+}
+
+.pc-search-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.45rem 0.7rem;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.pc-search-item:hover,
+.pc-search-item:focus-visible {
+    background: var(--hover);
+    outline: none;
+}
+
+.pc-search-name {
+    font-weight: 600;
+}
+
+.pc-search-meta {
+    font-size: 0.78rem;
+    color: var(--text-55);
+    text-align: right;
+}
+
+.pc-search-none {
+    padding: 0.45rem 0.7rem;
+    color: var(--text-55);
+    font-style: italic;
+}
+
+/* экран: стрелка — картотека — стрелка; высоту ставит js/pages/characters.js */
+/* «архив» / «← действующие» — маленькая серая надпись внизу справа */
+.pc-archive-link {
+    position: absolute;
+    right: 0.2rem;
+    bottom: 0;
+    z-index: 2;
+    font-size: 0.72rem;
+    color: var(--text-55);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.pc-archive-link:hover,
+.pc-archive-link:focus-visible {
+    color: var(--hi);
+}
+
+.dl-status + .pc-archive-link {
+    position: static;
+    display: block;
+    text-align: right;
+}
+
+.pc-screen {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.75rem;
+    min-height: 20rem;
+}
+
+.pc-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    min-height: 0;
+    transition: transform 0.4s cubic-bezier(0.33, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+/* смена группы: всё съезжает вбок; гаснет всё, кроме стопки карточек — прозрачность на карточках
+   отключает их «матовое стекло» (размытие появлялось бы рывком в конце), поэтому они только едут */
+.pc-stage.is-leaving-left { transform: translateX(-9rem); }
+.pc-stage.is-leaving-right { transform: translateX(9rem); }
+.pc-stage.is-entering-left { transform: translateX(-9rem); transition: none; }
+.pc-stage.is-entering-right { transform: translateX(9rem); transition: none; }
+
+.pc-stage > :not(.pc-file) {
+    transition: opacity 0.35s ease;
+}
+
+.pc-stage:is(.is-leaving-left, .is-leaving-right, .is-entering-left, .is-entering-right) > :not(.pc-file) {
+    opacity: 0;
+}
+
+.pc-stage:is(.is-entering-left, .is-entering-right) > :not(.pc-file) {
+    transition: none;
+}
+
+/* название группы, по бокам — соседние группы со стрелками, тают в фон */
+.pc-deck-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0 1rem;
+    width: 100%;
+}
+
+.pc-deck-side {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.3rem 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-size: 1.05rem;
+    color: var(--gold);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.25s ease;
+}
+
+.pc-deck-side[hidden] {
+    visibility: hidden;
+}
+
+/* соседние группы — у краёв блока; к названию текущей тают в фон */
+.pc-deck-side--prev {
+    justify-self: stretch;          /* на всю колонку: градиент считается от края блока, а не от слова */
+    justify-content: center;        /* посередине между краем блока и названием */
+    -webkit-mask-image: linear-gradient(to right, #000 68%, transparent);
+    mask-image: linear-gradient(to right, #000 68%, transparent);
+}
+
+.pc-deck-side--next {
+    justify-self: stretch;
+    justify-content: center;
+    -webkit-mask-image: linear-gradient(to left, #000 68%, transparent);
+    mask-image: linear-gradient(to left, #000 68%, transparent);
+}
+
+.pc-deck-side:hover,
+.pc-deck-side:focus-visible {
+    opacity: 1;
+    outline: none;
+}
+
+.pc-deck-side-name {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.pc-deck-arrow {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+}
+
+.pc-deck-side--prev .pc-deck-arrow { transform: rotate(135deg); }
+.pc-deck-side--next .pc-deck-arrow { transform: rotate(-45deg); }
+
+.pc-deck-title {
+    margin: 0;
+    font-family: 'Greengoth', 'FallbackSerif', serif;
+    font-weight: normal;
+    font-size: 1.7rem;
+    color: var(--gold);
+}
+
+.pc-deck-count {
+    margin: 0.1rem 0 0.4rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-55);
+}
+
+/* сортировка: имя / факультет / курс */
+.pc-sort {
+    display: flex;
+    gap: 0.3rem;
+    margin: 0 0 0.4rem;
+    padding: 0.2rem;
+    border: 1px solid var(--gold-15);
+    border-radius: 2rem;
+}
+
+.pc-sort[hidden] {
+    display: none;
+}
+
+.pc-sort-btn {
+    padding: 0.2rem 0.75rem;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--text-55);
+    background: transparent;
+    border: 0;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-sort-btn:hover,
+.pc-sort-btn:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
+.pc-sort-btn.is-current {
+    color: var(--text);
+    background-color: var(--hover);
+    box-shadow: inset 0 0 0 1px var(--gold-55);
+}
+
+/* картотека: пачка до 15 карточек друг за другом (расставляет js) */
+/* ряд: ленточки пачек слева, стопка карточек по центру блока; под стопкой ничего нет */
+.pc-file-row {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.pc-file {
+    position: relative;
+    flex: 0 1 23rem;
+    width: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
+}
+
+.pc-file-end {
+    position: absolute;
+    left: 0;
+    width: 1px;
+    height: 1px;
+}
+
+/* прокручиваемая стопка («все») поднята над рядом на место под подъём верхних карточек
+   (js: layout) — эта полоса заходит на кнопки сортировки, поэтому мышь ловят только карточки */
+.pc-file:not(.is-fit) {
+    pointer-events: none;
+}
+
+.pc-file:not(.is-fit) > .pc-file-card {
+    pointer-events: auto;
+}
+
+/* полоса прокрутки — только вдоль самой стопки, не по поднятой полосе над ней (--pad ставит js) */
+@supports selector(::-webkit-scrollbar) {
+    .pc-file:not(.is-fit) {
+        scrollbar-width: auto;
+        scrollbar-color: auto;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar-track {
+        margin-top: var(--pad, 0px);
+        background: transparent;
+    }
+
+    .pc-file:not(.is-fit)::-webkit-scrollbar-thumb {
+        background: var(--text-30);
+        border-radius: 3px;
+    }
+}
+
+/* пачка помещается целиком — поднятая карточка может выйти за верх картотеки */
+.pc-file.is-fit {
+    overflow: visible;
+    z-index: 2;
+    touch-action: none;   /* палец ведут по стопке — перебираются карточки, страница не листается */
+}
+
+.pc-file-card {
+    position: absolute;
+    left: 50%;
+    width: min(22rem, calc(100% - 1rem));
+    transform: translateX(-50%);
+    transition: transform 0.28s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.pc-file-card .pc-card {
+    margin-top: 0.85rem;
+    box-shadow: 0 -0.15rem 0.6rem rgba(0, 0, 0, 0.25);
+    transition: box-shadow 0.28s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+/* поднятая карточка — целиком над следующей */
+.pc-file-card.is-lifted,
+.pc-file-card:has(.pc-card:focus-visible) {
+    transform: translate(-50%, calc(-1 * var(--lift, 0px)));
+}
+
+.pc-file-card.is-lifted .pc-card,
+.pc-file-card:has(.pc-card:focus-visible) .pc-card {
+    border-color: var(--hover-line);
+    border-top-color: var(--fac-main, var(--gold-55));
+    background: linear-gradient(to bottom, var(--surface-hover-top), var(--surface-hover-bot));
+    box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
+}
+
+/* маленькие карточки в картотеке — матовое стекло, как окошки в общежитии:
+   полупрозрачный фон, карточки позади размыты */
+.pc-file .pc-card {
+    background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--surface-top) 72%, transparent),
+        color-mix(in srgb, var(--surface-bot) 72%, transparent));
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
+}
+
+.pc-file .pc-file-card.is-lifted .pc-card,
+.pc-file .pc-file-card:has(.pc-card:focus-visible) .pc-card {
+    background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--surface-hover-top) 72%, transparent),
+        color-mix(in srgb, var(--surface-hover-bot) 72%, transparent));
+}
+
+/* смена пачки: карточки въезжают по очереди */
+.pc-file.is-entering-next .pc-file-card { animation: pc-chunk-next 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.pc-file.is-entering-prev .pc-file-card { animation: pc-chunk-prev 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+
+/* без прозрачности — чтобы «матовое стекло» карточек работало и во время въезда */
+@keyframes pc-chunk-next {
+    from { margin-left: 10rem; }
+    to { margin-left: 0; }
+}
+
+@keyframes pc-chunk-prev {
+    from { margin-left: -10rem; }
+    to { margin-left: 0; }
+}
+
+/* ярлычки пачек под карточками — как закладки картотеки, свисают вниз */
+/* ленточки пачек — столбиком слева от стопки, прижаты к ней; текст не повёрнут */
+.pc-chunk-tabs {
+    position: absolute;
+    top: 0.6rem;
+    right: calc(50% + 11.5rem - 2px);   /* левый край стопки (карточка 22rem + запас) */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    z-index: 1;
+}
+
+.pc-chunk-tab {
+    min-width: 3.4rem;
+    padding: 0.3rem 0.7rem 0.3rem 1.1rem;
+    font: inherit;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    text-align: right;
+    color: var(--text-55);
+    background: linear-gradient(to right, var(--surface-bot), var(--surface-top));
+    border: 0;
+    /* ленточка-язычок: «ласточкин хвост» слева, правый край уходит под стопку */
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0.55rem 50%);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+/* телефон: стопка во всю ширину — ленточки отдельным столбиком слева, стопка рядом */
+@media (max-width: 768px) {
+    .pc-chunk-tabs {
+        position: static;
+        flex: none;
+        padding-top: 0.6rem;
+    }
+
+    .pc-file {
+        flex: 1 1 auto;
+    }
+}
+
+.pc-chunk-tab:hover,
+.pc-chunk-tab:focus-visible {
+    color: var(--hi);
+    transform: translateX(-2px);
+    outline: none;
+}
+
+.pc-chunk-tab.is-current {
+    color: #00223a;
+    background: linear-gradient(to right, #b6af98, #e3cfac);   /* золотая, как лента раздела */
+    transform: translateX(-0.4rem);
+}
+
+/* стрелки перелистывания групп */
+.pc-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--gold-15);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-arrow span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-right: 1.5px solid var(--gold-80);
+    border-bottom: 1.5px solid var(--gold-80);
+    transition: border-color 0.25s ease;
+}
+
+.pc-arrow-prev span { transform: translateX(0.12rem) rotate(135deg); }
+.pc-arrow-next span { transform: translateX(-0.12rem) rotate(-45deg); }
+
+.pc-arrow:hover,
+.pc-arrow:focus-visible {
+    border-color: var(--hover-line);
+    background-color: var(--hover);
+    outline: none;
+}
+
+.pc-arrow:hover span,
+.pc-arrow:focus-visible span {
+    border-color: var(--hi);
+}
+
+.pc-arrow[hidden] {
+    display: inline-flex;
+    visibility: hidden;   /* место остаётся — стопка не прыгает при смене группы */
+}
+
+@media (max-width: 768px) {
+    .pc-screen {
+        gap: 0 0.3rem;
+    }
+
+    .pc-arrow {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    /* на телефоне стрелки внизу экрана, поверх края карточки */
+    .pc-pager {
+        top: auto;
+        bottom: 0.8rem;
+        transform: none;
+        width: 2.6rem;
+        height: 2.6rem;
+        background: var(--pager-bg);
+    }
+
+    .pc-pager--prev { left: 0.8rem; }
+    .pc-pager--next { right: 0.8rem; }
+}
+
+/* ---------- Окно большой карточки ---------- */
+
+html.pc-open .main-scroll-viewport {
+    overflow: hidden;
+}
+
+.pc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-modal[hidden] {
+    display: none;
+}
+
+.pc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--backdrop);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.pc-modal-body {
+    position: relative;
+    width: min(40rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    overflow-x: hidden;                  /* раскладывание анкеты не даёт горизонтальной прокрутки */
+    overflow-y: auto;
+    scrollbar-gutter: stable;            /* место под полосу прокрутки заранее — без рывка после анимации */
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-30) transparent;
+    padding-top: 1.6rem;                 /* место под вкладки сверху карточки */
+    font-family: var(--font-main);
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(1rem) scale(0.98);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pc-modal.is-shown .pc-modal-backdrop,
+.pc-modal.is-shown .pc-modal-body {
+    opacity: 1;
+    transform: none;
+}
+
+.pc-big {
+    position: relative;
+    --card-bg: var(--card-surface);
+}
+
+/* большая карточка факультета — цельная, без билетных блоков */
+.fc-big .fc-block {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.fc-big .fc-block .fc-list:last-child {
+    margin-bottom: 0;
+}
+
+.fc-big .pc-ribbon {
+    right: 3.4rem;
+    height: 9rem;
+}
+
+/* у факультета нет вкладок — верхний левый угол тоже скруглён */
+.fc-big .pc-seg--head {
+    border-top-left-radius: 6px;
+}
+
+/* ---------- Карточка персонажа (как в прототипе Figma) ----------
+   Блоки со скруглёнными углами стоят вплотную, между ними — пунктир в основном цвете факультета. */
+
+.pc-ticket {
+    display: flex;
+    flex-direction: column;
+    --seam: var(--fac-accent, var(--gold-55));
+    --frame-in: 0.85rem;        /* рамка анкеты: на том же расстоянии от края, что линия со звёздочкой от низа */
+}
+
+/* рамка вокруг всей анкеты (её низ — линия со звёздочкой); лежит под закладкой.
+   Как обводка аватара: то же скругление, полупрозрачное золото и свет от курсора
+   (--gx/--gy ставит js/site.js; у рамки отступ --frame-in, поэтому центр света сдвинут).
+   Линия толщиной 1px рисуется маской: фон остаётся только по краю. */
+.pc-ticket::after {
+    content: "";
+    position: absolute;
+    inset: var(--frame-in);
+    z-index: 2;
+    padding: 1px;
+    border-radius: 5px;
+    background:
+        radial-gradient(circle 400px at calc(var(--gx, -999px) - var(--frame-in)) calc(var(--gy, -999px) - var(--frame-in)),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+/* блоки анкеты — одно целое: скруглены только внешние углы, между блоками ни скруглений,
+   ни пунктирных линий (их заменяет рамка) */
+.pc-ticket .pc-seg {
+    border-radius: 0;
+}
+
+.pc-ticket .pc-seg--head {
+    border-top-right-radius: 6px;
+}
+
+.fc-big.pc-ticket .pc-seg--head {
+    border-top-left-radius: 6px;
+}
+
+.pc-ticket .pc-seg--foot {
+    border-radius: 0 0 6px 6px;
+}
+
+.pc-ticket .pc-seg + .pc-seg::after,
+.pc-ticket .pc-top + .pc-seg::after {
+    content: none;
+}
+
+/* разделитель между блоками: линия на половину ширины с маленькой звёздочкой посередине,
+   прозрачность как у прежнего пунктира, без подсветки */
+.pc-ticket .pc-seg:not(.pc-seg--foot) + .pc-seg:not(.pc-seg--foot)::after,
+.pc-ticket .pc-top + .pc-seg:not(.pc-seg--foot)::after {
+    content: "✦";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 0.8rem;
+    transform: translateY(-50%);
+    font-size: 0.55rem;
+    line-height: 0.8rem;
+    text-align: center;
+    color: var(--seam);
+    /* к краям линия тает; у звёздочки — разрыв, и концы линии возле него тоже чуть прозрачнее */
+    background: linear-gradient(to right,
+            transparent 0, var(--seam) 35%, var(--seam) calc(50% - 1.8rem),
+            color-mix(in srgb, var(--seam) 40%, transparent) calc(50% - 0.7rem),
+            transparent calc(50% - 0.7rem) calc(50% + 0.7rem),
+            color-mix(in srgb, var(--seam) 40%, transparent) calc(50% + 0.7rem),
+            var(--seam) calc(50% + 1.8rem), var(--seam) 65%, transparent 100%)
+        center / 100% 1px no-repeat;
+    opacity: 0.17;
+    pointer-events: none;
+}
+
+/* во время раскрытия анкеты блоки чуть заходят друг на друга — на стыках нет щелей */
+.pc-ticket.is-unfolding .pc-seg {
+    box-shadow: 0 -2px 0 var(--card-bg), 0 2px 0 var(--card-bg);
+}
+
+/* у шапки сверху щели нет — там полоса цвета факультета, над ней не должно быть каёмки */
+.pc-ticket.is-unfolding .pc-seg--head {
+    box-shadow: 0 2px 0 var(--card-bg);
+}
+
+/* шапка анкеты чуть ниже, чтобы рамка не задевала её содержимое */
+.pc-ticket .pc-seg--head {
+    padding-top: calc(var(--frame-in) + 0.9rem);
+}
+
+/* нижний блок — высотой как отступ рамки: линия со звёздочкой совпадает с её низом */
+.pc-ticket .pc-seg--foot {
+    height: var(--frame-in);
+}
+
+/* крестик — внутри рамки */
+.pc-ticket .pc-close {
+    top: calc(var(--frame-in) + 0.2rem);
+    right: calc(var(--frame-in) + 0.2rem);
+}
+
+.pc-top {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.pc-seg {
+    position: relative;
+    padding: 1rem 1.8rem;
+    background: var(--card-bg);
+    border-radius: 6px;
+}
+
+/* пунктир на стыке с предыдущим блоком */
+.pc-seg + .pc-seg::after,
+.pc-top + .pc-seg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    transform: translateY(-50%);
+    transform: translateY(-50%) scaleY(0.6);
+    background: repeating-linear-gradient(to right, var(--seam) 0 3px, transparent 3px 7px);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* у последнего стыка вместо пунктира — линия со звёздочкой */
+.pc-seg.pc-seg--foot::after {
+    content: none;
+}
+
+.pc-seg--head {
+    padding-top: 1.4rem;
+    padding-bottom: 1.3rem;
+    border-top-left-radius: 0;           /* к углу примыкает ярлычок карточки */
+}
+
+.pc-seg--foot {
+    height: 1.4rem;
+    padding: 0;
+}
+
+/* вкладки над карточкой: свой «ярлычок» карточки, за ним ссылки; каждая следующая светлее */
+.pc-tabs {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.pc-tab-own {
+    position: relative;
+    z-index: 5;
+    width: 5.5rem;
+    height: calc(1.55rem + 1px);   /* на 1px заходит на анкету — без просвета на стыке */
+    margin-bottom: -1px;
+    background: var(--card-bg);
+    border-radius: 6px 0 0 0;
+    clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 100%, 0 100%);
+}
+
+.pc-tab {
+    --tab-mix: 14%;
+    position: relative;
+    margin-left: -0.45rem;
+    padding: 0.32rem 1.6rem 0.22rem 1.6rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--text-80);
+    text-decoration: none;
+    background: color-mix(in srgb, var(--fac-accent, #888f85) var(--tab-mix), var(--card-bg));
+    clip-path: polygon(0.9rem 0, calc(100% - 0.9rem) 0, 100% 100%, 0 100%);
+    transition: color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-tab:nth-child(2) { z-index: 4; --tab-mix: 14%; }
+.pc-tab:nth-child(3) { z-index: 3; --tab-mix: 26%; }
+.pc-tab:nth-child(4) { z-index: 2; --tab-mix: 38%; }
+
+.pc-tab:hover,
+.pc-tab:focus-visible {
+    color: var(--hi);
+    --tab-mix: 55%;
+    outline: none;
+}
+
+.pc-close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.6rem;
+    z-index: 4;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.pc-close:hover,
+.pc-close:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
+/* лента карточки персонажа: нависает над верхним краем на пару пикселей
+   и свисает до блока с параметрами; внутренняя обводка — второй цвет факультета */
+.pc-ribbon {
+    transform-origin: 50% 0;           /* лента откидывается вокруг верхнего края */
+    position: absolute;
+    z-index: 3;
+    top: -3px;
+    right: 3.4rem;
+    width: 6.2rem;                     /* шире влево (правый край на месте) */
+    height: calc(100% - 3.1rem + 3px);
+    max-height: 13.5rem;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.pc-ribbon-body {
+    fill: var(--fac-main, #8a8f88);
+}
+
+/* свет от мыши на внутренней полосе: белое ядро → второй цвет факультета (как у полосы шапки) */
+.pc-ribbon-glow-core { stop-color: #fff; }
+.pc-ribbon-glow-mid { stop-color: color-mix(in srgb, #fff 45%, var(--fac-stripe, #cccccc)); }
+.pc-ribbon-glow-edge { stop-color: var(--fac-stripe, #cccccc); }
+
+.pc-ribbon-line {
+    fill: none;                  /* stroke — свой градиент у каждой ленты, задаётся в разметке */
+    stroke-width: 4;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: miter;
+}
+
+.pc-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1.4rem;
+    align-items: center;
+    padding-right: 9.5rem;               /* не залезать под ленту */
+}
+
+.pc-ava.pc-big-avatar {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 3px;
+    font-size: 2.4rem;
+}
+
+/* рамка 3px полупрозрачного золота; свет от курсора — как у полосы внизу шапки
+   (белое ядро → #B6AF98 → #888F85, радиус 400px). Координаты --gx/--gy ставит js/site.js */
+.pc-ava-frame {
+    position: relative;
+    display: inline-block;
+    padding: 5px;              /* 1px — линия по внешнему краю, 4px — зазор до аватара */
+    line-height: 0;
+    border-radius: 5px;
+}
+
+/* сама обводка — 1px, как рамка анкеты; ::after — вторая такая же, вплотную к аватару */
+.pc-ava-frame::before,
+.pc-ava-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle 400px at var(--gx, -999px) var(--gy, -999px),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+.pc-ava-frame::after {
+    inset: 4px;                /* по краю аватара (он начинается через 5px) */
+    border-radius: 4px;
+    /* свет от курсора — в тех же координатах, что у внешней рамки */
+    background:
+        radial-gradient(circle 400px at calc(var(--gx, -999px) - 4px) calc(var(--gy, -999px) - 4px),
+            rgba(255, 255, 255, 0.95) 0%, rgba(182, 175, 152, 0.75) 50%, rgba(136, 143, 133, 0) 100%),
+        rgba(182, 175, 152, 0.45);
+}
+
+.pc-head-info .pc-k {
+    margin-top: 0.3rem;
+}
+
+.pc-head-info > .pc-k:first-child {
+    margin-top: 0;
+}
+
+.pc-big-name {
+    margin: -0.15rem 0 0;      /* у крупного имени внутренний отступ над буквами больше — */
+    line-height: 1.1;          /* подтягиваем, чтобы от «имя» до имени было как от «курс» до номера */
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pc-fac-link {
+    display: block;
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.pc-fac-link:hover,
+.pc-fac-link:focus-visible {
+    color: var(--hi);
+    outline: none;
+}
+
+.pc-big-fac {
+    margin-top: 0.4rem;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: var(--text-80);
+}
+
+.pc-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding-top: 0.95rem;
+    padding-bottom: 0.95rem;
+    text-align: center;
+}
+
+.pc-stat .pc-v {
+    margin-top: 0.15rem;
+    font-size: 0.92rem;
+    line-height: 1.3;
+}
+
+/* звёздочка у «проживает» и подсказка со статусом комнаты */
+.pc-room {
+    position: relative;
+    display: inline-block;
+}
+
+.pc-room-info {
+    display: none;
+}
+
+.pc-room-star {
+    margin-left: 0.3rem;
+    padding: 0 0.15rem;
+    font: inherit;
+    font-size: 0.8em;
+    line-height: 1;
+    color: var(--gold-55);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.pc-room-star--yes { color: var(--gold); }
+.pc-room-star--no { color: var(--text-55); }
+
+.pc-room-star:hover,
+.pc-room-star:focus-visible,
+.pc-room-star[aria-expanded="true"] {
+    color: var(--hi);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    outline: none;
+}
+
+/* ✦ дуэта у имени — цвета текста; при наведении светлеет, как звёздочки фактов (без свечения) */
+.pc-room-star--duet {
+    color: inherit;
+    font-weight: normal;
+    transition: color 0.5s ease;
+}
+
+.pc-room-star--duet:hover,
+.pc-room-star--duet:focus-visible,
+.pc-room-star--duet[aria-expanded="true"] {
+    color: var(--hi);
+    text-shadow: none;
+    transition: color 0.12s ease;
+}
+
+.pc-room-pop {
+    position: absolute;
+    z-index: 10;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 14rem;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--text);
+    background: var(--pop-bg);
+    border: 1px solid var(--gold-55);
+    border-radius: var(--pop-radius);
+    box-shadow: var(--pop-shadow);
+}
+
+.pc-room-pop[hidden] {
+    display: none;
+}
+
+/* узкий блок «взаимодействия» над биографией */
+.pc-interaction {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.2rem 0.6rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--text-80);
+}
+
+.pc-interaction .pc-k {
+    margin-right: 0.3rem;
+}
+
+.pc-section-title {
+    margin: 0 0 0.55rem;
+    text-align: center;
+    font-weight: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--text-55);
+}
+
+.pc-subtitle {
+    margin: 0.9rem 0 0.45rem;
+    text-align: center;
+    font-weight: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--text-55);
+}
+
+/* текст с собственной прокруткой, полоса в цвете факультета: тонкая, без стрелок,
+   с зазором до рамки анкеты */
+.pc-scroll {
+    overflow-y: auto;
+    padding-right: 0.6rem;
+    margin-right: -0.6rem;
+    overscroll-behavior: contain;
+    scrollbar-color: auto;   /* не наследовать от окна анкеты: иначе Chrome рисует полосу со стрелками */
+}
+
+/* Firefox: свои стрелок не рисует, достаточно «тонкой» полосы.
+   В Chrome / Safari эти свойства включили бы стандартную полосу со стрелками — там работают
+   ::-webkit-scrollbar ниже */
+@supports not selector(::-webkit-scrollbar) {
+    .pc-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in srgb, var(--fac-accent, var(--gold-55)) 50%, transparent) var(--hover);
+    }
+
+    .pc-seg:hover .pc-scroll {
+        scrollbar-color: var(--fac-accent, var(--gold-55)) var(--hover);
+    }
+}
+
+.pc-scroll::-webkit-scrollbar {
+    width: 3px;
+}
+
+.pc-scroll::-webkit-scrollbar-button {
+    display: none;
+}
+
+.pc-scroll::-webkit-scrollbar-track {
+    background: var(--hover);
+    border-radius: 2px;
+}
+
+.pc-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--fac-accent, var(--gold-55)) 50%, transparent);   /* бегунок прозрачнее; дорожка как была */
+    border-radius: 2px;
+}
+
+/* наведение на блок — бегунок в полную силу */
+.pc-seg:hover .pc-scroll::-webkit-scrollbar-thumb {
+    background: var(--fac-accent, var(--gold-55));
+    border-radius: 2px;
+}
+
+.pc-scroll--bio {
+    max-height: 16rem;
+}
+
+/* Анкета персонажа — одной высоты, сколько бы ни было текста (52.25rem — анкета Арнольда
+   Бондштедта, где биография и факты упираются в свои пределы). Лишнее место или нехватку
+   забирает блок биографии: он растягивается и сжимается, остальные блоки — по содержимому. */
+.pc-big.pc-ticket:not(.fc-big) {
+    height: 52.25rem;
+}
+
+.pc-big.pc-ticket:not(.fc-big) > :not(.pc-seg--bio-flex) {
+    flex: none;
+}
+
+.pc-big.pc-ticket:not(.fc-big) > .pc-seg--bio-flex {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.pc-big.pc-ticket:not(.fc-big) .pc-seg--bio-flex .pc-scroll--bio {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+}
+
+.pc-scroll--facts {
+    max-height: 8rem;
+}
+
+.pc-text p {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.38;
+    color: var(--text-80);
+}
+
+.pc-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* полупрозрачный герб на фоне фактов */
+.pc-seg--facts::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 2.2rem;
+    width: 9rem;
+    height: 9rem;
+    transform: translateY(-50%);
+    background: url("../img/crest-light.png") center / contain no-repeat;
+    opacity: 0.07;
+    pointer-events: none;
+}
+
+.pc-seg--facts > * {
+    position: relative;
+}
+
+.pc-facts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--text-80);
+    line-height: 1.35;
+}
+
+.pc-facts li {
+    position: relative;
+    padding-left: 1.2rem;
+}
+
+.pc-facts li::before {
+    content: "✦";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;                    /* на всю высоту пункта — звёздочка посередине, сколько бы строк ни было */
+    display: flex;
+    align-items: center;
+    transform: scale(0.75);       /* меньше текста — уменьшаем масштабом, не шрифтом */
+    transform-origin: left center;
+    color: var(--gold-55);
+    transition: color 0.5s ease, text-shadow 0.5s ease;
+}
+
+/* наведение на факт — его звёздочка загорается */
+.pc-facts li:hover::before {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+/* наведение на текст анкеты — подсвечивается заголовок его блока (без свечения вокруг) */
+.pc-ticket .pc-k,
+.pc-ticket .pc-section-title,
+.pc-ticket .pc-subtitle {
+    transition: color 0.4s ease;
+}
+
+.pc-stat:hover .pc-k,
+.pc-head-info .pc-k:has(+ .pc-v:hover, + .pc-big-name:hover),
+.pc-interaction:hover .pc-k,
+.pc-text:hover .pc-section-title {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+/* разделитель со звёздочкой на стыке двух нижних блоков (цвет факультета);
+   при наведении на звёздочку вспыхивают и она, и линия */
+.pc-seam-star {
+    position: relative;
+    z-index: 2;
+    height: 0;
+}
+
+.pc-seam-star::before {
+    content: none;   /* низ рамки анкеты (.pc-ticket::after) */
+}
+
+.pc-seam-dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -52%);
+    padding: 0.2rem 0.45rem;
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--seam);
+    pointer-events: auto;
+    cursor: default;
+    transition: color 0.5s ease;
+}
+
+.pc-seam-star::before {
+    transition: background 0.5s ease, opacity 0.5s ease;
+}
+
+.pc-seam-star:has(.pc-seam-dot:hover)::before {
+    background: var(--hi);
+    opacity: 1;
+    transition: background 0.12s ease, opacity 0.12s ease;
+}
+
+.pc-seam-dot:hover {
+    color: var(--hi);
+    transition: color 0.12s ease;
+}
+
+/* ---------- Открытие анкеты: карточка увеличивается, нижняя часть раскладывается ---------- */
+
+.pc-modal-body:has(.pc-ticket) {
+    transform: none;
+}
+
+/* во время раскрытия анкеты полоса прокрутки окна не появляется (место под неё остаётся) */
+.pc-modal-body.is-animating {
+    overflow-y: hidden;
+}
+
+/* шаги анимации — в js/pages/characters.js (unfoldCard); здесь только точки поворота */
+.pc-ticket .pc-seg,
+.pc-ticket .pc-seam-star {
+    transform-origin: 50% 0;
+}
+
+/* закрытие: анкета складывается и улетает в стопку (foldCard) — окно видно до конца, фон гаснет */
+.pc-modal.is-closing {
+    pointer-events: none;
+}
+
+/* анкета складывается в свою карточку (аватарку) — окно стоит на месте, иначе промахнётся */
+.pc-modal.is-closing .pc-modal-body {
+    opacity: 1;
+    transform: none;
+}
+
+.pc-modal.is-closing .pc-modal-backdrop {
+    transition-duration: 0.5s;
+}
+
+.pc-modal.is-closing .pc-pager {
+    opacity: 0;
+}
+
+/* открытие: полоса и ярлычок маленькой карточки на шапке анкеты (unfoldCard) —
+   полоса уезжает вправо, ярлычок переезжает влево и становится язычком */
+.pc-morph-line {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--fac-main, var(--gold-55));
+    transform-origin: 0 50%;             /* улетает влево (при закрытии — вытягивается слева) */
+    pointer-events: none;
+}
+
+.pc-morph-tab {
+    position: absolute;
+    z-index: 6;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    font-size: 0.75rem;                  /* как у вкладок анкеты: ярлычок становится последней из них */
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--fac-stripe, var(--text-80));
+    background: var(--fac-main, #0a3e5d);
+    clip-path: polygon(0.5rem 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+/* окно с анкетой появляется сразу — плавность даёт сама анимация карточки */
+.pc-modal-body:has(.pc-ticket) {
+    transition: none;
+}
+
+/* копия уезжающей карточки поверх окна */
+.pc-card-ghost {
+    z-index: 3;
+    pointer-events: none;
+    font-family: var(--font-main);
+    color: var(--text);
+}
+
+@keyframes pc-slide-next {
+    from { transform: translateX(2.5rem); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes pc-slide-prev {
+    from { transform: translateX(-2.5rem); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pc-ticket,
+    .pc-ticket * {
+        animation: none !important;
+    }
+}
+
+/* стрелки листания анкет — по краям экрана */
+.pc-pager {
+    position: fixed;
+    z-index: 2;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    background: var(--pager-bg);
+    opacity: 0;
+    transition: opacity 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pc-pager--prev { left: max(1rem, calc(50% - 20rem - 5rem)); }
+.pc-pager--next { right: max(1rem, calc(50% - 20rem - 5rem)); }
+
+.pc-modal.is-shown:has(.pc-ticket) .pc-pager {
+    opacity: 1;
+}
+
+.pc-modal:not(:has(.pc-ticket)) .pc-pager,
+.pc-pager:disabled {
+    visibility: hidden;
+}
+
+/* телефон */
+@media (max-width: 768px) {
+    }
+
+    }
+
+    }
+
+    .pc-seg {
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
+    }
+
+    .pc-head {
+        grid-template-columns: 1fr;
+        justify-items: start;
+        gap: 0.8rem;
+        padding-right: 6rem;
+    }
+
+    .pc-ava.pc-big-avatar {
+        width: 7rem;
+        height: 7rem;
+    }
+
+    .pc-ribbon {
+        right: 2.8rem;
+        width: 4.1rem;
+        height: 8.5rem;
+    }
+
+    .pc-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        row-gap: 0.8rem;
+    }
+
+    .pc-tab-own {
+        width: 3rem;
+    }
+
+    .pc-tab {
+        padding-left: 1.2rem;
+        padding-right: 1.3rem;
+    }
+
+    .pc-scroll--bio {
+        max-height: 14rem;
+    }
+
+    .pc-seg--facts::before {
+        right: 1rem;
+        width: 7rem;
+        height: 7rem;
+    }
+
+    }
+
+    }
+}
