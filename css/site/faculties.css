@@ -957,16 +957,25 @@ body:has(.pc-modal:not([hidden])) :is(.fc-badge, .fc-mini-badge) {
 @media (max-width: 768px) {
     .fc-head {
         padding-right: 5.5rem;
+    }
+
     .fc-pic {
         height: 150px;
         margin-right: -5.5rem;
         margin-left: -1.1rem;
+    }
+
     .fc-big .pc-ribbon {
         right: 2.8rem;
         height: 7rem;
+    }
+
     .fc-list .pc-k {
         display: block;
         min-width: 0;
+    }
+
     .fc-list > li:has(> .fc-names) {
         grid-template-columns: minmax(0, 1fr);
+    }
 }

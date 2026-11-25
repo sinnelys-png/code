@@ -183,7 +183,7 @@
 
         return `
             <article class="pc-big pc-ticket${c.archived ? ' is-archived' : ''}"${facStyle(c)}>
-                <nav class="pc-tabs"><span class="pc-tab-own" aria-hidden="true"></span>${tabs}</nav>
+                <nav class="pc-tabs"><span class="pc-tab-own">анкета</span>${tabs}</nav>
                 <div class="pc-top">
                     ${ribbon()}
                     <div class="pc-room-pop" role="status" hidden></div>
@@ -1051,6 +1051,13 @@
             : (n > 1 ? (avail - top0 - H - 8) / (n - 1) : H);
         const step = Math.round(Math.max(MIN_STEP, Math.min(H * MAX_STEP, fit)));
         box.classList.toggle('is-fit', fits);
+        // при прокрутке карточка, дошедшая до верха стопки, убирается целиком (а не обрезается):
+        // иначе она заезжает в поднятую полосу — на заголовок и кнопки сортировки
+        if (!box.dataset.scrollBound) {
+            box.dataset.scrollBound = '1';
+            // (прокрутка и так приходит не чаще раза за кадр)
+            box.addEventListener('scroll', () => hideScrolledCards(box), { passive: true });
+        }
         cards.forEach((el, i) => {
             el.style.top = `${top0 + i * step}px`;
             el.style.zIndex = String(i + 1);
@@ -1064,6 +1071,16 @@
         const end = box.querySelector('.pc-file-end');
         if (end) end.style.top = `${top0 + (n - 1) * step + H + 8}px`;
         file.geom = { top0, step, n };
+        hideScrolledCards(box);
+    }
+
+    // карточки, чей верх (с язычком) ушёл выше начала стопки, — убраны (css .is-gone)
+    function hideScrolledCards(box) {
+        const pad = box.classList.contains('is-fit') ? -Infinity : (parseFloat(box.style.getPropertyValue('--pad')) || 0);
+        const st = box.scrollTop;
+        box.querySelectorAll('.pc-file-card').forEach(el => {
+            el.classList.toggle('is-gone', (parseFloat(el.style.top) || 0) - st < pad);
+        });
     }
 
     // показать пачку (dir — откуда въезжает: 1 справа, -1 слева, 0 — без анимации)
@@ -1440,7 +1457,7 @@
             // ссылка внизу справа: в архив ушедших — и обратно
             const switchLink = inArchive
                 ? '<a class="pc-archive-link" href="#characters">← действующие</a>'
-                : '<a class="pc-archive-link" href="#characters/архив">архив</a>';
+                : '<a class="pc-archive-link" href="#characters/архив">архив →</a>';
             if (!file.groups.length) {
                 root.innerHTML = `<p class="dl-status">${inArchive ? 'В архиве пока никого.' : 'Персонажей пока нет.'}</p>${switchLink}`;
                 return;

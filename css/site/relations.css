@@ -27,7 +27,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0 var(--pill-pad-x);
+    /* справа — поменьше: стрелочка сама даёт «воздух», так обе стороны выглядят одинаково */
+    padding: 0 calc(var(--pill-pad-x) * 0.7) 0 var(--pill-pad-x);
     font: inherit;
     font-size: var(--pill-font);
     color: var(--text-70);
@@ -166,6 +167,31 @@
 
 .rg-reset {
     margin-left: 0.4rem;
+}
+
+/* последний фильтр и «сброс» — не разрываются; расстояние между ними — как в линейке
+   (промежуток между фильтрами + отступ «сброса») */
+.rg-filters-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* строка не влезает — кнопки компактнее (js: fitFilters) */
+.rg-filters.is-tight {
+    gap: 0.25rem;
+}
+
+.rg-filters.is-tight .rg-drop-btn {
+    padding: 0 0.4rem 0 0.55rem;
+}
+
+.rg-filters.is-tight .rg-filters-end {
+    gap: 0.25rem;
+}
+
+.rg-filters.is-tight .rg-reset {
+    margin-left: 0.25rem;
 }
 
 .rg-dot {
@@ -329,6 +355,8 @@
 }
 
 .rg-zoom button {
+    display: grid;
+    place-items: center;
     width: 2rem;
     height: 2rem;
     padding: 0;
@@ -342,6 +370,17 @@
     cursor: pointer;
 }
 
+/* значки — рисунками, ровно по центру кружка */
+.rg-zoom svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .rg-zoom button:hover,
 .rg-zoom button:focus-visible {
     color: var(--hi);
@@ -350,13 +389,25 @@
 }
 
 /* список отношений выбранного персонажа */
-.rg-hint {
-    margin: 0;
-    font-size: 0.82rem;
-    text-align: center;
-    color: var(--text-55);
+
+/* аватар в списке — кнопка: открывает анкету */
+.rg-ava-btn {
+    flex: none;
+    padding: 0;
+    font: inherit;
+    line-height: 0;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
 }
 
+.rg-ava-btn:hover,
+.rg-ava-btn:focus-visible {
+    box-shadow: 0 0 0 2px var(--hover-line);
+    outline: none;
+}
 .rg-details-name {
     margin: 0 0 0.8rem;
     font-size: 1.1rem;

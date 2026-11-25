@@ -3,6 +3,16 @@
    ========================================================================== */
 
 /* ---------- Линейка роста (js/pages/lineup.js) ---------- */
+/* страница — во всю ширину основного блока (fullBleed), по высоте — как была: посередине блока */
+.lu-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0.9rem 1rem 0.5rem;
+}
+
 /* фильтры — те же выпадающие меню, что в «Отношениях» (.rg-filters) */
 .lu-filters {
     margin-bottom: 1rem;
@@ -80,6 +90,7 @@
 }
 
 .lu-person {
+    --ava-w: 2.8rem;
     flex: none;
     width: 4.4rem;
     height: var(--chart-h);    /* ровно высота поля — пол совпадает с нулём делений */
@@ -99,7 +110,6 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    border-bottom: 2px solid var(--gold-55);      /* пол */
 }
 
 .lu-figure {
@@ -113,16 +123,18 @@
 /* число над аватаром — вне высоты: верх аватара стоит ровно на отметке роста */
 .lu-cm {
     position: absolute;
-    bottom: calc(100% + 0.15rem);
+    bottom: calc(100% + 2px + 0.35rem);        /* над обводкой аватара — как имя от нижней линии */
     font-size: 0.7rem;
     color: var(--text-55);
     transition: color 0.2s ease;
 }
 
 .lu-ava {
+    position: relative;
+    z-index: 1;
     flex: none;
-    width: 2.8rem;
-    height: 2.8rem;
+    width: var(--ava-w);
+    height: var(--ava-w);
     border-radius: 50%;
     object-fit: cover;
     box-shadow: 0 0 0 2px var(--fac-main, var(--gold-55));
@@ -137,19 +149,20 @@
     background: var(--hover);
 }
 
+/* полоса — шириной с аватар и начинается от его середины: вместе они — арка, скругление сверху даёт аватар */
 .lu-bar {
     flex: 1;
-    width: 0.8rem;
-    margin-top: 0.3rem;
-    background: linear-gradient(to bottom, var(--fac-main, #888f85), color-mix(in srgb, var(--fac-main, #888f85) 35%, transparent));
-    border-radius: 3px 3px 0 0;
+    width: calc(var(--ava-w) + 4px);            /* с обводкой аватара (2px с каждой стороны) */
+    margin-top: calc(var(--ava-w) / -2);
+    background: linear-gradient(to bottom, var(--fac-main, #888f85), color-mix(in srgb, var(--fac-main, #888f85) 15%, transparent));
     transition: filter 0.2s ease;
 }
 
 .lu-name {
     flex: none;
     height: var(--name-h);
-    padding-top: 0.35rem;
+    padding-top: 0.35rem;                      /* от нижней линии */
+    box-sizing: border-box;
     font-size: 0.72rem;
     line-height: 1.2;
     text-align: center;
@@ -187,12 +200,8 @@
     }
 
     .lu-person {
+        --ava-w: 2.3rem;
         width: 3.6rem;
-    }
-
-    .lu-ava {
-        width: 2.3rem;
-        height: 2.3rem;
     }
 }
 

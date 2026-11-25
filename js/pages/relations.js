@@ -5,13 +5,14 @@
 // Фильтры (выпадающие меню): типы отношений, роли, факультеты, курсы, подроли
 // (когда появятся) и персонажи — выбранные персонажи и те, с кем у них есть отношения.
 // Нажатие на персонажа оставляет только его связи и показывает их списком под графом.
+// Масштаб — кнопками в углу; сдвиг — перетаскиванием.
 (() => {
     const { esc, safeUrl } = RCU;
 
     const R = 360;                 // радиус круга с аватарами (viewBox 1000×1000, центр в 0,0)
     const AVA = 15;                // радиус аватара
-    // по умолчанию включены «сильные» отношения — иначе граф превращается в клубок
-    const DEFAULT_TYPES = ['любовь', 'симпатия', 'дружба', 'ненависть', 'страх'];
+    // по умолчанию включены все отношения, кроме «не знакомы» (их слишком много — граф превращается в клубок)
+    const OFF_BY_DEFAULT = ['не знакомы'];
     const ROLE_TITLES = [['студент', 'студенты'], ['преподаватель', 'преподаватели'], ['персонал', 'персонал']];
 
     const norm = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
@@ -85,19 +86,22 @@
             g.people.push(p);
         });
 
+        // в фильтрах — только факультеты и курсы, где есть персонажи
         const facultyList = [...new Set(people.map(p => p.faculty).filter(Boolean))]
             .sort((a, b) => {
                 const ia = facultyInfoTitles.findIndex(t => facKey(t) === facKey(a));
                 const ib = facultyInfoTitles.findIndex(t => facKey(t) === facKey(b));
                 return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
             });
-        // курсов всего 8: показываем все, даже если на 7 и 8 пока никого нет
-        const courses = ['1', '2', '3', '4', '5', '6', '7', '8'];
+        const courses = [...new Set(people.filter(p => p.role === 'студент' && p.course).map(p => p.course))]
+            .sort((a, b) => Number(a) - Number(b));
 
         return { legend: rel.legend, people, links: rel.links, groups, facultyList, courses };
     }
 
     /* ---------- Фильтры ---------- */
+
+    const defaultTypes = () => new Set(model.legend.map((l, i) => (OFF_BY_DEFAULT.includes(norm(l.name)) ? -1 : i)).filter(i => i >= 0));
 
     function freshState() {
         return {
@@ -105,7 +109,7 @@
             roles: new Set(),
             courses: new Set(),
             activities: new Set(),
-            types: new Set(model.legend.map((l, i) => (DEFAULT_TYPES.includes(norm(l.name)) ? i : -1)).filter(i => i >= 0)),
+            types: defaultTypes(),
             people: new Set(),           // выбранные персонажи (номера); пусто — все
             selected: -1,
         };
@@ -185,17 +189,21 @@
                 ${drop('courses', 'курс', model.courses.map(c => ({ value: c, label: `${c} курс` })))}
                 ${drop('activities', 'подроль', allActivities.map(a => ({ value: a, label: a })),
                     { empty: 'Появятся вместе со страницей подролей.' })}
-                ${drop('types', 'отношение', model.legend.map((l, i) => ({ value: i, key: i, label: l.name.toLowerCase(), dot: visibleOn(l.color) })), { types: true })}
-                <button class="rg-reset" type="button">сброс</button>
+                <span class="rg-filters-end">
+                    ${drop('types', 'отношение', model.legend.map((l, i) => ({ value: i, key: i, label: l.name.toLowerCase(), dot: visibleOn(l.color) })), { types: true })}
+                    <button class="rg-reset" type="button">сброс</button>
+                </span>
             </div>`;
     }
 
-    // выбранный фильтр — кнопка выделена рамкой (у «отношения» — если включены не все типы)
+    // выбранный фильтр — кнопка выделена рамкой (у «отношения» — если набор не тот, что по умолчанию)
     function updateCounts() {
         root.querySelectorAll('.rg-drop').forEach(d => {
             const g = d.dataset.group;
             const n = state[g].size;
-            d.classList.toggle('is-active', g === 'types' ? n !== model.legend.length : n > 0);
+            const def = defaultTypes();
+            const changed = g === 'types' ? (n !== def.size || [...state.types].some(x => !def.has(x))) : n > 0;
+            d.classList.toggle('is-active', changed);
         });
     }
 
@@ -332,7 +340,7 @@
 
     /* ---------- Список связей выбранного персонажа ---------- */
 
-    // имя персонажа: если у него есть анкета — открывает её
+    // имя персонажа: если у него есть анкета — открывает её (аватар в списке — тоже)
     const nameHTML = (p, cls) => p.inTech
         ? `<button class="${cls} pc-open-char" type="button" data-name="${esc(p.name)}" title="Открыть анкету">${esc(p.name)}</button>`
         : `<span class="${cls}">${esc(p.name)}</span>`;
@@ -368,7 +376,9 @@
                     const note = l[4];
                     return `
                         <li class="rg-item">
-                            ${avaHTML(other)}
+                            ${other.inTech
+                                ? `<button class="rg-ava-btn pc-open-char" type="button" data-name="${esc(other.name)}" title="Открыть анкету" aria-label="Анкета: ${esc(other.name)}">${avaHTML(other)}</button>`
+                                : avaHTML(other)}
                             <div class="rg-item-body">
                                 <button class="rg-person" type="button" data-i="${other.i}" title="Показать отношения ${esc(other.name)}">${esc(other.name)}</button>
                                 ${note ? `<p class="rg-note">${esc(note)}</p>` : ''}
@@ -385,7 +395,7 @@
 
     function detailsHTML() {
         const sel = state.selected;
-        if (sel < 0) return '<p class="rg-hint">Нажмите на персонажа, чтобы увидеть только его отношения и комментарии к ним.</p>';
+        if (sel < 0) return '';
         const p = model.people[sel];
         const out = model.links.filter(l => l[0] === sel && state.types.has(l[2]));
         const inc = model.links.filter(l => l[1] === sel && state.types.has(l[2]));
@@ -407,7 +417,28 @@
 
     function draw() {
         root.querySelector('.rg-filters-wrap').innerHTML = filtersHTML();
+        fitFilters();
         drawGraph();
+    }
+
+    // граф — по высоте блока: пока никто не выбран, страница не прокручивается и кнопки
+    // масштаба внизу графа видны (выбрали — ниже появляется список, тогда прокрутка нужна)
+    function fitStage() {
+        const stage = root && root.querySelector('.rg-stage');
+        const vp = root && root.closest('.main-scroll-viewport');
+        if (!stage || !vp || !state || state.selected >= 0) return;
+        stage.style.height = '';
+        const over = vp.scrollHeight - vp.clientHeight;
+        if (over > 0) stage.style.height = `${Math.max(280, stage.offsetHeight - over - 2)}px`;
+    }
+
+    // фильтры и «сброс» — в одну строку; если не влезают — кнопки компактнее
+    function fitFilters() {
+        const row = root && root.querySelector('.rg-filters');
+        if (!row) return;
+        row.classList.remove('is-tight');
+        const wraps = () => new Set([...row.children].map(c => Math.round(c.getBoundingClientRect().top))).size > 1;
+        if (wraps()) row.classList.add('is-tight');
     }
 
     // линии каждого персонажа — для быстрой подсветки при наведении
@@ -451,12 +482,6 @@
 
     function setView() {
         root.querySelectorAll('.rg-stage svg').forEach(svg => svg.setAttribute('viewBox', state.view.join(' ')));
-    }
-
-    function svgPoint(svg, e) {
-        const r = svg.getBoundingClientRect();
-        const [x, y, w, h] = state.view;
-        return [x + (e.clientX - r.left) / r.width * w, y + (e.clientY - r.top) / r.height * h];
     }
 
     function bind() {
@@ -558,13 +583,6 @@
         };
         stage.addEventListener('pointerup', end);
         stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('is-dragging'); });
-        stage.addEventListener('wheel', (e) => {
-            const svg = stage.querySelector('.rg-svg');
-            if (!svg || !(e.ctrlKey || e.metaKey || e.altKey)) return;        // без Ctrl колесо прокручивает страницу
-            e.preventDefault();
-            const [px, py] = svgPoint(svg, e);
-            zoom(e.deltaY > 0 ? 1.12 : 0.89, px, py);
-        }, { passive: false });
         stage.addEventListener('keydown', (e) => {
             const node = e.target.closest('.rg-node');
             if (node && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(Number(node.dataset.i)); }
@@ -639,15 +657,36 @@
                         <div class="rg-stage"></div>
                         <button class="rg-clear" type="button" hidden>показать всех</button>
                         <div class="rg-zoom">
-                            <button type="button" data-zoom="in" aria-label="Приблизить">+</button>
-                            <button type="button" data-zoom="out" aria-label="Отдалить">−</button>
-                            <button type="button" data-zoom="reset" aria-label="Весь граф">⟲</button>
+                            <button type="button" data-zoom="in" aria-label="Приблизить"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9" /></svg></button>
+                            <button type="button" data-zoom="out" aria-label="Отдалить"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" /></svg></button>
+                            <button type="button" data-zoom="reset" aria-label="Весь граф"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12.6 6.2A5 5 0 1 0 13 9.5" /><path d="M13.2 2.8v3.6H9.6" /></svg></button>
                         </div>
                     </div>
                     <div class="rg-details"></div>
                 </div>`;
             draw();
             bind();
+            fitStage();
+            if (document.fonts) document.fonts.ready.then(() => { fitFilters(); fitStage(); });
+            // высота блока меняется (заставка, окно, поворот телефона) — граф подстраивается
+            const vp = el.closest('.main-scroll-viewport');
+            if (vp && window.ResizeObserver) {
+                let vh = vp.clientHeight;
+                const rov = new ResizeObserver(() => {
+                    if (!el.isConnected) { rov.disconnect(); return; }
+                    if (vp.clientHeight !== vh) { vh = vp.clientHeight; fitStage(); }
+                });
+                rov.observe(vp);
+            }
+            if (window.ResizeObserver) {
+                const wrap = el.querySelector('.rg-filters-wrap');
+                let w = wrap.clientWidth;
+                const ro = new ResizeObserver(() => {
+                    if (!wrap.isConnected) { ro.disconnect(); return; }
+                    if (wrap.clientWidth !== w) { w = wrap.clientWidth; fitFilters(); }
+                });
+                ro.observe(wrap);
+            }
         },
     };
 })();
